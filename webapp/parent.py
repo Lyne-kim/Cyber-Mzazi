@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 
 from .extensions import db
 from .models import ActivityLog, LogoutRequest, MessageRecord
 from .services.audit import log_event
+from .ui_text import SUPPORTED_LANGUAGES
 
 
 parent_bp = Blueprint("parent", __name__, url_prefix="/parent")
@@ -62,6 +63,33 @@ def _parent_data() -> dict:
         .limit(20)
         .all()
     )
+    logout_request_logs = (
+        ActivityLog.query.filter_by(
+            family_id=current_user.family_id, event_type="logout_requested"
+        )
+        .order_by(ActivityLog.created_at.desc())
+        .all()
+    )
+    logout_details_by_child: dict[int, ActivityLog] = {}
+    for log in logout_request_logs:
+        if log.actor_id and log.actor_id not in logout_details_by_child:
+            logout_details_by_child[log.actor_id] = log
+
+    logout_request_cards = []
+    for logout_request in logout_requests:
+        detail_log = logout_details_by_child.get(logout_request.child_user_id)
+        logout_request_cards.append(
+            {
+                "request": logout_request,
+                "detail": (
+                    detail_log.details
+                    if detail_log
+                    else "Child requested sign-out from this device."
+                ),
+                "requested_at": logout_request.created_at.strftime("%Y-%m-%d %H:%M"),
+            }
+        )
+
     high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
@@ -69,6 +97,8 @@ def _parent_data() -> dict:
     return {
         "messages": messages,
         "logout_requests": logout_requests,
+        "logout_request_cards": logout_request_cards,
+        "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": activity_logs,
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
@@ -160,6 +190,47 @@ def trusted_contacts():
     return _render_parent_page("trusted_contacts", "Trusted Contacts")
 
 
+@parent_bp.post("/language")
+def set_language():
+    language = request.form.get("language", "en").strip().lower()
+    if language not in SUPPORTED_LANGUAGES:
+        flash("Choose English or Swahili.", "warning")
+        return redirect(url_for("parent.language_settings"))
+
+    session["ui_language"] = language
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "language_changed",
+        f"Parent interface language set to {SUPPORTED_LANGUAGES[language]}",
+    )
+    db.session.commit()
+    flash(f"Language updated to {SUPPORTED_LANGUAGES[language]}.", "success")
+    return redirect(request.form.get("next") or url_for("parent.language_settings"))
+
+
+@parent_bp.post("/safety-resources/attachments")
+def attach_resource_documents():
+    files = [
+        upload.filename
+        for upload in request.files.getlist("attachments")
+        if upload and upload.filename
+    ]
+    if not files:
+        flash("Choose one or more documents first.", "warning")
+        return redirect(url_for("parent.safety_resources"))
+
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "resource_attachment_added",
+        f"Safety resource placeholders added for: {', '.join(files)}",
+    )
+    db.session.commit()
+    flash("Document placeholders added to safety resources.", "success")
+    return redirect(url_for("parent.safety_resources"))
+
+
 @parent_bp.post("/messages/<int:message_id>/review")
 def review_message(message_id: int):
     record = MessageRecord.query.filter_by(
@@ -195,7 +266,7 @@ def approve_logout(request_id: int):
         current_user.family_id,
         current_user.id,
         "logout_approved",
-        f"Approved sign-out for child user {logout_request.child_user_id}",
+        f"Approved sign-out for child user {logout_request.child_user_id}. The child device can close the current child session once.",
     )
     db.session.commit()
     flash("Logout approved. The child can now sign out once.", "success")

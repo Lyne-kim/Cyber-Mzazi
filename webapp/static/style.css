@@ -283,8 +283,13 @@ select {
   box-shadow: var(--shadow);
 }
 
+.child-sidebar {
+  background: #15354d;
+}
+
 .sidebar .eyebrow,
 .sidebar .muted,
+.sidebar .meta,
 .sidebar p,
 .sidebar label {
   color: rgba(241, 246, 243, 0.72);
@@ -324,6 +329,12 @@ select {
 .sidebar-more {
   display: grid;
   gap: 0.35rem;
+}
+
+.sidebar-footer {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: auto;
 }
 
 .sidebar-heading {
@@ -381,6 +392,26 @@ select {
   color: white;
   text-decoration: none;
   box-shadow: 0 14px 30px rgba(217, 93, 57, 0.35);
+}
+
+.approval-card,
+.upload-zone {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.workspace-main .approval-card,
+.workspace-main .upload-zone {
+  background: rgba(31, 111, 91, 0.06);
+  border-color: var(--line);
+}
+
+.inline-card {
+  margin-top: 1rem;
 }
 
 .workspace-main {
@@ -477,6 +508,10 @@ select {
   gap: 1.25rem;
 }
 
+.child-workspace .workspace-main {
+  gap: 1.25rem;
+}
+
 .child-hero {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -491,7 +526,6 @@ select {
   background: rgba(255, 255, 255, 0.78);
 }
 
-.child-nav-strip,
 .child-bottom-nav {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -588,7 +622,7 @@ select {
   }
 
   .stats-grid,
-  .child-nav-strip {
+  .child-bottom-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -611,10 +645,6 @@ select {
 
   .sidebar {
     padding-bottom: 1rem;
-  }
-
-  .child-nav-strip {
-    display: none;
   }
 
   .child-bottom-nav {

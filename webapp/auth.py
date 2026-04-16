@@ -175,6 +175,14 @@ def request_logout():
         flash("A logout request is already waiting for parent approval.", "warning")
         return redirect(url_for("child.dashboard"))
 
+    request_note = request.form.get("request_note", "").strip()
+    request_details = (
+        "Child requested sign-out from this device. "
+        "This request ends only the current child session on this device."
+    )
+    if request_note:
+        request_details = f"{request_details} Note from child device: {request_note}"
+
     db.session.add(
         LogoutRequest(
             family_id=current_user.family_id,
@@ -186,11 +194,11 @@ def request_logout():
         current_user.family_id,
         current_user.id,
         "logout_requested",
-        "Child requested sign-out approval",
+        request_details,
     )
     db.session.commit()
-    flash("Parent approval requested.", "info")
-    return redirect(url_for("child.dashboard"))
+    flash("Parent approval requested for sign-out on this device.", "info")
+    return redirect(url_for("child.settings"))
 
 
 @auth_bp.route("/logout")

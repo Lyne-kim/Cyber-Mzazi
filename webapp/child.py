@@ -1,11 +1,12 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 
 from .extensions import db
-from .models import LogoutRequest, MessageRecord
+from .models import ActivityLog, LogoutRequest, MessageRecord
 from .services.audit import log_event
 from .services.ml_service import get_classifier
 from .services.verification import verify_message
+from .ui_text import SUPPORTED_LANGUAGES
 
 
 child_bp = Blueprint("child", __name__, url_prefix="/child")
@@ -39,7 +40,20 @@ def _child_data() -> dict:
     pending_logout = LogoutRequest.query.filter_by(
         family_id=current_user.family_id, child_user_id=current_user.id, status="pending"
     ).first()
-    return {"messages": messages, "pending_logout": pending_logout}
+    pending_logout_detail = (
+        ActivityLog.query.filter_by(
+            family_id=current_user.family_id,
+            actor_id=current_user.id,
+            event_type="logout_requested",
+        )
+        .order_by(ActivityLog.created_at.desc())
+        .first()
+    )
+    return {
+        "messages": messages,
+        "pending_logout": pending_logout,
+        "pending_logout_detail": pending_logout_detail,
+    }
 
 
 def _render_child_page(page_key: str, page_title: str) -> str:
@@ -81,6 +95,25 @@ def settings():
 @child_bp.route("/report")
 def report():
     return _render_child_page("report", "Safety Check")
+
+
+@child_bp.post("/language")
+def set_language():
+    language = request.form.get("language", "en").strip().lower()
+    if language not in SUPPORTED_LANGUAGES:
+        flash("Choose English or Swahili.", "warning")
+        return redirect(url_for("child.settings"))
+
+    session["ui_language"] = language
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "language_changed",
+        f"Child interface language set to {SUPPORTED_LANGUAGES[language]}",
+    )
+    db.session.commit()
+    flash(f"Language updated to {SUPPORTED_LANGUAGES[language]}.", "success")
+    return redirect(request.form.get("next") or url_for("child.settings"))
 
 
 @child_bp.post("/messages")

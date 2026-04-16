@@ -1,29 +1,29 @@
 {% extends "base.html" %}
-{% block title %}{{ page_title }} | Cyber Mzazi{% endblock %}
+{% block title %}{{ t(page_title) }} | Cyber Mzazi{% endblock %}
 {% block content %}
 <div class="workspace-shell">
   <aside class="sidebar parent-sidebar">
     <div class="sidebar-top">
-      <p class="eyebrow">Parent Dashboard</p>
+      <p class="eyebrow">{{ t("Parent Dashboard") }}</p>
       <h2>{{ current_user.family.family_name }}</h2>
       <label class="sidebar-select">
-        Child selector
+        {{ t("Child selector") }}
         <select>
           <option>{{ current_user.family.child_display_name }}</option>
         </select>
       </label>
       <div class="connection-pill">
         <span class="status-dot online"></span>
-        <span>Online</span>
+        <span>{{ t("Online") }}</span>
       </div>
     </div>
 
     <nav class="sidebar-nav">
-      <p class="sidebar-heading">Primary</p>
+      <p class="sidebar-heading">{{ t("Primary") }}</p>
       {% for item in primary_nav_items %}
         <a class="sidebar-link{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
           <span>{{ item.icon|safe }}</span>
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.label) }}</span>
           {% if item.key == "alerts" and alert_count %}
             <strong class="alert-badge">{{ alert_count }}</strong>
           {% endif %}
@@ -32,47 +32,65 @@
 
       <div class="sidebar-divider"></div>
 
-      <p class="sidebar-heading">Support</p>
+      <p class="sidebar-heading">{{ t("Support") }}</p>
       {% for item in support_nav_items %}
         <a class="sidebar-link{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
           <span>{{ item.icon|safe }}</span>
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.label) }}</span>
         </a>
       {% endfor %}
     </nav>
 
     <details class="sidebar-more">
-      <summary>Show More</summary>
+      <summary>{{ t("Show More") }}</summary>
       {% for item in advanced_nav_items %}
         <a class="sidebar-link{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
           <span>{{ item.icon|safe }}</span>
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.label) }}</span>
         </a>
       {% endfor %}
     </details>
 
-    <a class="quick-action-fab" href="{{ url_for('parent.alerts') }}" title="Manually flag content or start a safety chat">+</a>
+    <section class="sidebar-footer">
+      <p class="sidebar-heading">{{ t("Selected child") }}</p>
+      <strong>{{ current_user.family.child_display_name }}</strong>
+      {% if selected_logout_request %}
+        <article class="approval-card">
+          <p class="eyebrow">{{ t("Pending child request") }}</p>
+          <strong>{{ t("Approve child logout") }}</strong>
+          <p class="muted">{{ selected_logout_request.detail }}</p>
+          <span class="meta">{{ t("Requested on") }} {{ selected_logout_request.requested_at }}</span>
+          <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
+            <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
+          </form>
+        </article>
+      {% else %}
+        <p class="muted">{{ t("No logout request pending.") }}</p>
+      {% endif %}
+    </section>
+
+    <a class="quick-action-fab" href="{{ url_for('parent.alerts') }}" title="Flag content">+</a>
   </aside>
 
   <section class="workspace-main">
     <section class="panel hero-panel">
       <div>
-        <p class="eyebrow">{{ page_title }}</p>
-        <h3>Safety snapshot for {{ current_user.family.child_display_name }}</h3>
-        <p class="muted">Transparent, privacy-respecting checks with clear next steps for conversations, approvals, and safety support.</p>
+        <p class="eyebrow">{{ t(page_title) }}</p>
+        <h3>{{ current_user.family.child_display_name }}</h3>
+        <p class="muted">{{ t("Current child") }}</p>
       </div>
       <div class="stats-grid">
         <article class="stat-card emphasis">
           <span>{{ alert_count }}</span>
-          <p>Open alerts</p>
+          <p>{{ t("Open alerts") }}</p>
         </article>
         <article class="stat-card">
           <span>{{ high_risk_count }}</span>
-          <p>High-risk items</p>
+          <p>{{ t("High-risk items") }}</p>
         </article>
         <article class="stat-card">
           <span>{{ reviewed_count }}</span>
-          <p>Reviewed checks</p>
+          <p>{{ t("Reviewed checks") }}</p>
         </article>
       </div>
     </section>
@@ -80,21 +98,21 @@
     {% if page_key == "dashboard" %}
       <div class="content-grid">
         <section class="panel">
-          <p class="eyebrow">Overview</p>
-          <h3>Recent risk summary</h3>
+          <p class="eyebrow">{{ t("Overview") }}</p>
+          <h3>{{ t("Dashboard") }}</h3>
           <div class="detail-list">
-            <div><span>Unread alerts</span><strong>{{ alert_count }}</strong></div>
-            <div><span>Messages analyzed</span><strong>{{ messages|length }}</strong></div>
-            <div><span>Last sync</span><strong>{{ latest_sync }}</strong></div>
+            <div><span>{{ t("Alerts") }}</span><strong>{{ alert_count }}</strong></div>
+            <div><span>Checks</span><strong>{{ messages|length }}</strong></div>
+            <div><span>Sync</span><strong>{{ latest_sync }}</strong></div>
           </div>
         </section>
         <section class="panel">
-          <p class="eyebrow">Quick Stats</p>
-          <h3>Immediate actions</h3>
+          <p class="eyebrow">{{ t("Quick Stats") }}</p>
+          <h3>Next</h3>
           <ul class="simple-list">
-            <li>Review flagged messages in Alerts</li>
-            <li>Check activity trends in Insights</li>
-            <li>Update thresholds in Alert Settings</li>
+            <li>{{ t("Alerts") }}</li>
+            <li>{{ t("Insights") }}</li>
+            <li>{{ t("Alert Settings") }}</li>
           </ul>
         </section>
       </div>
@@ -102,16 +120,17 @@
       <section class="panel">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Alerts</p>
-            <h3>Threat notifications</h3>
+            <p class="eyebrow">{{ t("Alerts") }}</p>
+            <h3>{{ t("Alerts") }}</h3>
           </div>
-          <span class="info-chip">Why am I seeing this? Threat scores, manual flags, and sign-out approvals surface here for transparency.</span>
+          <span class="info-chip">Scores, flags, approvals.</span>
         </div>
-        {% for request in logout_requests %}
+        {% for item in logout_request_cards %}
           <article class="request-card">
-            <p>{{ current_user.family.child_display_name }} asked to change a protected safety setting or sign out.</p>
-            <form method="post" action="{{ url_for('parent.approve_logout', request_id=request.id) }}">
-              <button class="button accent small" type="submit">Approve sign-out</button>
+            <p>{{ item.detail }}</p>
+            <p class="meta">{{ t("Requested on") }} {{ item.requested_at }}</p>
+            <form method="post" action="{{ url_for('parent.approve_logout', request_id=item.request.id) }}">
+              <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
             </form>
           </article>
         {% endfor %}
@@ -141,26 +160,36 @@
             </form>
           </article>
         {% else %}
-          {% if not logout_requests %}
-            <p class="muted">No active alerts yet. New safety checks will appear here.</p>
+          {% if not logout_request_cards %}
+            <p class="muted">No active alerts yet.</p>
           {% endif %}
         {% endfor %}
       </section>
     {% elif page_key == "child_profile" %}
       <section class="panel">
-        <p class="eyebrow">Child Profile</p>
+        <p class="eyebrow">{{ t("Child Profile") }}</p>
         <h3>{{ current_user.family.child_display_name }}</h3>
         <div class="detail-list">
-          <div><span>Safety mode</span><strong>Safety Check</strong></div>
-          <div><span>Linked device</span><strong>Shared family session</strong></div>
-          <div><span>Protected sign-out</span><strong>Parent approval required</strong></div>
-          <div><span>Current scope</span><strong>Incoming third-party messages and links</strong></div>
+          <div><span>Mode</span><strong>{{ t("Safety Check") }}</strong></div>
+          <div><span>Device</span><strong>{{ t("Shared family session") }}</strong></div>
+          <div><span>{{ t("Protected sign-out") }}</span><strong>Parent approval required</strong></div>
+          <div><span>Scope</span><strong>{{ t("Incoming third-party messages and links") }}</strong></div>
         </div>
+        {% if selected_logout_request %}
+          <article class="approval-card inline-card">
+            <p class="eyebrow">{{ t("Pending child request") }}</p>
+            <strong>{{ t("Approve child logout") }}</strong>
+            <p class="muted">{{ selected_logout_request.detail }}</p>
+            <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
+              <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
+            </form>
+          </article>
+        {% endif %}
       </section>
     {% elif page_key == "activity_log" %}
       <section class="panel">
-        <p class="eyebrow">Activity Log</p>
-        <h3>Filterable safety history</h3>
+        <p class="eyebrow">{{ t("Activity Log") }}</p>
+        <h3>{{ t("Activity Log") }}</h3>
         {% for log in activity_logs %}
           <article class="log-row">
             <strong>{{ log.event_type }}</strong>
@@ -173,12 +202,12 @@
       </section>
     {% elif page_key == "alert_settings" %}
       <section class="panel">
-        <p class="eyebrow">Alert Settings</p>
-        <h3>Thresholds, channels, and quiet hours</h3>
+        <p class="eyebrow">{{ t("Alert Settings") }}</p>
+        <h3>{{ t("Alert Settings") }}</h3>
         <div class="setting-row">
           <div>
             <strong>Pause monitoring</strong>
-            <p class="muted">Use a confirmation step and time limit before pausing safety checks.</p>
+            <p class="muted">Confirmation required.</p>
           </div>
           <label class="toggle">
             <input type="checkbox">
@@ -186,85 +215,99 @@
           </label>
         </div>
         <div class="detail-list">
-          <div><span>Threat threshold</span><strong>Medium + High</strong></div>
-          <div><span>Notification channels</span><strong>In-app, email</strong></div>
+          <div><span>Threshold</span><strong>Medium + High</strong></div>
+          <div><span>Channels</span><strong>In-app, email</strong></div>
           <div><span>Quiet hours</span><strong>22:00 - 06:00</strong></div>
         </div>
       </section>
     {% elif page_key == "family_hub" %}
       <section class="panel">
-        <p class="eyebrow">Family Hub</p>
-        <h3>Multi-child and guardian management</h3>
+        <p class="eyebrow">{{ t("Family Hub") }}</p>
+        <h3>{{ t("Family Hub") }}</h3>
         <ul class="simple-list">
-          <li>Add another child profile to this family workspace</li>
-          <li>Switch between children quickly from the selector</li>
-          <li>Invite a co-parent or trusted guardian with shared visibility</li>
+          <li>Add child</li>
+          <li>Switch profile</li>
+          <li>Add guardian</li>
         </ul>
       </section>
     {% elif page_key == "safety_resources" %}
       <section class="panel">
-        <p class="eyebrow">Safety Resources</p>
-        <h3>Conversation guides and support links</h3>
+        <p class="eyebrow">{{ t("Safety Resources") }}</p>
+        <h3>{{ t("Safety Resources") }}</h3>
         <ul class="simple-list">
-          <li>How to discuss unkind or coercive messages calmly</li>
-          <li>Tips for talking about betting, scams, and peer pressure</li>
-          <li>Age-appropriate cyber safety guidance and crisis contacts</li>
+          <li>Conversation guide</li>
+          <li>Crisis contact</li>
+          <li>School resource</li>
         </ul>
+        <form class="stack upload-zone" method="post" action="{{ url_for('parent.attach_resource_documents') }}" enctype="multipart/form-data">
+          <label>
+            {{ t("Upload documents") }}
+            <input type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+          </label>
+          <button class="button small" type="submit">{{ t("Add placeholders") }}</button>
+        </form>
       </section>
     {% elif page_key == "help_support" %}
       <section class="panel">
-        <p class="eyebrow">Help &amp; Support</p>
-        <h3>Answers, tutorials, and support</h3>
+        <p class="eyebrow">{{ t("Help & Support") }}</p>
+        <h3>{{ t("Help & Support") }}</h3>
         <ul class="simple-list">
-          <li>Frequently asked questions</li>
-          <li>Video walkthroughs for setup and alerts</li>
-          <li>Live support and contact options</li>
+          <li>FAQ</li>
+          <li>Tutorial</li>
+          <li>Contact</li>
         </ul>
       </section>
     {% elif page_key == "privacy_center" %}
       <section class="panel">
-        <p class="eyebrow">Privacy Center</p>
-        <h3>Consent and data controls</h3>
+        <p class="eyebrow">{{ t("Privacy Center") }}</p>
+        <h3>{{ t("Privacy Center") }}</h3>
         <ul class="simple-list">
-          <li>Review what data is stored and why</li>
-          <li>Export or delete records</li>
-          <li>Manage family consent and access settings</li>
+          <li>Stored data</li>
+          <li>Export</li>
+          <li>Delete</li>
         </ul>
       </section>
     {% elif page_key == "system_status" %}
       <section class="panel">
-        <p class="eyebrow">System Status</p>
-        <h3>Agent and backend health</h3>
+        <p class="eyebrow">{{ t("System Status") }}</p>
+        <h3>{{ t("System Status") }}</h3>
         <div class="detail-list">
-          <div><span>Connectivity</span><strong>Online</strong></div>
+          <div><span>Connectivity</span><strong>{{ t("Online") }}</strong></div>
           <div><span>Last sync</span><strong>{{ latest_sync }}</strong></div>
-          <div><span>Backend uptime</span><strong>Startup bootstrap enabled</strong></div>
+          <div><span>Uptime</span><strong>Bootstrap enabled</strong></div>
         </div>
       </section>
     {% elif page_key == "insights" %}
       <section class="panel">
-        <p class="eyebrow">Insights</p>
-        <h3>Weekly risk trends</h3>
+        <p class="eyebrow">{{ t("Insights") }}</p>
+        <h3>{{ t("Insights") }}</h3>
         <div class="detail-list">
-          <div><span>Most common threat type</span><strong>{% if messages %}{{ messages[0].predicted_label|title }}{% else %}No data yet{% endif %}</strong></div>
-          <div><span>Peak review activity</span><strong>{{ latest_sync }}</strong></div>
-          <div><span>Reviewed ratio</span><strong>{{ reviewed_count }}/{{ messages|length }}</strong></div>
+          <div><span>Threat type</span><strong>{% if messages %}{{ messages[0].predicted_label|title }}{% else %}No data{% endif %}</strong></div>
+          <div><span>Peak review</span><strong>{{ latest_sync }}</strong></div>
+          <div><span>Reviewed</span><strong>{{ reviewed_count }}/{{ messages|length }}</strong></div>
         </div>
       </section>
     {% elif page_key == "language_settings" %}
       <section class="panel">
-        <p class="eyebrow">Language Settings</p>
-        <h3>Local slang and dialect sensitivity</h3>
-        <ul class="simple-list">
-          <li>English, Swahili, and Sheng-aware text processing</li>
-          <li>Adjust future sensitivity by retraining with reviewed labels</li>
-          <li>Use reviewed messages to improve local context detection</li>
-        </ul>
+        <p class="eyebrow">{{ t("Language Settings") }}</p>
+        <h3>{{ t("Language") }}</h3>
+        <form class="stack" method="post" action="{{ url_for('parent.set_language') }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <label>
+            {{ t("Language") }}
+            <select name="language">
+              {% for code, label in supported_languages.items() %}
+                <option value="{{ code }}"{% if ui_language == code %} selected{% endif %}>{{ t(label) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button small" type="submit">{{ t("Save language") }}</button>
+        </form>
       </section>
     {% elif page_key == "notification_log" %}
       <section class="panel">
-        <p class="eyebrow">Notification Log</p>
-        <h3>History of delivered alerts</h3>
+        <p class="eyebrow">{{ t("Notification Log") }}</p>
+        <h3>{{ t("Notification Log") }}</h3>
         {% for log in activity_logs if "alert" in log.event_type or "logout" in log.event_type %}
           <article class="log-row">
             <strong>{{ log.event_type }}</strong>
@@ -277,12 +320,12 @@
       </section>
     {% elif page_key == "trusted_contacts" %}
       <section class="panel">
-        <p class="eyebrow">Trusted Contacts</p>
-        <h3>Shared alert access</h3>
+        <p class="eyebrow">{{ t("Trusted Contacts") }}</p>
+        <h3>{{ t("Trusted Contacts") }}</h3>
         <ul class="simple-list">
-          <li>Add a co-parent or trusted guardian</li>
-          <li>Define who receives high-priority alerts</li>
-          <li>Use role-based access for shared family safety response</li>
+          <li>Add guardian</li>
+          <li>Set alert access</li>
+          <li>Share response role</li>
         </ul>
       </section>
     {% endif %}

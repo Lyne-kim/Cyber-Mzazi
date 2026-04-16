@@ -1,43 +1,81 @@
 {% extends "base.html" %}
-{% block title %}{{ page_title }} | Cyber Mzazi{% endblock %}
+{% block title %}{{ t(page_title) }} | Cyber Mzazi{% endblock %}
 {% block content %}
-<div class="child-app-shell">
-  <section class="panel child-hero">
-    <div>
-      <p class="eyebrow">{{ page_title }}</p>
-      <h2>Hi {{ current_user.name }}!</h2>
-      <p class="muted">Cyber Mzazi helps keep you safe online. It explains what is happening and helps you share risky messages sent by other accounts.</p>
-    </div>
-    <div class="transparency-badge">
-      <span>&#128269;</span>
-      <div>
-        <strong>This app helps protect you.</strong>
-        <p>It checks messages from other people and helps you ask your grown-up for support.</p>
+<div class="workspace-shell child-workspace">
+  <aside class="sidebar child-sidebar">
+    <div class="sidebar-top">
+      <p class="eyebrow">{{ t("Child Safety App") }}</p>
+      <h2>{{ current_user.name }}</h2>
+      <div class="connection-pill">
+        <span class="status-dot online"></span>
+        <span>{{ t("Online") }}</span>
       </div>
     </div>
-  </section>
 
-  {% if pending_logout %}
-    <section class="panel info-banner">
-      <strong>Safety setting request pending.</strong>
-      <p class="muted">Ask your grown-up to approve sign-out or other changes.</p>
-    </section>
-  {% endif %}
-
-  <section class="child-nav-strip">
-    {% for item in child_nav_items %}
-      <a class="child-nav-item{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
-        <span>{{ item.icon|safe }}</span>
-        <span>{{ item.label }}</span>
+    <nav class="sidebar-nav">
+      <p class="sidebar-heading">{{ t("Primary") }}</p>
+      {% for item in child_nav_items %}
+        <a class="sidebar-link{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
+          <span>{{ item.icon|safe }}</span>
+          <span>{{ t(item.label) }}</span>
+        </a>
+      {% endfor %}
+      <a class="sidebar-link{% if page_key == 'report' %} active{% endif %}" href="{{ url_for('child.report') }}">
+        <span>&#128680;</span>
+        <span>{{ t("Safety Check") }}</span>
       </a>
-    {% endfor %}
-  </section>
+    </nav>
 
-  <div class="child-content-grid">
+    <section class="sidebar-footer">
+      {% if pending_logout %}
+        <article class="approval-card">
+          <p class="eyebrow">{{ t("Waiting for parent approval") }}</p>
+          <strong>{{ t("Request sign-out") }}</strong>
+          <p class="muted">{{ pending_logout_detail.details if pending_logout_detail else t("This request ends only the current child session on this device.") }}</p>
+          <span class="meta">{{ t("Parent approval received") if pending_logout.status == 'approved' else t("Waiting for parent approval") }}</span>
+        </article>
+      {% else %}
+        <article class="approval-card">
+          <p class="eyebrow">{{ t("Request sign-out") }}</p>
+          <strong>{{ t("Request sign-out") }}</strong>
+          <p class="muted">{{ t("Ask to end this child session on this device.") }}</p>
+          <form method="post" action="{{ url_for('auth.request_logout') }}">
+            <input type="hidden" name="request_note" value="End the current child session on this device only.">
+            <button class="button accent small" type="submit">{{ t("Send request") }}</button>
+          </form>
+        </article>
+      {% endif %}
+    </section>
+  </aside>
+
+  <section class="workspace-main">
+    <section class="panel child-hero">
+      <div>
+        <p class="eyebrow">{{ t(page_title) }}</p>
+        <h2>{{ current_user.name }}</h2>
+        <p class="muted">{{ t("Safety Check") }}</p>
+      </div>
+      <div class="transparency-badge">
+        <span>&#128269;</span>
+        <div>
+          <strong>{{ t("My Safety") }}</strong>
+          <p>{{ t("Incoming third-party messages and links") }}</p>
+        </div>
+      </div>
+    </section>
+
+    {% if pending_logout %}
+      <section class="panel info-banner">
+        <strong>{{ t("Waiting for parent approval") }}</strong>
+        <p class="muted">{{ pending_logout_detail.details if pending_logout_detail else t("This request ends only the current child session on this device.") }}</p>
+      </section>
+    {% endif %}
+
+    <div class="child-content-grid">
     {% if page_key == "home" %}
       <section class="panel">
-        <p class="eyebrow">Home</p>
-        <h3>Safety tip of the day</h3>
+        <p class="eyebrow">{{ t("Home") }}</p>
+        <h3>Tips</h3>
         <div class="tip-carousel">
           <article class="tip-card">
             <strong>Think before you share a photo</strong>
@@ -58,52 +96,52 @@
             <span>&#128680;</span>
             <div>
               <strong>I saw something scary</strong>
-              <p>Open the safety check page for a message sent by another account.</p>
+              <p>{{ t("Safety Check") }}</p>
             </div>
           </a>
           <a class="action-card" href="{{ url_for('child.talk') }}">
             <span>&#128172;</span>
             <div>
               <strong>I need to talk</strong>
-              <p>Open a ready-made message to your grown-up.</p>
+              <p>{{ t("Talk") }}</p>
             </div>
           </a>
           <a class="action-card" href="{{ url_for('child.help_questions') }}">
             <span>&#128218;</span>
             <div>
               <strong>Learn about online safety</strong>
-              <p>Short micro-lessons and simple explanations.</p>
+              <p>{{ t("Help") }}</p>
             </div>
           </a>
         </div>
       </section>
     {% elif page_key == "report" %}
       <section class="panel">
-        <p class="eyebrow">Safety Check</p>
-        <h3>Share a message from another account</h3>
+        <p class="eyebrow">{{ t("Safety Check") }}</p>
+        <h3>{{ t("Safety Check") }}</h3>
         <form method="post" action="{{ url_for('child.submit_message') }}">
           <label>
-            Which app was it on?
+            {{ t("Which app was it on?") }}
             <input type="text" name="source_platform" placeholder="WhatsApp, TikTok, Instagram, SMS">
           </label>
           <label>
-            Who sent it?
+            {{ t("Who sent it?") }}
             <input type="text" name="sender_handle" placeholder="@username or phone number">
           </label>
           <label>
-            Link or app page
+            {{ t("Link or app page") }}
             <input type="text" name="browser_origin" placeholder="Profile link, page URL, or app page">
           </label>
           <label>
-            Paste the message they sent
+            {{ t("Paste the message they sent") }}
             <textarea name="message_text" rows="7" placeholder="Paste the incoming message here..." required></textarea>
           </label>
-          <button class="button accent" type="submit">Run safety check</button>
+          <button class="button accent" type="submit">{{ t("Run safety check") }}</button>
         </form>
       </section>
       <section class="panel">
-        <p class="eyebrow">Recent Safety Checks</p>
-        <h3>Your latest summaries</h3>
+        <p class="eyebrow">{{ t("Recent Safety Checks") }}</p>
+        <h3>{{ t("Recent summaries") }}</h3>
         {% for message in messages %}
           <article class="message-card compact">
             <div class="message-topline">
@@ -121,8 +159,8 @@
       </section>
     {% elif page_key == "my_safety" %}
       <section class="panel">
-        <p class="eyebrow">My Safety</p>
-        <h3>How Cyber Mzazi helps</h3>
+        <p class="eyebrow">{{ t("My Safety") }}</p>
+        <h3>{{ t("My Safety") }}</h3>
         <div class="safety-columns">
           <div>
             <strong>What it does</strong>
@@ -145,13 +183,13 @@
     {% elif page_key == "talk" %}
       <section class="panel">
         <p class="eyebrow">Talk to Grown-up</p>
-        <h3>One-tap support</h3>
+        <h3>{{ t("Talk") }}</h3>
         <div class="child-quick-actions">
           <article class="action-card">
             <span>&#128172;</span>
             <div>
               <strong>Can we chat?</strong>
-              <p>Pre-drafted message: “Something online feels weird. Can we talk?”</p>
+              <p>Message: "Something online feels weird. Can we talk?"</p>
             </div>
           </article>
           <article class="action-card">
@@ -162,18 +200,15 @@
             </div>
           </article>
         </div>
-        <form method="post" action="{{ url_for('auth.request_logout') }}">
-          <button class="button ghost" type="submit">Ask grown-up to change safety settings</button>
-        </form>
       </section>
     {% elif page_key == "help" %}
       <section class="panel">
-        <p class="eyebrow">Help &amp; Questions</p>
-        <h3>Simple answers</h3>
+        <p class="eyebrow">{{ t("Help") }}</p>
+        <h3>{{ t("Help") }}</h3>
         <ul class="simple-list">
           <li>Why is this app here?</li>
-          <li>What happens when I report a scary message from another account?</li>
-          <li>Who can see safety alerts?</li>
+          <li>What happens after a safety check?</li>
+          <li>Who sees alerts?</li>
         </ul>
         <div class="wellness-card">
           <strong>How are you feeling today?</strong>
@@ -186,24 +221,44 @@
       </section>
     {% elif page_key == "settings" %}
       <section class="panel">
-        <p class="eyebrow">Settings</p>
-        <h3>Limited controls</h3>
+        <p class="eyebrow">{{ t("Settings") }}</p>
+        <h3>{{ t("Settings") }}</h3>
         <div class="detail-list">
-          <div><span>Notifications</span><strong>Friendly reminders</strong></div>
-          <div><span>Language</span><strong>English / Swahili friendly</strong></div>
-          <div><span>Parent lock</span><strong>Needed for safety changes</strong></div>
+          <div><span>Notifications</span><strong>{{ t("Friendly reminders") }}</strong></div>
+          <div><span>{{ t("Language") }}</span><strong>{{ t("English") }} / {{ t("Swahili") }}</strong></div>
+          <div><span>{{ t("Parent lock") }}</span><strong>Needed</strong></div>
         </div>
+        <form class="stack" method="post" action="{{ url_for('child.set_language') }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <label>
+            {{ t("Language") }}
+            <select name="language">
+              {% for code, label in supported_languages.items() %}
+                <option value="{{ code }}"{% if ui_language == code %} selected{% endif %}>{{ t(label) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button small" type="submit">{{ t("Save language") }}</button>
+        </form>
+        <form class="stack" method="post" action="{{ url_for('auth.request_logout') }}">
+          <label>
+            {{ t("Optional note") }}
+            <textarea name="request_note" rows="3" placeholder="Example: I am done using this device for today."></textarea>
+          </label>
+          <button class="button ghost" type="submit">{{ t("Request sign-out") }}</button>
+        </form>
       </section>
     {% endif %}
-  </div>
+    </div>
 
-  <nav class="child-bottom-nav">
-    {% for item in child_nav_items[:4] %}
-      <a class="child-nav-item{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
-        <span>{{ item.icon|safe }}</span>
-        <span>{{ item.label }}</span>
-      </a>
-    {% endfor %}
-  </nav>
+    <nav class="child-bottom-nav">
+      {% for item in child_nav_items[:4] %}
+        <a class="child-nav-item{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
+          <span>{{ item.icon|safe }}</span>
+          <span>{{ t(item.label) }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+  </section>
 </div>
 {% endblock %}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
 
@@ -11,6 +11,7 @@ from .models import ActivityLog, Family, LogoutRequest, MessageRecord, User
 from .services.audit import log_event
 from .services.ml_service import get_classifier
 from .services.verification import verify_message
+from .ui_text import SUPPORTED_LANGUAGES, get_language
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -79,21 +80,41 @@ def _parent_page_payload() -> dict:
         .limit(30)
         .all()
     )
+    logout_request_logs = (
+        ActivityLog.query.filter_by(
+            family_id=current_user.family_id, event_type="logout_requested"
+        )
+        .order_by(ActivityLog.created_at.desc())
+        .all()
+    )
+    logout_details_by_child: dict[int, ActivityLog] = {}
+    for log in logout_request_logs:
+        if log.actor_id and log.actor_id not in logout_details_by_child:
+            logout_details_by_child[log.actor_id] = log
+    logout_request_cards = []
+    for item in logout_requests:
+        detail_log = logout_details_by_child.get(item.child_user_id)
+        logout_request_cards.append(
+            {
+                "id": item.id,
+                "child_user_id": item.child_user_id,
+                "status": item.status,
+                "created_at": item.created_at.isoformat(),
+                "detail": (
+                    detail_log.details
+                    if detail_log
+                    else "Child requested sign-out from this device."
+                ),
+            }
+        )
     high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.isoformat() if activity_logs else None
     return {
         "messages": [_message_payload(message) for message in messages],
-        "logout_requests": [
-            {
-                "id": item.id,
-                "child_user_id": item.child_user_id,
-                "status": item.status,
-                "created_at": item.created_at.isoformat(),
-            }
-            for item in logout_requests
-        ],
+        "logout_requests": logout_request_cards,
+        "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": [_log_payload(log) for log in activity_logs],
         "summary": {
             "alert_count": alert_count,
@@ -102,6 +123,7 @@ def _parent_page_payload() -> dict:
             "latest_sync": latest_sync,
             "child_display_name": current_user.family.child_display_name,
         },
+        "language": {"active": get_language(), "options": SUPPORTED_LANGUAGES},
     }
 
 
@@ -117,6 +139,15 @@ def _child_page_payload() -> dict:
         child_user_id=current_user.id,
         status="pending",
     ).first()
+    pending_logout_detail = (
+        ActivityLog.query.filter_by(
+            family_id=current_user.family_id,
+            actor_id=current_user.id,
+            event_type="logout_requested",
+        )
+        .order_by(ActivityLog.created_at.desc())
+        .first()
+    )
     return {
         "messages": [_message_payload(message) for message in messages],
         "pending_logout": None
@@ -126,7 +157,11 @@ def _child_page_payload() -> dict:
             "status": pending_logout.status,
             "created_at": pending_logout.created_at.isoformat(),
         },
+        "pending_logout_detail": None
+        if pending_logout_detail is None
+        else _log_payload(pending_logout_detail),
         "child_name": current_user.name,
+        "language": {"active": get_language(), "options": SUPPORTED_LANGUAGES},
     }
 
 
@@ -465,7 +500,7 @@ def approve_logout(request_id: int):
         current_user.family_id,
         current_user.id,
         "logout_approved",
-        f"Approved sign-out for child user {logout_request.child_user_id} via API",
+        f"Approved sign-out for child user {logout_request.child_user_id} via API. The child device can close the current child session once.",
     )
     db.session.commit()
     return jsonify({"ok": True})
@@ -589,6 +624,15 @@ def request_logout():
     if existing:
         return _error("A logout request is already pending.", 409)
 
+    payload = request.get_json(silent=True) or {}
+    request_note = str(payload.get("request_note", "")).strip()
+    request_details = (
+        "Child requested sign-out from this device. "
+        "This request ends only the current child session on this device."
+    )
+    if request_note:
+        request_details = f"{request_details} Note from child device: {request_note}"
+
     logout_request = LogoutRequest(
         family_id=current_user.family_id,
         child_user_id=current_user.id,
@@ -599,7 +643,7 @@ def request_logout():
         current_user.family_id,
         current_user.id,
         "logout_requested",
-        "Child requested sign-out approval via API",
+        f"{request_details} Requested via API.",
     )
     db.session.commit()
     return (
@@ -615,6 +659,25 @@ def request_logout():
         ),
         201,
     )
+
+
+@api_bp.post("/ui/language")
+@login_required
+def set_ui_language():
+    payload = request.get_json(silent=True) or {}
+    language = str(payload.get("language", "en")).strip().lower()
+    if language not in SUPPORTED_LANGUAGES:
+        return _error("Choose English or Swahili.")
+
+    session["ui_language"] = language
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "language_changed",
+        f"{current_user.role.title()} interface language set to {SUPPORTED_LANGUAGES[language]} via API",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "language": {"active": language, "options": SUPPORTED_LANGUAGES}})
 
 
 @api_bp.get("/activity")
