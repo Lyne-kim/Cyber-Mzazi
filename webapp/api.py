@@ -61,6 +61,75 @@ def _log_payload(log: ActivityLog) -> dict:
     }
 
 
+def _parent_page_payload() -> dict:
+    messages = (
+        MessageRecord.query.filter_by(family_id=current_user.family_id)
+        .order_by(MessageRecord.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    logout_requests = (
+        LogoutRequest.query.filter_by(family_id=current_user.family_id, status="pending")
+        .order_by(LogoutRequest.created_at.desc())
+        .all()
+    )
+    activity_logs = (
+        ActivityLog.query.filter_by(family_id=current_user.family_id)
+        .order_by(ActivityLog.created_at.desc())
+        .limit(30)
+        .all()
+    )
+    high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
+    reviewed_count = sum(1 for message in messages if message.reviewed_label)
+    alert_count = high_risk_count + len(logout_requests)
+    latest_sync = activity_logs[0].created_at.isoformat() if activity_logs else None
+    return {
+        "messages": [_message_payload(message) for message in messages],
+        "logout_requests": [
+            {
+                "id": item.id,
+                "child_user_id": item.child_user_id,
+                "status": item.status,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in logout_requests
+        ],
+        "activity_logs": [_log_payload(log) for log in activity_logs],
+        "summary": {
+            "alert_count": alert_count,
+            "high_risk_count": high_risk_count,
+            "reviewed_count": reviewed_count,
+            "latest_sync": latest_sync,
+            "child_display_name": current_user.family.child_display_name,
+        },
+    }
+
+
+def _child_page_payload() -> dict:
+    messages = (
+        MessageRecord.query.filter_by(family_id=current_user.family_id)
+        .order_by(MessageRecord.created_at.desc())
+        .limit(15)
+        .all()
+    )
+    pending_logout = LogoutRequest.query.filter_by(
+        family_id=current_user.family_id,
+        child_user_id=current_user.id,
+        status="pending",
+    ).first()
+    return {
+        "messages": [_message_payload(message) for message in messages],
+        "pending_logout": None
+        if pending_logout is None
+        else {
+            "id": pending_logout.id,
+            "status": pending_logout.status,
+            "created_at": pending_logout.created_at.isoformat(),
+        },
+        "child_name": current_user.name,
+    }
+
+
 @api_bp.get("/health")
 def health():
     classifier = get_classifier()
@@ -216,40 +285,136 @@ def current_session():
 def parent_dashboard():
     if current_user.role != "parent":
         return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "dashboard", **_parent_page_payload()})
 
-    messages = (
-        MessageRecord.query.filter_by(family_id=current_user.family_id)
-        .order_by(MessageRecord.created_at.desc())
-        .limit(20)
-        .all()
-    )
-    logout_requests = (
-        LogoutRequest.query.filter_by(family_id=current_user.family_id, status="pending")
-        .order_by(LogoutRequest.created_at.desc())
-        .all()
-    )
-    activity_logs = (
-        ActivityLog.query.filter_by(family_id=current_user.family_id)
-        .order_by(ActivityLog.created_at.desc())
-        .limit(30)
-        .all()
-    )
+
+@api_bp.get("/parent/alerts")
+@login_required
+def parent_alerts():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "alerts", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/child-profile")
+@login_required
+def parent_child_profile():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
     return jsonify(
         {
             "ok": True,
-            "messages": [_message_payload(message) for message in messages],
-            "logout_requests": [
-                {
-                    "id": item.id,
-                    "child_user_id": item.child_user_id,
-                    "status": item.status,
-                    "created_at": item.created_at.isoformat(),
-                }
-                for item in logout_requests
-            ],
-            "activity_logs": [_log_payload(log) for log in activity_logs],
+            "page": "child_profile",
+            "child_profile": {
+                "display_name": current_user.family.child_display_name,
+                "safety_mode": "Safety Check",
+                "linked_device": "Shared family session",
+                "protected_sign_out": True,
+                "scope": "Incoming third-party messages and links",
+            },
+            **_parent_page_payload(),
         }
     )
+
+
+@api_bp.get("/parent/activity-log")
+@login_required
+def parent_activity_log():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "activity_log", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/alert-settings")
+@login_required
+def parent_alert_settings():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify(
+        {
+            "ok": True,
+            "page": "alert_settings",
+            "settings": {
+                "threat_threshold": "Medium + High",
+                "notification_channels": ["in-app", "email"],
+                "quiet_hours": "22:00 - 06:00",
+                "pause_monitoring_enabled": False,
+            },
+            **_parent_page_payload(),
+        }
+    )
+
+
+@api_bp.get("/parent/family-hub")
+@login_required
+def parent_family_hub():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "family_hub", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/safety-resources")
+@login_required
+def parent_safety_resources():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "safety_resources", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/help-support")
+@login_required
+def parent_help_support():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "help_support", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/privacy-center")
+@login_required
+def parent_privacy_center():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "privacy_center", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/system-status")
+@login_required
+def parent_system_status():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "system_status", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/insights")
+@login_required
+def parent_insights():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "insights", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/language-settings")
+@login_required
+def parent_language_settings():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "language_settings", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/notification-log")
+@login_required
+def parent_notification_log():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "notification_log", **_parent_page_payload()})
+
+
+@api_bp.get("/parent/trusted-contacts")
+@login_required
+def parent_trusted_contacts():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    return jsonify({"ok": True, "page": "trusted_contacts", **_parent_page_payload()})
 
 
 @api_bp.post("/parent/messages/<int:message_id>/review")
@@ -311,31 +476,55 @@ def approve_logout(request_id: int):
 def child_dashboard():
     if current_user.role != "child":
         return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "home", **_child_page_payload()})
 
-    messages = (
-        MessageRecord.query.filter_by(family_id=current_user.family_id)
-        .order_by(MessageRecord.created_at.desc())
-        .limit(15)
-        .all()
-    )
-    pending_logout = LogoutRequest.query.filter_by(
-        family_id=current_user.family_id,
-        child_user_id=current_user.id,
-        status="pending",
-    ).first()
-    return jsonify(
-        {
-            "ok": True,
-            "messages": [_message_payload(message) for message in messages],
-            "pending_logout": None
-            if pending_logout is None
-            else {
-                "id": pending_logout.id,
-                "status": pending_logout.status,
-                "created_at": pending_logout.created_at.isoformat(),
-            },
-        }
-    )
+
+@api_bp.get("/child/home")
+@login_required
+def child_home():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "home", **_child_page_payload()})
+
+
+@api_bp.get("/child/report")
+@login_required
+def child_report():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "report", **_child_page_payload()})
+
+
+@api_bp.get("/child/my-safety")
+@login_required
+def child_my_safety():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "my_safety", **_child_page_payload()})
+
+
+@api_bp.get("/child/talk")
+@login_required
+def child_talk():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "talk", **_child_page_payload()})
+
+
+@api_bp.get("/child/help")
+@login_required
+def child_help():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "help", **_child_page_payload()})
+
+
+@api_bp.get("/child/settings")
+@login_required
+def child_settings():
+    if current_user.role != "child":
+        return _error("Child access only.", 403)
+    return jsonify({"ok": True, "page": "settings", **_child_page_payload()})
 
 
 @api_bp.post("/child/messages")
@@ -350,7 +539,7 @@ def submit_message():
 
     payload = request.get_json(silent=True) or {}
     message_text = str(payload.get("message_text", "")).strip()
-    source_platform = str(payload.get("source_platform", "manual")).strip() or "manual"
+    source_platform = str(payload.get("source_platform", "social media")).strip() or "social media"
     sender_handle = str(payload.get("sender_handle", "")).strip() or None
     browser_origin = str(payload.get("browser_origin", "")).strip() or None
 
@@ -380,7 +569,7 @@ def submit_message():
         current_user.family_id,
         current_user.id,
         "message_submitted",
-        f"Submitted {source_platform} message for analysis via API",
+        f"Flagged an incoming message from {source_platform} for safety analysis via API",
     )
     db.session.commit()
     return jsonify({"ok": True, "message": _message_payload(record)}), 201

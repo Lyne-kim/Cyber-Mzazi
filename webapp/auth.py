@@ -33,6 +33,30 @@ def index():
     return redirect(url_for("auth.login"))
 
 
+def _login_user_by_portal(portal: str, form_data) -> User | None:
+    password = form_data.get("password", "")
+    if portal == "parent":
+        identifier = form_data.get("identifier", "").strip()
+        user = User.query.filter(
+            User.role == "parent", or_(User.email == identifier, User.phone == identifier)
+        ).first()
+    else:
+        parent_contact = form_data.get("parent_contact", "").strip()
+        child_username = form_data.get("child_username", "").strip()
+        user = (
+            User.query.join(Family)
+            .filter(
+                User.role == "child",
+                User.username == child_username,
+                Family.parent_contact == parent_contact,
+            )
+            .first()
+        )
+    if not user or not user.check_password(password):
+        return None
+    return user
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -95,48 +119,46 @@ def register():
         db.session.commit()
 
         flash("Family account created. Parent can sign in now.", "success")
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.parent_login"))
 
     return render_template("register.html")
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
+@auth_bp.route("/login")
 def login():
+    return render_template("login.html")
+
+
+@auth_bp.route("/login/parent", methods=["GET", "POST"])
+def parent_login():
     if request.method == "POST":
-        portal = request.form.get("portal", "parent")
-        password = request.form.get("password", "")
-
-        if portal == "parent":
-            identifier = request.form.get("identifier", "").strip()
-            user = User.query.filter(
-                User.role == "parent", or_(User.email == identifier, User.phone == identifier)
-            ).first()
-        else:
-            parent_contact = request.form.get("parent_contact", "").strip()
-            child_username = request.form.get("child_username", "").strip()
-            user = (
-                User.query.join(Family)
-                .filter(
-                    User.role == "child",
-                    User.username == child_username,
-                    Family.parent_contact == parent_contact,
-                )
-                .first()
-            )
-
-        if not user or not user.check_password(password):
-            flash("Login details were not recognised.", "danger")
-            return render_template("login.html")
+        user = _login_user_by_portal("parent", request.form)
+        if not user:
+            flash("Parent login details were not recognised.", "danger")
+            return render_template("parent_login.html")
 
         login_user(user)
         log_event(user.family_id, user.id, "login", f"{user.role} logged in")
         db.session.commit()
+        return redirect(url_for("parent.dashboard"))
 
-        if user.role == "parent":
-            return redirect(url_for("parent.dashboard"))
+    return render_template("parent_login.html")
+
+
+@auth_bp.route("/login/child", methods=["GET", "POST"])
+def child_login():
+    if request.method == "POST":
+        user = _login_user_by_portal("child", request.form)
+        if not user:
+            flash("Child login details were not recognised.", "danger")
+            return render_template("child_login.html")
+
+        login_user(user)
+        log_event(user.family_id, user.id, "login", f"{user.role} logged in")
+        db.session.commit()
         return redirect(url_for("child.dashboard"))
 
-    return render_template("login.html")
+    return render_template("child_login.html")
 
 
 @auth_bp.route("/request-logout", methods=["POST"])

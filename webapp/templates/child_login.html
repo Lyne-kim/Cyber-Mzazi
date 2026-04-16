@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Child Login | Cyber Mzazi{% endblock %}
+{% block content %}
+<section class="hero-card">
+  <div>
+    <p class="eyebrow">Child Portal</p>
+    <h2>Sign in to the child safety app</h2>
+    <p class="muted">Use the child account together with the parent contact so the right family safety workspace opens.</p>
+  </div>
+  <a class="button ghost" href="{{ url_for('auth.parent_login') }}">Parent login</a>
+</section>
+
+<section class="single-auth-shell">
+  <form class="panel auth-panel child-panel" method="post">
+    <h3>Child login</h3>
+    <label>
+      Parent email or phone
+      <input type="text" name="parent_contact" placeholder="Parent contact" required>
+    </label>
+    <label>
+      Child username
+      <input type="text" name="child_username" placeholder="child-account" required>
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required>
+    </label>
+    <button class="button accent" type="submit">Open child app</button>
+  </form>
+</section>
+{% endblock %}

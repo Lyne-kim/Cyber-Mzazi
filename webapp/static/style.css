@@ -153,6 +153,22 @@ p {
   padding: 1.4rem;
 }
 
+.auth-choice {
+  display: grid;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.single-auth-shell {
+  display: grid;
+  justify-content: center;
+}
+
+.auth-panel {
+  width: min(100%, 460px);
+}
+
 .flash-stack {
   display: grid;
   gap: 0.7rem;

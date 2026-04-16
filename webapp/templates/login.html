@@ -11,36 +11,16 @@
 </section>
 
 <section class="two-column">
-  <form class="panel" method="post">
-    <input type="hidden" name="portal" value="parent">
-    <h3>Parent login</h3>
-    <label>
-      Email or phone
-      <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" required>
-    </label>
-    <label>
-      Password
-      <input type="password" name="password" required>
-    </label>
-    <button class="button" type="submit">Open parent dashboard</button>
-  </form>
+  <a class="panel auth-choice" href="{{ url_for('auth.parent_login') }}">
+    <p class="eyebrow">Parent</p>
+    <h3>Open parent login</h3>
+    <p class="muted">Access alerts, privacy controls, family settings, and reviewed safety checks.</p>
+  </a>
 
-  <form class="panel child-panel" method="post">
-    <input type="hidden" name="portal" value="child">
-    <h3>Child login</h3>
-    <label>
-      Parent email or phone
-      <input type="text" name="parent_contact" placeholder="Parent contact" required>
-    </label>
-    <label>
-      Child username
-      <input type="text" name="child_username" placeholder="child-account" required>
-    </label>
-    <label>
-      Password
-      <input type="password" name="password" required>
-    </label>
-    <button class="button accent" type="submit">Open child dashboard</button>
-  </form>
+  <a class="panel auth-choice" href="{{ url_for('auth.child_login') }}">
+    <p class="eyebrow">Child</p>
+    <h3>Open child login</h3>
+    <p class="muted">Access the child-friendly safety app for reporting messages from outside accounts.</p>
+  </a>
 </section>
 {% endblock %}
