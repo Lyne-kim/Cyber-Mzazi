@@ -1,64 +1,204 @@
 {% extends "base.html" %}
 {% block title %}Child Dashboard | Cyber Mzazi{% endblock %}
 {% block content %}
-<section class="dashboard-header child-header">
-  <div>
-    <p class="eyebrow">Child workspace</p>
-    <h2>Hello, {{ current_user.name }}</h2>
-    <p class="muted">Submit messages for analysis and keep the parent informed through the shared activity log.</p>
-  </div>
-  <div class="child-actions">
-    <form method="post" action="{{ url_for('auth.request_logout') }}">
-      <button class="button ghost" type="submit">Request sign-out approval</button>
-    </form>
-    <a class="button small" href="{{ url_for('auth.logout') }}">Try sign out</a>
-  </div>
-</section>
-
-{% if pending_logout %}
-  <section class="panel info-banner">
-    <strong>Logout request pending.</strong>
-    <p class="muted">A parent needs to approve your sign-out request before the session can close.</p>
+<div class="child-app-shell">
+  <section class="panel child-hero">
+    <div>
+      <p class="eyebrow">Cyber Mzazi Safety</p>
+      <h2>Hi {{ current_user.name }}!</h2>
+      <p class="muted">Cyber Mzazi helps keep you safe online. It is a safety companion, not a secret monitoring tool.</p>
+    </div>
+    <div class="transparency-badge">
+      <span>🔍</span>
+      <div>
+        <strong>This app helps protect you.</strong>
+        <p>Learn how safety checks work in “My Safety”.</p>
+      </div>
+    </div>
   </section>
-{% endif %}
 
-<section class="two-column dashboard-grid">
-  <form class="panel" method="post" action="{{ url_for('child.submit_message') }}">
-    <h3>Submit a message for analysis</h3>
-    <label>
-      Social platform or source
-      <input type="text" name="source_platform" placeholder="WhatsApp, TikTok, Browser, SMS">
-    </label>
-    <label>
-      Sender handle
-      <input type="text" name="sender_handle" placeholder="@username">
-    </label>
-    <label>
-      Browser page or origin
-      <input type="text" name="browser_origin" placeholder="https://example.com or manual upload">
-    </label>
-    <label>
-      Message text
-      <textarea name="message_text" rows="8" placeholder="Paste the message here..." required></textarea>
-    </label>
-    <button class="button accent" type="submit">Analyse and save</button>
-  </form>
+  {% if pending_logout %}
+    <section class="panel info-banner">
+      <strong>Safety setting request pending.</strong>
+      <p class="muted">Ask your grown-up to approve sign-out or other changes.</p>
+    </section>
+  {% endif %}
 
-  <div class="panel">
-    <h3>Recent results</h3>
-    {% for message in messages %}
-      <article class="message-card compact">
-        <div class="message-topline">
-          <strong>{{ message.predicted_label }}</strong>
-          <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+  <section class="child-nav-strip">
+    <a class="child-nav-item active" href="#home"><span>🏠</span><span>Home</span></a>
+    <a class="child-nav-item" href="#my-safety"><span>🛡️</span><span>My Safety</span></a>
+    <a class="child-nav-item" href="#talk"><span>💬</span><span>Talk</span></a>
+    <a class="child-nav-item" href="#help"><span>❓</span><span>Help</span></a>
+    <a class="child-nav-item" href="#settings"><span>⚙️</span><span>Settings</span></a>
+  </section>
+
+  <div class="child-content-grid">
+    <section id="home" class="panel">
+      <p class="eyebrow">Home</p>
+      <h3>Safety tip of the day</h3>
+      <div class="tip-carousel">
+        <article class="tip-card">
+          <strong>Think before you share a photo 📸</strong>
+          <p>Private things should stay with people you trust.</p>
+        </article>
+        <article class="tip-card">
+          <strong>Stranger asking for info? Tell a grown-up 👤</strong>
+          <p>If anything feels weird, you do not need to handle it alone.</p>
+        </article>
+        <article class="tip-card">
+          <strong>Feeling upset by a message? Tap 💬 to talk</strong>
+          <p>You can ask for help quickly and calmly.</p>
+        </article>
+      </div>
+
+      <div class="child-quick-actions">
+        <a class="action-card alert" href="#report">
+          <span>🚨</span>
+          <div>
+            <strong>I saw something scary</strong>
+            <p>Send an instant alert and get a calming prompt.</p>
+          </div>
+        </a>
+        <a class="action-card" href="#talk">
+          <span>💬</span>
+          <div>
+            <strong>I need to talk</strong>
+            <p>Open a ready-made message to your grown-up.</p>
+          </div>
+        </a>
+        <a class="action-card" href="#help">
+          <span>📚</span>
+          <div>
+            <strong>Learn about online safety</strong>
+            <p>Short micro-lessons and simple explanations.</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section id="report" class="panel">
+      <p class="eyebrow">Safety Check</p>
+      <h3>Share a message or tricky link</h3>
+      <form method="post" action="{{ url_for('child.submit_message') }}">
+        <label>
+          Where did you see it?
+          <input type="text" name="source_platform" placeholder="WhatsApp, TikTok, Browser, SMS">
+        </label>
+        <label>
+          Who sent it?
+          <input type="text" name="sender_handle" placeholder="@username">
+        </label>
+        <label>
+          Link or app page
+          <input type="text" name="browser_origin" placeholder="https://example.com or app name">
+        </label>
+        <label>
+          Paste the message here
+          <textarea name="message_text" rows="7" placeholder="Share the message or link that felt unsafe..." required></textarea>
+        </label>
+        <button class="button accent" type="submit">Run safety check</button>
+      </form>
+    </section>
+
+    <section id="my-safety" class="panel">
+      <p class="eyebrow">My Safety</p>
+      <h3>How Cyber Mzazi helps</h3>
+      <div class="safety-columns">
+        <div>
+          <strong>What it does</strong>
+          <ul class="simple-list">
+            <li>I check messages for unkind words</li>
+            <li>I warn about tricky links that could harm your device</li>
+            <li>I let your grown-up know if you might be in danger</li>
+          </ul>
         </div>
-        <p>{{ message.message_text }}</p>
-        <p class="meta">{{ message.source_platform }}{% if message.sender_handle %} / {{ message.sender_handle }}{% endif %}</p>
-        <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
-      </article>
-    {% else %}
-      <p class="muted">No submissions yet.</p>
-    {% endfor %}
+        <div>
+          <strong>What it does not do</strong>
+          <ul class="simple-list">
+            <li>I do not read your private diary or photos</li>
+            <li>I do not share your info with strangers or ads</li>
+            <li>I do not secretly record your camera or microphone</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="talk" class="panel">
+      <p class="eyebrow">Talk to Grown-up</p>
+      <h3>One-tap support</h3>
+      <div class="child-quick-actions">
+        <article class="action-card">
+          <span>💬</span>
+          <div>
+            <strong>Can we chat?</strong>
+            <p>Pre-drafted message: “Something online feels weird. Can we talk?”</p>
+          </div>
+        </article>
+        <article class="action-card">
+          <span>🆘</span>
+          <div>
+            <strong>Panic button</strong>
+            <p>Tap twice and hold to alert your grown-up quickly.</p>
+          </div>
+        </article>
+      </div>
+      <form method="post" action="{{ url_for('auth.request_logout') }}">
+        <button class="button ghost" type="submit">Ask grown-up to change safety settings</button>
+      </form>
+    </section>
+
+    <section id="help" class="panel">
+      <p class="eyebrow">Help &amp; Questions</p>
+      <h3>Simple answers</h3>
+      <ul class="simple-list">
+        <li>Why is this app here?</li>
+        <li>What happens when I report something scary?</li>
+        <li>Who can see safety alerts?</li>
+      </ul>
+      <div class="wellness-card">
+        <strong>How are you feeling today?</strong>
+        <div class="mood-row">
+          <span>😊</span>
+          <span>😐</span>
+          <span>😞</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings" class="panel">
+      <p class="eyebrow">Settings</p>
+      <h3>Limited controls</h3>
+      <div class="detail-list">
+        <div><span>Notifications</span><strong>Friendly reminders</strong></div>
+        <div><span>Language</span><strong>English / Swahili friendly</strong></div>
+        <div><span>Parent lock</span><strong>Needed for safety changes</strong></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">Recent Safety Checks</p>
+      <h3>Your latest summaries</h3>
+      {% for message in messages %}
+        <article class="message-card compact">
+          <div class="message-topline">
+            <strong>{{ message.predicted_label }}</strong>
+            <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+          </div>
+          <p>{{ message.message_text }}</p>
+          <p class="meta">{{ message.source_platform }}{% if message.sender_handle %} / {{ message.sender_handle }}{% endif %}</p>
+          <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+        </article>
+      {% else %}
+        <p class="muted">No safety checks yet.</p>
+      {% endfor %}
+    </section>
   </div>
-</section>
+
+  <nav class="child-bottom-nav">
+    <a class="child-nav-item active" href="#home"><span>🏠</span><span>Home</span></a>
+    <a class="child-nav-item" href="#my-safety"><span>🛡️</span><span>My Safety</span></a>
+    <a class="child-nav-item" href="#talk"><span>💬</span><span>Talk</span></a>
+    <a class="child-nav-item" href="#help"><span>❓</span><span>Help</span></a>
+  </nav>
+</div>
 {% endblock %}
