@@ -31,9 +31,6 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(parent_bp)
     app.register_blueprint(child_bp)
 
-    with app.app_context():
-        db.create_all()
-
     @app.cli.command("train-models")
     def train_models_command() -> None:
         feedback_rows = []

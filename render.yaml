@@ -4,7 +4,7 @@ services:
     env: python
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
+    startCommand: python scripts/bootstrap.py && gunicorn wsgi:app
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -18,3 +18,5 @@ services:
         value: /opt/render/project/src/artifacts/message_model.joblib
       - key: MODEL_METRICS_PATH
         value: /opt/render/project/src/artifacts/training_metrics.json
+      - key: FORCE_MODEL_RETRAIN
+        value: "false"

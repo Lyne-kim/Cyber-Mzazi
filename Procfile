@@ -1,1 +1,1 @@
-web: gunicorn wsgi:app
+web: python scripts/bootstrap.py && gunicorn wsgi:app

@@ -29,3 +29,9 @@ class Config:
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    MYSQL_SSL_CA_PATH = os.getenv("MYSQL_SSL_CA_PATH", "")
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}
+        if MYSQL_SSL_CA_PATH
+        else {}
+    )

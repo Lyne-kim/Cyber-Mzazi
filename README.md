@@ -102,11 +102,21 @@ For Render, point your host to:
 - MySQL connection string in environment variables
 - `SECRET_KEY`, `FRONTEND_ORIGIN`, and cookie settings in environment variables
 
-After the first deploy shell opens, run:
+On Render free tier, shell access is not required. The service now bootstraps itself on startup by:
 
-```bash
-python scripts/init_db.py
-flask train-models
+- creating tables if they do not already exist
+- training the model if the artifact is missing
+
+Render start command:
+
+```text
+python scripts/bootstrap.py && gunicorn wsgi:app
+```
+
+If you want to force a fresh retrain on the next deploy, set:
+
+```text
+FORCE_MODEL_RETRAIN=true
 ```
 
 ## 8. Railway deployment
@@ -121,11 +131,10 @@ Set Railway variables:
 - `SESSION_COOKIE_SECURE=true`
 - `SESSION_COOKIE_SAMESITE=None`
 
-Then run once after deployment:
+Then use the same startup bootstrap flow:
 
-```bash
-python scripts/init_db.py
-flask train-models
+```text
+python scripts/bootstrap.py && gunicorn wsgi:app
 ```
 
 ## External verification hook
