@@ -6,12 +6,7 @@
     <div class="sidebar-top">
       <p class="eyebrow">{{ t("Parent Dashboard") }}</p>
       <h2>{{ current_user.family.family_name }}</h2>
-      <label class="sidebar-select">
-        {{ t("Child selector") }}
-        <select>
-          <option>{{ current_user.family.child_display_name }}</option>
-        </select>
-      </label>
+      <p class="muted">{{ selected_child.name if selected_child else "No child selected" }}</p>
       <div class="connection-pill">
         <span class="status-dot online"></span>
         <span>{{ t("Online") }}</span>
@@ -53,12 +48,26 @@
 
     <section class="sidebar-footer">
       <p class="sidebar-heading">{{ t("Selected child") }}</p>
-      <strong>{{ current_user.family.child_display_name }}</strong>
+      <form class="stack" method="post" action="{{ url_for('parent.select_child') }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <label class="sidebar-select">
+          {{ t("Child selector") }}
+          <select name="child_id">
+            {% for child in children %}
+              <option value="{{ child.id }}"{% if selected_child and child.id == selected_child.id %} selected{% endif %}>{{ child.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="button small" type="submit">Switch</button>
+      </form>
       {% if selected_logout_request %}
         <article class="approval-card">
           <p class="eyebrow">{{ t("Pending child request") }}</p>
           <strong>{{ t("Approve child logout") }}</strong>
           <p class="muted">{{ selected_logout_request.detail }}</p>
+          {% if selected_logout_request.request_note %}
+            <p class="meta">Note: {{ selected_logout_request.request_note }}</p>
+          {% endif %}
           <span class="meta">{{ t("Requested on") }} {{ selected_logout_request.requested_at }}</span>
           <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
             <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
@@ -76,7 +85,7 @@
     <section class="panel hero-panel">
       <div>
         <p class="eyebrow">{{ t(page_title) }}</p>
-        <h3>{{ current_user.family.child_display_name }}</h3>
+        <h3>{{ selected_child.name if selected_child else "No child selected" }}</h3>
         <p class="muted">{{ t("Current child") }}</p>
       </div>
       <div class="stats-grid">
@@ -115,6 +124,22 @@
             <li>{{ t("Alert Settings") }}</li>
           </ul>
         </section>
+        <section class="panel">
+          <p class="eyebrow">Approvals</p>
+          <h3>History</h3>
+        {% for item in approval_history[:5] %}
+          <article class="log-row">
+            <strong>{{ item.status|title }}</strong>
+            <p>{{ item.action_description }}</p>
+            {% if item.request_note %}
+              <p class="meta">Note: {{ item.request_note }}</p>
+            {% endif %}
+            <span>{{ item.created_at.strftime("%Y-%m-%d %H:%M") }}{% if item.resolved_at %} / {{ item.resolved_at.strftime("%Y-%m-%d %H:%M") }} by {{ item.resolved_by.name if item.resolved_by else "Parent" }}{% endif %}</span>
+          </article>
+        {% else %}
+          <p class="muted">No approval history yet.</p>
+        {% endfor %}
+        </section>
       </div>
     {% elif page_key == "alerts" %}
       <section class="panel">
@@ -128,6 +153,9 @@
         {% for item in logout_request_cards %}
           <article class="request-card">
             <p>{{ item.detail }}</p>
+            {% if item.request_note %}
+              <p class="meta">Note: {{ item.request_note }}</p>
+            {% endif %}
             <p class="meta">{{ t("Requested on") }} {{ item.requested_at }}</p>
             <form method="post" action="{{ url_for('parent.approve_logout', request_id=item.request.id) }}">
               <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
@@ -168,18 +196,23 @@
     {% elif page_key == "child_profile" %}
       <section class="panel">
         <p class="eyebrow">{{ t("Child Profile") }}</p>
-        <h3>{{ current_user.family.child_display_name }}</h3>
+        <h3>{{ selected_child.name if selected_child else "No child selected" }}</h3>
         <div class="detail-list">
           <div><span>Mode</span><strong>{{ t("Safety Check") }}</strong></div>
           <div><span>Device</span><strong>{{ t("Shared family session") }}</strong></div>
           <div><span>{{ t("Protected sign-out") }}</span><strong>Parent approval required</strong></div>
           <div><span>Scope</span><strong>{{ t("Incoming third-party messages and links") }}</strong></div>
+          <div><span>Username</span><strong>{{ selected_child.username if selected_child else "-" }}</strong></div>
+          <div><span>{{ t("Language") }}</span><strong>{{ t(supported_languages[selected_child.preferred_language]) if selected_child else "-" }}</strong></div>
         </div>
         {% if selected_logout_request %}
           <article class="approval-card inline-card">
             <p class="eyebrow">{{ t("Pending child request") }}</p>
             <strong>{{ t("Approve child logout") }}</strong>
             <p class="muted">{{ selected_logout_request.detail }}</p>
+            {% if selected_logout_request.request_note %}
+              <p class="meta">Note: {{ selected_logout_request.request_note }}</p>
+            {% endif %}
             <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
               <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
             </form>
@@ -224,11 +257,38 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Family Hub") }}</p>
         <h3>{{ t("Family Hub") }}</h3>
-        <ul class="simple-list">
-          <li>Add child</li>
-          <li>Switch profile</li>
-          <li>Add guardian</li>
-        </ul>
+        <div class="subpanel-grid">
+          {% for child in children %}
+            <article class="mini-panel">
+              <strong>{{ child.name }}</strong>
+              <p class="muted">{{ child.username }}</p>
+              <p class="muted">{{ t(supported_languages[child.preferred_language]) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+        <form class="stack" method="post" action="{{ url_for('parent.add_child') }}">
+          <label>
+            Child name
+            <input type="text" name="child_name" placeholder="Child name" required>
+          </label>
+          <label>
+            Username
+            <input type="text" name="child_username" placeholder="child-account" required>
+          </label>
+          <label>
+            Password
+            <input type="password" name="child_password" placeholder="Temporary password" required>
+          </label>
+          <label>
+            {{ t("Language") }}
+            <select name="preferred_language">
+              {% for code, label in supported_languages.items() %}
+                <option value="{{ code }}">{{ t(label) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button small" type="submit">Add child</button>
+        </form>
       </section>
     {% elif page_key == "safety_resources" %}
       <section class="panel">
@@ -244,8 +304,19 @@
             {{ t("Upload documents") }}
             <input type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
           </label>
-          <button class="button small" type="submit">{{ t("Add placeholders") }}</button>
+          <button class="button small" type="submit">{{ t("Upload documents") }}</button>
         </form>
+        <div class="stack">
+          {% for document in safety_documents %}
+            <article class="mini-panel resource-item">
+              <strong>{{ document.filename }}</strong>
+              <p class="muted">{{ document.file_size }} bytes</p>
+              <a class="button ghost small" href="{{ url_for('parent.download_resource_document', document_id=document.id) }}">Download</a>
+            </article>
+          {% else %}
+            <p class="muted">No documents uploaded yet.</p>
+          {% endfor %}
+        </div>
       </section>
     {% elif page_key == "help_support" %}
       <section class="panel">
@@ -308,14 +379,17 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Notification Log") }}</p>
         <h3>{{ t("Notification Log") }}</h3>
-        {% for log in activity_logs if "alert" in log.event_type or "logout" in log.event_type %}
+        {% for item in approval_history %}
           <article class="log-row">
-            <strong>{{ log.event_type }}</strong>
-            <p>{{ log.details }}</p>
-            <span>{{ log.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+            <strong>{{ item.status|title }}</strong>
+            <p>{{ item.action_description }}</p>
+            {% if item.request_note %}
+              <p class="meta">Note: {{ item.request_note }}</p>
+            {% endif %}
+            <span>{{ item.created_at.strftime("%Y-%m-%d %H:%M") }}{% if item.resolved_at %} / {{ item.resolved_at.strftime("%Y-%m-%d %H:%M") }} by {{ item.resolved_by.name if item.resolved_by else "Parent" }}{% endif %}</span>
           </article>
         {% else %}
-          <p class="muted">No notification history yet.</p>
+          <p class="muted">No approval notifications yet.</p>
         {% endfor %}
       </section>
     {% elif page_key == "trusted_contacts" %}

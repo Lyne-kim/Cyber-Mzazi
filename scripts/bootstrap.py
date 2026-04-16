@@ -17,6 +17,7 @@ from app import app
 from ml.train import train_and_save
 from webapp.extensions import db
 from webapp.models import MessageRecord
+from webapp.services.schema import ensure_runtime_schema
 
 
 def collect_feedback_rows() -> list[dict]:
@@ -38,7 +39,7 @@ def collect_feedback_rows() -> list[dict]:
 
 def main() -> None:
     with app.app_context():
-        db.create_all()
+        ensure_runtime_schema()
         print("Database tables are ready.")
 
         artifact_path = Path(app.config["MODEL_ARTIFACT_PATH"])

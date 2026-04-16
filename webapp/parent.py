@@ -1,11 +1,14 @@
+from io import BytesIO
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
+from sqlalchemy import or_
 
 from .extensions import db
-from .models import ActivityLog, LogoutRequest, MessageRecord
+from .models import ActivityLog, LogoutRequest, MessageRecord, SafetyResourceDocument, User
 from .services.audit import log_event
+from .services.family_context import get_selected_child, set_selected_child
 from .ui_text import SUPPORTED_LANGUAGES
 
 
@@ -46,26 +49,56 @@ def require_parent():
 
 
 def _parent_data() -> dict:
+    selected_child, children = get_selected_child(current_user.family_id)
     messages = (
-        MessageRecord.query.filter_by(family_id=current_user.family_id)
+        MessageRecord.query.filter_by(
+            family_id=current_user.family_id,
+            submitted_by_id=selected_child.id if selected_child else None,
+        )
         .order_by(MessageRecord.created_at.desc())
         .limit(15)
         .all()
     )
     logout_requests = (
-        LogoutRequest.query.filter_by(family_id=current_user.family_id, status="pending")
+        LogoutRequest.query.filter_by(
+            family_id=current_user.family_id,
+            child_user_id=selected_child.id if selected_child else None,
+            status="pending",
+        )
         .order_by(LogoutRequest.created_at.desc())
         .all()
     )
     activity_logs = (
-        ActivityLog.query.filter_by(family_id=current_user.family_id)
+        ActivityLog.query.filter(ActivityLog.family_id == current_user.family_id)
+        .filter(
+            or_(
+                ActivityLog.subject_user_id == (selected_child.id if selected_child else None),
+                ActivityLog.actor_id == (selected_child.id if selected_child else None),
+            )
+        )
         .order_by(ActivityLog.created_at.desc())
         .limit(20)
         .all()
     )
+    approval_history = (
+        LogoutRequest.query.filter_by(
+            family_id=current_user.family_id,
+            child_user_id=selected_child.id if selected_child else None,
+        )
+        .order_by(LogoutRequest.created_at.desc())
+        .limit(12)
+        .all()
+    )
+    safety_documents = (
+        SafetyResourceDocument.query.filter_by(family_id=current_user.family_id)
+        .order_by(SafetyResourceDocument.created_at.desc())
+        .all()
+    )
     logout_request_logs = (
         ActivityLog.query.filter_by(
-            family_id=current_user.family_id, event_type="logout_requested"
+            family_id=current_user.family_id,
+            event_type="logout_requested",
+            subject_user_id=selected_child.id if selected_child else None,
         )
         .order_by(ActivityLog.created_at.desc())
         .all()
@@ -82,10 +115,13 @@ def _parent_data() -> dict:
             {
                 "request": logout_request,
                 "detail": (
-                    detail_log.details
+                    logout_request.action_description
+                    or detail_log.details
                     if detail_log
-                    else "Child requested sign-out from this device."
+                    else logout_request.action_description
+                    or "Child requested sign-out from this device."
                 ),
+                "request_note": logout_request.request_note,
                 "requested_at": logout_request.created_at.strftime("%Y-%m-%d %H:%M"),
             }
         )
@@ -95,11 +131,15 @@ def _parent_data() -> dict:
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
     return {
+        "children": children,
+        "selected_child": selected_child,
         "messages": messages,
         "logout_requests": logout_requests,
         "logout_request_cards": logout_request_cards,
         "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": activity_logs,
+        "approval_history": approval_history,
+        "safety_documents": safety_documents,
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
@@ -190,6 +230,57 @@ def trusted_contacts():
     return _render_parent_page("trusted_contacts", "Trusted Contacts")
 
 
+@parent_bp.post("/select-child")
+def select_child():
+    child_id = request.form.get("child_id", type=int)
+    child = set_selected_child(current_user.family_id, child_id or 0)
+    if child is None:
+        flash("Choose a valid child profile.", "warning")
+    else:
+        flash(f"{child.name} selected.", "success")
+    return redirect(request.form.get("next") or url_for("parent.dashboard"))
+
+
+@parent_bp.post("/family-hub/children")
+def add_child():
+    child_name = request.form.get("child_name", "").strip()
+    child_username = request.form.get("child_username", "").strip()
+    child_password = request.form.get("child_password", "")
+    preferred_language = request.form.get("preferred_language", "en").strip().lower()
+
+    if not all([child_name, child_username, child_password]):
+        flash("Fill in all child fields.", "warning")
+        return redirect(url_for("parent.family_hub"))
+    if preferred_language not in SUPPORTED_LANGUAGES:
+        preferred_language = "en"
+    if User.query.filter_by(username=child_username).first():
+        flash("That child username is already in use.", "danger")
+        return redirect(url_for("parent.family_hub"))
+
+    child_user = User(
+        family_id=current_user.family_id,
+        role="child",
+        name=child_name,
+        username=child_username,
+        logout_requires_parent_approval=True,
+        preferred_language=preferred_language,
+    )
+    child_user.set_password(child_password)
+    db.session.add(child_user)
+    db.session.flush()
+    set_selected_child(current_user.family_id, child_user.id)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "child_added",
+        f"Added child profile {child_name}",
+        subject_user_id=child_user.id,
+    )
+    db.session.commit()
+    flash("Child profile added.", "success")
+    return redirect(url_for("parent.family_hub"))
+
+
 @parent_bp.post("/language")
 def set_language():
     language = request.form.get("language", "en").strip().lower()
@@ -198,6 +289,7 @@ def set_language():
         return redirect(url_for("parent.language_settings"))
 
     session["ui_language"] = language
+    current_user.preferred_language = language
     log_event(
         current_user.family_id,
         current_user.id,
@@ -211,24 +303,47 @@ def set_language():
 
 @parent_bp.post("/safety-resources/attachments")
 def attach_resource_documents():
-    files = [
-        upload.filename
-        for upload in request.files.getlist("attachments")
-        if upload and upload.filename
-    ]
-    if not files:
+    uploads = [upload for upload in request.files.getlist("attachments") if upload and upload.filename]
+    if not uploads:
         flash("Choose one or more documents first.", "warning")
         return redirect(url_for("parent.safety_resources"))
+
+    saved_names = []
+    for upload in uploads:
+        binary_data = upload.read()
+        document = SafetyResourceDocument(
+            family_id=current_user.family_id,
+            uploaded_by_id=current_user.id,
+            filename=upload.filename,
+            content_type=upload.mimetype,
+            file_size=len(binary_data),
+            binary_data=binary_data,
+        )
+        db.session.add(document)
+        saved_names.append(upload.filename)
 
     log_event(
         current_user.family_id,
         current_user.id,
         "resource_attachment_added",
-        f"Safety resource placeholders added for: {', '.join(files)}",
+        f"Uploaded safety resource documents: {', '.join(saved_names)}",
     )
     db.session.commit()
-    flash("Document placeholders added to safety resources.", "success")
+    flash("Safety resource documents uploaded.", "success")
     return redirect(url_for("parent.safety_resources"))
+
+
+@parent_bp.get("/safety-resources/documents/<int:document_id>")
+def download_resource_document(document_id: int):
+    document = SafetyResourceDocument.query.filter_by(
+        id=document_id, family_id=current_user.family_id
+    ).first_or_404()
+    return send_file(
+        BytesIO(document.binary_data),
+        mimetype=document.content_type or "application/octet-stream",
+        as_attachment=True,
+        download_name=document.filename,
+    )
 
 
 @parent_bp.post("/messages/<int:message_id>/review")
@@ -248,6 +363,7 @@ def review_message(message_id: int):
         current_user.id,
         "message_reviewed",
         f"Message {record.id} reviewed as {reviewed_label}",
+        subject_user_id=record.submitted_by_id,
     )
     db.session.commit()
     flash("Review saved. You can use reviewed labels for later retraining.", "success")
@@ -267,6 +383,7 @@ def approve_logout(request_id: int):
         current_user.id,
         "logout_approved",
         f"Approved sign-out for child user {logout_request.child_user_id}. The child device can close the current child session once.",
+        subject_user_id=logout_request.child_user_id,
     )
     db.session.commit()
     flash("Logout approved. The child can now sign out once.", "success")

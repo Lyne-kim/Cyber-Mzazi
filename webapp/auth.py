@@ -101,6 +101,7 @@ def register():
             email=parent_contact if "@" in parent_contact else None,
             phone=parent_contact if "@" not in parent_contact else None,
             logout_requires_parent_approval=False,
+            preferred_language="en",
         )
         parent_user.set_password(parent_password)
 
@@ -110,12 +111,19 @@ def register():
             name=child_name,
             username=child_username,
             logout_requires_parent_approval=True,
+            preferred_language="en",
         )
         child_user.set_password(child_password)
 
         db.session.add_all([family, parent_user, child_user])
         db.session.flush()
-        log_event(family.id, parent_user.id, "family_registered", "Family account created")
+        log_event(
+            family.id,
+            parent_user.id,
+            "family_registered",
+            "Family account created",
+            subject_user_id=child_user.id,
+        )
         db.session.commit()
 
         flash("Family account created. Parent can sign in now.", "success")
@@ -138,7 +146,13 @@ def parent_login():
             return render_template("parent_login.html")
 
         login_user(user)
-        log_event(user.family_id, user.id, "login", f"{user.role} logged in")
+        log_event(
+            user.family_id,
+            user.id,
+            "login",
+            f"{user.role} logged in",
+            subject_user_id=user.id if user.role == "child" else None,
+        )
         db.session.commit()
         return redirect(url_for("parent.dashboard"))
 
@@ -154,7 +168,13 @@ def child_login():
             return render_template("child_login.html")
 
         login_user(user)
-        log_event(user.family_id, user.id, "login", f"{user.role} logged in")
+        log_event(
+            user.family_id,
+            user.id,
+            "login",
+            f"{user.role} logged in",
+            subject_user_id=user.id,
+        )
         db.session.commit()
         return redirect(url_for("child.dashboard"))
 
@@ -187,6 +207,12 @@ def request_logout():
         LogoutRequest(
             family_id=current_user.family_id,
             child_user_id=current_user.id,
+            action_type="session_logout",
+            action_description=(
+                "Child requested sign-out from this device. "
+                "This request ends only the current child session on this device."
+            ),
+            request_note=request_note or None,
             status="pending",
         )
     )
@@ -195,6 +221,7 @@ def request_logout():
         current_user.id,
         "logout_requested",
         request_details,
+        subject_user_id=current_user.id,
     )
     db.session.commit()
     flash("Parent approval requested for sign-out on this device.", "info")
@@ -224,7 +251,13 @@ def logout():
     actor_id = current_user.id
     role = current_user.role
     logout_user()
-    log_event(family_id, actor_id, "logout", f"{role} logged out")
+    log_event(
+        family_id,
+        actor_id,
+        "logout",
+        f"{role} logged out",
+        subject_user_id=actor_id if role == "child" else None,
+    )
     db.session.commit()
     flash("Signed out successfully.", "success")
     return redirect(url_for("auth.login"))

@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from flask_login import current_user, login_required
 
 from .extensions import db
-from .models import ActivityLog, LogoutRequest, MessageRecord
+from .models import LogoutRequest, MessageRecord
 from .services.audit import log_event
 from .services.ml_service import get_classifier
 from .services.verification import verify_message
@@ -37,22 +37,18 @@ def _child_data() -> dict:
         .limit(10)
         .all()
     )
-    pending_logout = LogoutRequest.query.filter_by(
-        family_id=current_user.family_id, child_user_id=current_user.id, status="pending"
-    ).first()
-    pending_logout_detail = (
-        ActivityLog.query.filter_by(
+    pending_logout = (
+        LogoutRequest.query.filter_by(
             family_id=current_user.family_id,
-            actor_id=current_user.id,
-            event_type="logout_requested",
+            child_user_id=current_user.id,
         )
-        .order_by(ActivityLog.created_at.desc())
+        .filter(LogoutRequest.status.in_(["pending", "approved"]))
+        .order_by(LogoutRequest.updated_at.desc())
         .first()
     )
     return {
         "messages": messages,
         "pending_logout": pending_logout,
-        "pending_logout_detail": pending_logout_detail,
     }
 
 
@@ -105,11 +101,13 @@ def set_language():
         return redirect(url_for("child.settings"))
 
     session["ui_language"] = language
+    current_user.preferred_language = language
     log_event(
         current_user.family_id,
         current_user.id,
         "language_changed",
         f"Child interface language set to {SUPPORTED_LANGUAGES[language]}",
+        subject_user_id=current_user.id,
     )
     db.session.commit()
     flash(f"Language updated to {SUPPORTED_LANGUAGES[language]}.", "success")
@@ -156,6 +154,7 @@ def submit_message():
         current_user.id,
         "message_submitted",
         f"Flagged an incoming message from {source_platform} for safety analysis",
+        subject_user_id=current_user.id,
     )
     db.session.commit()
     flash("Incoming message analysed and shared with the family safety dashboard.", "success")

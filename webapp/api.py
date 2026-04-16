@@ -7,8 +7,9 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
 
 from .extensions import db
-from .models import ActivityLog, Family, LogoutRequest, MessageRecord, User
+from .models import ActivityLog, Family, LogoutRequest, MessageRecord, SafetyResourceDocument, User
 from .services.audit import log_event
+from .services.family_context import get_selected_child, set_selected_child
 from .services.ml_service import get_classifier
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
@@ -30,6 +31,7 @@ def _user_payload(user: User) -> dict:
         "phone": user.phone,
         "username": user.username,
         "family_id": user.family_id,
+        "preferred_language": user.preferred_language,
     }
 
 
@@ -59,52 +61,96 @@ def _log_payload(log: ActivityLog) -> dict:
         "details": log.details,
         "created_at": log.created_at.isoformat(),
         "actor_id": log.actor_id,
+        "subject_user_id": log.subject_user_id,
+    }
+
+
+def _document_payload(document: SafetyResourceDocument) -> dict:
+    return {
+        "id": document.id,
+        "filename": document.filename,
+        "content_type": document.content_type,
+        "file_size": document.file_size,
+        "created_at": document.created_at.isoformat(),
+        "uploaded_by_id": document.uploaded_by_id,
+        "download_url": f"/parent/safety-resources/documents/{document.id}",
+    }
+
+
+def _logout_request_payload(item: LogoutRequest) -> dict:
+    return {
+        "id": item.id,
+        "child_user_id": item.child_user_id,
+        "status": item.status,
+        "action_type": item.action_type,
+        "action_description": item.action_description,
+        "request_note": item.request_note,
+        "created_at": item.created_at.isoformat(),
+        "resolved_at": item.resolved_at.isoformat() if item.resolved_at else None,
+        "resolved_by_id": item.resolved_by_id,
+        "resolved_by_name": item.resolved_by.name if item.resolved_by else None,
     }
 
 
 def _parent_page_payload() -> dict:
-    messages = (
-        MessageRecord.query.filter_by(family_id=current_user.family_id)
-        .order_by(MessageRecord.created_at.desc())
-        .limit(20)
-        .all()
-    )
-    logout_requests = (
-        LogoutRequest.query.filter_by(family_id=current_user.family_id, status="pending")
-        .order_by(LogoutRequest.created_at.desc())
-        .all()
-    )
-    activity_logs = (
-        ActivityLog.query.filter_by(family_id=current_user.family_id)
-        .order_by(ActivityLog.created_at.desc())
-        .limit(30)
-        .all()
-    )
-    logout_request_logs = (
-        ActivityLog.query.filter_by(
-            family_id=current_user.family_id, event_type="logout_requested"
+    selected_child, children = get_selected_child(current_user.family_id)
+    if selected_child is None:
+        messages = []
+        logout_requests = []
+        activity_logs = []
+        approval_history = []
+    else:
+        messages = (
+            MessageRecord.query.filter_by(
+                family_id=current_user.family_id,
+                submitted_by_id=selected_child.id,
+            )
+            .order_by(MessageRecord.created_at.desc())
+            .limit(20)
+            .all()
         )
-        .order_by(ActivityLog.created_at.desc())
+        logout_requests = (
+            LogoutRequest.query.filter_by(
+                family_id=current_user.family_id,
+                child_user_id=selected_child.id,
+                status="pending",
+            )
+            .order_by(LogoutRequest.created_at.desc())
+            .all()
+        )
+        activity_logs = (
+            ActivityLog.query.filter(ActivityLog.family_id == current_user.family_id)
+            .filter(
+                or_(
+                    ActivityLog.subject_user_id == selected_child.id,
+                    ActivityLog.actor_id == selected_child.id,
+                )
+            )
+            .order_by(ActivityLog.created_at.desc())
+            .limit(30)
+            .all()
+        )
+        approval_history = (
+            LogoutRequest.query.filter_by(
+                family_id=current_user.family_id,
+                child_user_id=selected_child.id,
+            )
+            .order_by(LogoutRequest.created_at.desc())
+            .limit(20)
+            .all()
+        )
+    documents = (
+        SafetyResourceDocument.query.filter_by(family_id=current_user.family_id)
+        .order_by(SafetyResourceDocument.created_at.desc())
         .all()
     )
-    logout_details_by_child: dict[int, ActivityLog] = {}
-    for log in logout_request_logs:
-        if log.actor_id and log.actor_id not in logout_details_by_child:
-            logout_details_by_child[log.actor_id] = log
     logout_request_cards = []
     for item in logout_requests:
-        detail_log = logout_details_by_child.get(item.child_user_id)
         logout_request_cards.append(
             {
-                "id": item.id,
-                "child_user_id": item.child_user_id,
-                "status": item.status,
-                "created_at": item.created_at.isoformat(),
-                "detail": (
-                    detail_log.details
-                    if detail_log
-                    else "Child requested sign-out from this device."
-                ),
+                **_logout_request_payload(item),
+                "detail": item.action_description
+                or "Child requested sign-out from this device.",
             }
         )
     high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
@@ -112,16 +158,20 @@ def _parent_page_payload() -> dict:
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.isoformat() if activity_logs else None
     return {
+        "children": [_user_payload(child) for child in children],
+        "selected_child": None if selected_child is None else _user_payload(selected_child),
         "messages": [_message_payload(message) for message in messages],
         "logout_requests": logout_request_cards,
         "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": [_log_payload(log) for log in activity_logs],
+        "approval_history": [_logout_request_payload(item) for item in approval_history],
+        "safety_documents": [_document_payload(document) for document in documents],
         "summary": {
             "alert_count": alert_count,
             "high_risk_count": high_risk_count,
             "reviewed_count": reviewed_count,
             "latest_sync": latest_sync,
-            "child_display_name": current_user.family.child_display_name,
+            "child_display_name": selected_child.name if selected_child else None,
         },
         "language": {"active": get_language(), "options": SUPPORTED_LANGUAGES},
     }
@@ -134,32 +184,18 @@ def _child_page_payload() -> dict:
         .limit(15)
         .all()
     )
-    pending_logout = LogoutRequest.query.filter_by(
-        family_id=current_user.family_id,
-        child_user_id=current_user.id,
-        status="pending",
-    ).first()
-    pending_logout_detail = (
-        ActivityLog.query.filter_by(
+    pending_logout = (
+        LogoutRequest.query.filter_by(
             family_id=current_user.family_id,
-            actor_id=current_user.id,
-            event_type="logout_requested",
+            child_user_id=current_user.id,
         )
-        .order_by(ActivityLog.created_at.desc())
+        .filter(LogoutRequest.status.in_(["pending", "approved"]))
+        .order_by(LogoutRequest.updated_at.desc())
         .first()
     )
     return {
         "messages": [_message_payload(message) for message in messages],
-        "pending_logout": None
-        if pending_logout is None
-        else {
-            "id": pending_logout.id,
-            "status": pending_logout.status,
-            "created_at": pending_logout.created_at.isoformat(),
-        },
-        "pending_logout_detail": None
-        if pending_logout_detail is None
-        else _log_payload(pending_logout_detail),
+        "pending_logout": None if pending_logout is None else _logout_request_payload(pending_logout),
         "child_name": current_user.name,
         "language": {"active": get_language(), "options": SUPPORTED_LANGUAGES},
     }
@@ -212,6 +248,7 @@ def register_family():
         email=parent_contact if "@" in parent_contact else None,
         phone=parent_contact if "@" not in parent_contact else None,
         logout_requires_parent_approval=False,
+        preferred_language="en",
     )
     parent_user.set_password(str(payload["parent_password"]))
 
@@ -221,12 +258,19 @@ def register_family():
         name=str(payload["child_name"]).strip(),
         username=child_username,
         logout_requires_parent_approval=True,
+        preferred_language="en",
     )
     child_user.set_password(str(payload["child_password"]))
 
     db.session.add_all([family, parent_user, child_user])
     db.session.flush()
-    log_event(family.id, parent_user.id, "family_registered", "Family account created via API")
+    log_event(
+        family.id,
+        parent_user.id,
+        "family_registered",
+        "Family account created via API",
+        subject_user_id=child_user.id,
+    )
     db.session.commit()
 
     return (
@@ -277,7 +321,13 @@ def login():
         return _error("Invalid login details.", 401)
 
     login_user(user)
-    log_event(user.family_id, user.id, "login", f"{user.role} logged in via API")
+    log_event(
+        user.family_id,
+        user.id,
+        "login",
+        f"{user.role} logged in via API",
+        subject_user_id=user.id if user.role == "child" else None,
+    )
     db.session.commit()
     return jsonify({"ok": True, "user": _user_payload(user)})
 
@@ -304,7 +354,13 @@ def logout():
     actor_id = current_user.id
     role = current_user.role
     logout_user()
-    log_event(family_id, actor_id, "logout", f"{role} logged out via API")
+    log_event(
+        family_id,
+        actor_id,
+        "logout",
+        f"{role} logged out via API",
+        subject_user_id=actor_id if role == "child" else None,
+    )
     db.session.commit()
     return jsonify({"ok": True})
 
@@ -336,12 +392,13 @@ def parent_alerts():
 def parent_child_profile():
     if current_user.role != "parent":
         return _error("Parent access only.", 403)
+    selected_child, _children = get_selected_child(current_user.family_id)
     return jsonify(
         {
             "ok": True,
             "page": "child_profile",
             "child_profile": {
-                "display_name": current_user.family.child_display_name,
+                "display_name": selected_child.name if selected_child else None,
                 "safety_mode": "Safety Check",
                 "linked_device": "Shared family session",
                 "protected_sign_out": True,
@@ -476,6 +533,7 @@ def review_message(message_id: int):
         current_user.id,
         "message_reviewed",
         f"Message {record.id} reviewed as {reviewed_label} via API",
+        subject_user_id=record.submitted_by_id,
     )
     db.session.commit()
     return jsonify({"ok": True, "message": _message_payload(record)})
@@ -501,9 +559,97 @@ def approve_logout(request_id: int):
         current_user.id,
         "logout_approved",
         f"Approved sign-out for child user {logout_request.child_user_id} via API. The child device can close the current child session once.",
+        subject_user_id=logout_request.child_user_id,
     )
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@api_bp.post("/parent/select-child")
+@login_required
+def parent_select_child():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    payload = request.get_json(silent=True) or {}
+    child = set_selected_child(current_user.family_id, int(payload.get("child_id", 0)))
+    if child is None:
+        return _error("Child profile not found.", 404)
+    return jsonify({"ok": True, "selected_child": _user_payload(child)})
+
+
+@api_bp.post("/parent/family-hub/children")
+@login_required
+def parent_add_child():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    payload = request.get_json(silent=True) or {}
+    child_name = str(payload.get("child_name", "")).strip()
+    child_username = str(payload.get("child_username", "")).strip()
+    child_password = str(payload.get("child_password", ""))
+    preferred_language = str(payload.get("preferred_language", "en")).strip().lower()
+    if not all([child_name, child_username, child_password]):
+        return _error("child_name, child_username, and child_password are required.")
+    if preferred_language not in SUPPORTED_LANGUAGES:
+        preferred_language = "en"
+    if User.query.filter_by(username=child_username).first():
+        return _error("Child username already exists.", 409)
+
+    child_user = User(
+        family_id=current_user.family_id,
+        role="child",
+        name=child_name,
+        username=child_username,
+        logout_requires_parent_approval=True,
+        preferred_language=preferred_language,
+    )
+    child_user.set_password(child_password)
+    db.session.add(child_user)
+    db.session.flush()
+    set_selected_child(current_user.family_id, child_user.id)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "child_added",
+        f"Added child profile {child_name} via API",
+        subject_user_id=child_user.id,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "child": _user_payload(child_user)}), 201
+
+
+@api_bp.post("/parent/safety-resources/documents")
+@login_required
+def parent_upload_resource_documents():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    uploads = [upload for upload in request.files.getlist("attachments") if upload and upload.filename]
+    if not uploads:
+        return _error("Choose one or more documents first.")
+
+    documents = []
+    saved_names = []
+    for upload in uploads:
+        binary_data = upload.read()
+        document = SafetyResourceDocument(
+            family_id=current_user.family_id,
+            uploaded_by_id=current_user.id,
+            filename=upload.filename,
+            content_type=upload.mimetype,
+            file_size=len(binary_data),
+            binary_data=binary_data,
+        )
+        db.session.add(document)
+        documents.append(document)
+        saved_names.append(upload.filename)
+
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "resource_attachment_added",
+        f"Uploaded safety resource documents via API: {', '.join(saved_names)}",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "documents": [_document_payload(document) for document in documents]}), 201
 
 
 @api_bp.get("/child/dashboard")
@@ -605,6 +751,7 @@ def submit_message():
         current_user.id,
         "message_submitted",
         f"Flagged an incoming message from {source_platform} for safety analysis via API",
+        subject_user_id=current_user.id,
     )
     db.session.commit()
     return jsonify({"ok": True, "message": _message_payload(record)}), 201
@@ -636,6 +783,12 @@ def request_logout():
     logout_request = LogoutRequest(
         family_id=current_user.family_id,
         child_user_id=current_user.id,
+        action_type="session_logout",
+        action_description=(
+            "Child requested sign-out from this device. "
+            "This request ends only the current child session on this device."
+        ),
+        request_note=request_note or None,
         status="pending",
     )
     db.session.add(logout_request)
@@ -644,6 +797,7 @@ def request_logout():
         current_user.id,
         "logout_requested",
         f"{request_details} Requested via API.",
+        subject_user_id=current_user.id,
     )
     db.session.commit()
     return (
@@ -670,11 +824,13 @@ def set_ui_language():
         return _error("Choose English or Swahili.")
 
     session["ui_language"] = language
+    current_user.preferred_language = language
     log_event(
         current_user.family_id,
         current_user.id,
         "language_changed",
         f"{current_user.role.title()} interface language set to {SUPPORTED_LANGUAGES[language]} via API",
+        subject_user_id=current_user.id if current_user.role == "child" else None,
     )
     db.session.commit()
     return jsonify({"ok": True, "language": {"active": language, "options": SUPPORTED_LANGUAGES}})

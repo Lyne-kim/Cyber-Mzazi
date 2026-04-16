@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask import session
+from flask_login import current_user
 
 
 SUPPORTED_LANGUAGES = {
@@ -81,6 +82,11 @@ TRANSLATIONS = {
 
 
 def get_language() -> str:
+    if getattr(current_user, "is_authenticated", False):
+        language = getattr(current_user, "preferred_language", "en")
+        if language in SUPPORTED_LANGUAGES:
+            session["ui_language"] = language
+            return language
     language = session.get("ui_language", "en")
     return language if language in SUPPORTED_LANGUAGES else "en"
 

@@ -410,6 +410,11 @@ select {
   border-color: var(--line);
 }
 
+.resource-item {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .inline-card {
   margin-top: 1rem;
 }

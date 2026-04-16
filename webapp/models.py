@@ -32,6 +32,9 @@ class Family(TimestampMixin, db.Model):
     logout_requests = db.relationship(
         "LogoutRequest", back_populates="family", lazy="dynamic"
     )
+    safety_resource_documents = db.relationship(
+        "SafetyResourceDocument", back_populates="family", lazy="dynamic"
+    )
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -44,9 +47,21 @@ class User(UserMixin, TimestampMixin, db.Model):
     username = db.Column(db.String(80))
     password_hash = db.Column(db.String(255), nullable=False)
     logout_requires_parent_approval = db.Column(db.Boolean, default=False, nullable=False)
+    preferred_language = db.Column(db.String(8), nullable=False, default="en")
 
     family = db.relationship("Family", back_populates="users")
-    activity_logs = db.relationship("ActivityLog", back_populates="actor", lazy="dynamic")
+    activity_logs = db.relationship(
+        "ActivityLog",
+        back_populates="actor",
+        lazy="dynamic",
+        foreign_keys="ActivityLog.actor_id",
+    )
+    subject_logs = db.relationship(
+        "ActivityLog",
+        back_populates="subject_user",
+        foreign_keys="ActivityLog.subject_user_id",
+        lazy="dynamic",
+    )
     submitted_messages = db.relationship(
         "MessageRecord",
         back_populates="submitted_by",
@@ -95,17 +110,30 @@ class ActivityLog(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
     actor_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    subject_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     event_type = db.Column(db.String(80), nullable=False)
     details = db.Column(db.Text, nullable=False, default="")
 
     family = db.relationship("Family", back_populates="activity_logs")
-    actor = db.relationship("User", back_populates="activity_logs")
+    actor = db.relationship(
+        "User",
+        back_populates="activity_logs",
+        foreign_keys=[actor_id],
+    )
+    subject_user = db.relationship(
+        "User",
+        foreign_keys=[subject_user_id],
+        back_populates="subject_logs",
+    )
 
 
 class LogoutRequest(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
     child_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    action_type = db.Column(db.String(50), nullable=False, default="session_logout")
+    action_description = db.Column(db.Text, nullable=False, default="")
+    request_note = db.Column(db.Text)
     status = db.Column(db.String(30), nullable=False, default="pending")
     resolved_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     resolved_at = db.Column(db.DateTime)
@@ -113,3 +141,16 @@ class LogoutRequest(TimestampMixin, db.Model):
     family = db.relationship("Family", back_populates="logout_requests")
     child_user = db.relationship("User", foreign_keys=[child_user_id])
     resolved_by = db.relationship("User", foreign_keys=[resolved_by_id])
+
+
+class SafetyResourceDocument(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(120))
+    file_size = db.Column(db.Integer, nullable=False, default=0)
+    binary_data = db.Column(db.LargeBinary, nullable=False)
+
+    family = db.relationship("Family", back_populates="safety_resource_documents")
+    uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])

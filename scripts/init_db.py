@@ -10,9 +10,9 @@ if str(PROJECT_ROOT) not in sys.path:
 load_dotenv()
 
 from app import app
-from webapp.extensions import db
+from webapp.services.schema import ensure_runtime_schema
 
 
 with app.app_context():
-    db.create_all()
+    ensure_runtime_schema()
     print("Database tables created successfully.")
