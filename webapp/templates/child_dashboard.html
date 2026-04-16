@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Child Dashboard | Cyber Mzazi{% endblock %}
+{% block content %}
+<section class="dashboard-header child-header">
+  <div>
+    <p class="eyebrow">Child workspace</p>
+    <h2>Hello, {{ current_user.name }}</h2>
+    <p class="muted">Submit messages for analysis and keep the parent informed through the shared activity log.</p>
+  </div>
+  <div class="child-actions">
+    <form method="post" action="{{ url_for('auth.request_logout') }}">
+      <button class="button ghost" type="submit">Request sign-out approval</button>
+    </form>
+    <a class="button small" href="{{ url_for('auth.logout') }}">Try sign out</a>
+  </div>
+</section>
+
+{% if pending_logout %}
+  <section class="panel info-banner">
+    <strong>Logout request pending.</strong>
+    <p class="muted">A parent needs to approve your sign-out request before the session can close.</p>
+  </section>
+{% endif %}
+
+<section class="two-column dashboard-grid">
+  <form class="panel" method="post" action="{{ url_for('child.submit_message') }}">
+    <h3>Submit a message for analysis</h3>
+    <label>
+      Social platform or source
+      <input type="text" name="source_platform" placeholder="WhatsApp, TikTok, Browser, SMS">
+    </label>
+    <label>
+      Sender handle
+      <input type="text" name="sender_handle" placeholder="@username">
+    </label>
+    <label>
+      Browser page or origin
+      <input type="text" name="browser_origin" placeholder="https://example.com or manual upload">
+    </label>
+    <label>
+      Message text
+      <textarea name="message_text" rows="8" placeholder="Paste the message here..." required></textarea>
+    </label>
+    <button class="button accent" type="submit">Analyse and save</button>
+  </form>
+
+  <div class="panel">
+    <h3>Recent results</h3>
+    {% for message in messages %}
+      <article class="message-card compact">
+        <div class="message-topline">
+          <strong>{{ message.predicted_label }}</strong>
+          <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+        </div>
+        <p>{{ message.message_text }}</p>
+        <p class="meta">{{ message.source_platform }}{% if message.sender_handle %} / {{ message.sender_handle }}{% endif %}</p>
+        <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+      </article>
+    {% else %}
+      <p class="muted">No submissions yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

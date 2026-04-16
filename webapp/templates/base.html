@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Cyber Mzazi{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body class="{% if current_user.is_authenticated and current_user.role == 'parent' %}parent-theme{% elif current_user.is_authenticated and current_user.role == 'child' %}child-theme{% else %}public-theme{% endif %}">
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Family Safety Console</p>
+        <h1 class="brand">Cyber Mzazi</h1>
+      </div>
+      <nav class="site-nav">
+        {% if current_user.is_authenticated %}
+          <span class="nav-chip">{{ current_user.role|title }}: {{ current_user.name }}</span>
+          <a href="{{ url_for('auth.logout') }}">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Login</a>
+          <a href="{{ url_for('auth.register') }}">Create family</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    <main class="page-shell">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <article class="flash flash-{{ category }}">{{ message }}</article>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

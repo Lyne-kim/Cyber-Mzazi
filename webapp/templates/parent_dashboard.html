@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Parent Dashboard | Cyber Mzazi{% endblock %}
+{% block content %}
+<section class="dashboard-header">
+  <div>
+    <p class="eyebrow">Parent workspace</p>
+    <h2>{{ current_user.family.family_name }}</h2>
+    <p class="muted">Monitor submitted activity, review model output, and approve child sign-out requests.</p>
+  </div>
+  <div class="stats-grid">
+    <article class="stat-card">
+      <span>{{ messages|length }}</span>
+      <p>Recent message analyses</p>
+    </article>
+    <article class="stat-card">
+      <span>{{ logout_requests|length }}</span>
+      <p>Pending logout requests</p>
+    </article>
+    <article class="stat-card">
+      <span>{{ activity_logs|length }}</span>
+      <p>Recent audit events</p>
+    </article>
+  </div>
+</section>
+
+<section class="two-column dashboard-grid">
+  <div class="panel">
+    <h3>Message reviews</h3>
+    {% for message in messages %}
+      <article class="message-card">
+        <div class="message-topline">
+          <strong>{{ message.source_platform|title }}</strong>
+          <span>{{ message.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+        </div>
+        <p>{{ message.message_text }}</p>
+        <p class="meta">Model: {{ message.predicted_label }} ({{ "%.0f"|format(message.predicted_confidence * 100) }}%)</p>
+        <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+        <p class="meta">Indicators: {{ message.risk_indicators }}</p>
+        {% if message.verification_notes %}
+          <p class="meta">Notes: {{ message.verification_notes }}</p>
+        {% endif %}
+        <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
+          <select name="reviewed_label">
+            <option value="">Review label</option>
+            <option value="safe">safe</option>
+            <option value="grooming">grooming</option>
+            <option value="betting">betting</option>
+            <option value="sextortion">sextortion</option>
+          </select>
+          <button class="button small" type="submit">Save review</button>
+        </form>
+      </article>
+    {% else %}
+      <p class="muted">No submitted messages yet.</p>
+    {% endfor %}
+  </div>
+
+  <div class="stack">
+    <div class="panel">
+      <h3>Logout approvals</h3>
+      {% for item in logout_requests %}
+        <article class="request-card">
+          <p>{{ item.child_user.name }} asked to sign out.</p>
+          <form method="post" action="{{ url_for('parent.approve_logout', request_id=item.id) }}">
+            <button class="button accent small" type="submit">Approve sign-out</button>
+          </form>
+        </article>
+      {% else %}
+        <p class="muted">No pending requests right now.</p>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <h3>Audit log</h3>
+      {% for log in activity_logs %}
+        <article class="log-row">
+          <strong>{{ log.event_type }}</strong>
+          <p>{{ log.details }}</p>
+          <span>{{ log.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+        </article>
+      {% else %}
+        <p class="muted">Audit events will appear here.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

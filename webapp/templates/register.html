@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Create Family | Cyber Mzazi{% endblock %}
+{% block content %}
+<form class="panel wide-form" method="post">
+  <div class="section-heading">
+    <p class="eyebrow">Setup</p>
+    <h2>Create a parent and child portal</h2>
+  </div>
+
+  <div class="form-grid">
+    <label>
+      Family name
+      <input type="text" name="family_name" placeholder="Mwangi family" required>
+    </label>
+    <label>
+      Parent full name
+      <input type="text" name="parent_name" placeholder="Jane Mwangi" required>
+    </label>
+    <label>
+      Parent email or phone
+      <input type="text" name="parent_contact" placeholder="jane@example.com or 0712345678" required>
+    </label>
+    <label>
+      Parent password
+      <input type="password" name="parent_password" required>
+    </label>
+    <label>
+      Child display name
+      <input type="text" name="child_name" placeholder="Kevin" required>
+    </label>
+    <label>
+      Child username
+      <input type="text" name="child_username" placeholder="kevin-home" required>
+    </label>
+    <label>
+      Child password
+      <input type="password" name="child_password" required>
+    </label>
+  </div>
+  <button class="button" type="submit">Create family workspace</button>
+</form>
+{% endblock %}
