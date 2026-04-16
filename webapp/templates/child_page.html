@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | Cyber Mzazi{% endblock %}
+{% block content %}
+<div class="child-app-shell">
+  <section class="panel child-hero">
+    <div>
+      <p class="eyebrow">{{ page_title }}</p>
+      <h2>Hi {{ current_user.name }}!</h2>
+      <p class="muted">Cyber Mzazi helps keep you safe online. It explains what is happening and helps you share risky messages sent by other accounts.</p>
+    </div>
+    <div class="transparency-badge">
+      <span>&#128269;</span>
+      <div>
+        <strong>This app helps protect you.</strong>
+        <p>It checks messages from other people and helps you ask your grown-up for support.</p>
+      </div>
+    </div>
+  </section>
+
+  {% if pending_logout %}
+    <section class="panel info-banner">
+      <strong>Safety setting request pending.</strong>
+      <p class="muted">Ask your grown-up to approve sign-out or other changes.</p>
+    </section>
+  {% endif %}
+
+  <section class="child-nav-strip">
+    {% for item in child_nav_items %}
+      <a class="child-nav-item{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
+        <span>{{ item.icon|safe }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    {% endfor %}
+  </section>
+
+  <div class="child-content-grid">
+    {% if page_key == "home" %}
+      <section class="panel">
+        <p class="eyebrow">Home</p>
+        <h3>Safety tip of the day</h3>
+        <div class="tip-carousel">
+          <article class="tip-card">
+            <strong>Think before you share a photo</strong>
+            <p>Private things should stay with people you trust.</p>
+          </article>
+          <article class="tip-card">
+            <strong>Stranger asking for info? Tell a grown-up</strong>
+            <p>If anything feels weird, you do not need to handle it alone.</p>
+          </article>
+          <article class="tip-card">
+            <strong>Feeling upset by a message? Tap Talk</strong>
+            <p>You can ask for help quickly and calmly.</p>
+          </article>
+        </div>
+
+        <div class="child-quick-actions">
+          <a class="action-card alert" href="{{ url_for('child.report') }}">
+            <span>&#128680;</span>
+            <div>
+              <strong>I saw something scary</strong>
+              <p>Open the safety check page for a message sent by another account.</p>
+            </div>
+          </a>
+          <a class="action-card" href="{{ url_for('child.talk') }}">
+            <span>&#128172;</span>
+            <div>
+              <strong>I need to talk</strong>
+              <p>Open a ready-made message to your grown-up.</p>
+            </div>
+          </a>
+          <a class="action-card" href="{{ url_for('child.help_questions') }}">
+            <span>&#128218;</span>
+            <div>
+              <strong>Learn about online safety</strong>
+              <p>Short micro-lessons and simple explanations.</p>
+            </div>
+          </a>
+        </div>
+      </section>
+    {% elif page_key == "report" %}
+      <section class="panel">
+        <p class="eyebrow">Safety Check</p>
+        <h3>Share a message from another account</h3>
+        <form method="post" action="{{ url_for('child.submit_message') }}">
+          <label>
+            Which app was it on?
+            <input type="text" name="source_platform" placeholder="WhatsApp, TikTok, Instagram, SMS">
+          </label>
+          <label>
+            Who sent it?
+            <input type="text" name="sender_handle" placeholder="@username or phone number">
+          </label>
+          <label>
+            Link or app page
+            <input type="text" name="browser_origin" placeholder="Profile link, page URL, or app page">
+          </label>
+          <label>
+            Paste the message they sent
+            <textarea name="message_text" rows="7" placeholder="Paste the incoming message here..." required></textarea>
+          </label>
+          <button class="button accent" type="submit">Run safety check</button>
+        </form>
+      </section>
+      <section class="panel">
+        <p class="eyebrow">Recent Safety Checks</p>
+        <h3>Your latest summaries</h3>
+        {% for message in messages %}
+          <article class="message-card compact">
+            <div class="message-topline">
+              <strong>{{ message.predicted_label }}</strong>
+              <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+            </div>
+            <p>{{ message.message_text }}</p>
+            <p class="meta">From: {{ message.sender_handle or "Unknown account" }}</p>
+            <p class="meta">{{ message.source_platform }}</p>
+            <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+          </article>
+        {% else %}
+          <p class="muted">No safety checks yet.</p>
+        {% endfor %}
+      </section>
+    {% elif page_key == "my_safety" %}
+      <section class="panel">
+        <p class="eyebrow">My Safety</p>
+        <h3>How Cyber Mzazi helps</h3>
+        <div class="safety-columns">
+          <div>
+            <strong>What it does</strong>
+            <ul class="simple-list">
+              <li>I check messages sent by other people for unkind or risky words</li>
+              <li>I warn about tricky links that could harm your device</li>
+              <li>I let your grown-up know if you might need help</li>
+            </ul>
+          </div>
+          <div>
+            <strong>What it does not do</strong>
+            <ul class="simple-list">
+              <li>I do not read your private diary or photos</li>
+              <li>I do not share your info with strangers or ads</li>
+              <li>I do not secretly record your camera or microphone</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    {% elif page_key == "talk" %}
+      <section class="panel">
+        <p class="eyebrow">Talk to Grown-up</p>
+        <h3>One-tap support</h3>
+        <div class="child-quick-actions">
+          <article class="action-card">
+            <span>&#128172;</span>
+            <div>
+              <strong>Can we chat?</strong>
+              <p>Pre-drafted message: “Something online feels weird. Can we talk?”</p>
+            </div>
+          </article>
+          <article class="action-card">
+            <span>&#128680;</span>
+            <div>
+              <strong>Panic button</strong>
+              <p>Tap twice and hold to alert your grown-up quickly.</p>
+            </div>
+          </article>
+        </div>
+        <form method="post" action="{{ url_for('auth.request_logout') }}">
+          <button class="button ghost" type="submit">Ask grown-up to change safety settings</button>
+        </form>
+      </section>
+    {% elif page_key == "help" %}
+      <section class="panel">
+        <p class="eyebrow">Help &amp; Questions</p>
+        <h3>Simple answers</h3>
+        <ul class="simple-list">
+          <li>Why is this app here?</li>
+          <li>What happens when I report a scary message from another account?</li>
+          <li>Who can see safety alerts?</li>
+        </ul>
+        <div class="wellness-card">
+          <strong>How are you feeling today?</strong>
+          <div class="mood-row">
+            <span>:-)</span>
+            <span>:-|</span>
+            <span>:-(</span>
+          </div>
+        </div>
+      </section>
+    {% elif page_key == "settings" %}
+      <section class="panel">
+        <p class="eyebrow">Settings</p>
+        <h3>Limited controls</h3>
+        <div class="detail-list">
+          <div><span>Notifications</span><strong>Friendly reminders</strong></div>
+          <div><span>Language</span><strong>English / Swahili friendly</strong></div>
+          <div><span>Parent lock</span><strong>Needed for safety changes</strong></div>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <nav class="child-bottom-nav">
+    {% for item in child_nav_items[:4] %}
+      <a class="child-nav-item{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
+        <span>{{ item.icon|safe }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+</div>
+{% endblock %}
