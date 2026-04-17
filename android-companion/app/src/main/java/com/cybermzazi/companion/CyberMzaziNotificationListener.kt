@@ -9,6 +9,7 @@ class CyberMzaziNotificationListener : NotificationListenerService() {
         sbn ?: return
         if (sbn.packageName == packageName) return
         if (sbn.notification.flags and Notification.FLAG_ONGOING_EVENT != 0) return
+        if (!FilterRules.shouldIngest(applicationContext, sbn.packageName)) return
 
         val extras = sbn.notification.extras ?: return
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim()
@@ -32,6 +33,13 @@ class CyberMzaziNotificationListener : NotificationListenerService() {
             notificationTitle = title,
             notificationText = body,
             deepLink = null,
+        )
+        RecentNotificationLog.append(
+            applicationContext,
+            appName,
+            title,
+            body,
+            "Captured from notification listener",
         )
         IngestionClient.sendNotification(applicationContext, payload)
     }

@@ -6,11 +6,24 @@
     <string name="token_hint">One-time device token from the parent dashboard</string>
     <string name="device_name_hint">This Android device name</string>
     <string name="save_settings">Save settings</string>
+    <string name="scan_pairing_qr">Scan pairing QR</string>
     <string name="open_notification_access">Open notification access</string>
     <string name="send_test_payload">Send test payload</string>
+    <string name="retry_queue">Retry queued uploads</string>
     <string name="status_label">Latest upload status</string>
     <string name="no_status_yet">No uploads yet.</string>
+    <string name="filter_rules_label">Per-app allow and block filters</string>
+    <string name="allow_packages_hint">Allowed package names, for example com.whatsapp, com.instagram.android</string>
+    <string name="block_packages_hint">Blocked package names, for example com.facebook.orca</string>
+    <string name="recent_log_label">Recent captured notifications</string>
+    <string name="no_recent_logs">No captured notifications yet.</string>
     <string name="settings_saved">Settings saved.</string>
     <string name="test_sent_ok">Test payload sent.</string>
     <string name="test_sent_failed">Test payload failed.</string>
+    <string name="retry_queue_ok">Retry finished.</string>
+    <string name="retry_queue_partial">Some notifications are still queued.</string>
+    <string name="camera_permission_required">Camera permission is needed to scan the pairing QR.</string>
+    <string name="scan_qr_prompt">Scan the Cyber Mzazi pairing QR</string>
+    <string name="invalid_pairing_qr">That QR code is not a Cyber Mzazi pairing code.</string>
+    <string name="qr_pairing_applied">Pairing details added from QR.</string>
 </resources>

@@ -223,9 +223,12 @@
           </form>
           {% if pending_android_link %}
             <article class="wellness-card">
-              <strong>Copy this one-time token</strong>
+              <strong>Pair with QR or token</strong>
               <p class="meta">{{ pending_android_link.device_name }}</p>
+              <img class="pairing-qr" src="{{ pending_android_link.qr_image_url }}" alt="Cyber Mzazi Android pairing QR">
+              <p class="meta">Scan this QR in the Android companion app.</p>
               <code class="token-block">{{ pending_android_link.ingest_token }}</code>
+              <code class="token-block">{{ pending_android_link.pairing_uri }}</code>
               <p class="meta">Endpoint: {{ pending_android_link.endpoint_hint }}</p>
             </article>
           {% endif %}

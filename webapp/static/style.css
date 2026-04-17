@@ -597,6 +597,15 @@ select {
   overflow-wrap: anywhere;
 }
 
+.pairing-qr {
+  width: min(220px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.65rem;
+}
+
 .mood-row {
   justify-content: flex-start;
   font-size: 1.6rem;

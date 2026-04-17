@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import quote
 
 from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
@@ -745,6 +746,12 @@ def parent_create_android_device():
                     "header": "Authorization: Bearer <token> or X-Cyber-Mzazi-Device-Key",
                     "endpoint": "/api/device-ingest/android-notifications",
                     "scope": "notification_listener",
+                    "pairing_uri": (
+                        "cybermzazi://pair"
+                        f"?base_url={quote(request.url_root.rstrip('/'), safe='')}"
+                        f"&token={quote(ingest_token, safe='')}"
+                        f"&device_name={quote(device_name, safe='')}"
+                    ),
                 },
             }
         ),

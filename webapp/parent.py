@@ -1,5 +1,6 @@
 from io import BytesIO
 from datetime import datetime
+from urllib.parse import quote
 from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
@@ -149,10 +150,21 @@ def _parent_data() -> dict:
     if selected_child:
         flash_child_id = session.get("android_link_child_id")
         if flash_child_id == selected_child.id:
+            pairing_uri = (
+                "cybermzazi://pair"
+                f"?base_url={quote(request.url_root.rstrip('/'), safe='')}"
+                f"&token={quote(session.get('android_link_token') or '', safe='')}"
+                f"&device_name={quote(session.get('android_link_device_name') or '', safe='')}"
+            )
             pending_android_link = {
                 "device_name": session.get("android_link_device_name"),
                 "ingest_token": session.get("android_link_token"),
                 "endpoint_hint": "/api/device-ingest/android-notifications",
+                "pairing_uri": pairing_uri,
+                "qr_image_url": (
+                    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="
+                    f"{quote(pairing_uri, safe='')}"
+                ),
             }
             session.pop("android_link_child_id", None)
             session.pop("android_link_device_name", None)

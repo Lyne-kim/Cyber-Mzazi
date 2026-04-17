@@ -5,8 +5,12 @@ This folder contains the first Android companion app for Cyber Mzazi.
 ## What it does
 
 - stores the backend URL and one-time device token from the parent dashboard
+- scans a pairing QR instead of requiring manual token copy
 - opens Android notification-listener settings
 - listens for notification text from supported apps
+- queues notifications locally if the network is down and retries later
+- lets you define allow/block package filters per app
+- shows a small recent log of captured notifications and upload status
 - forwards notification payloads to:
 
 ```text
@@ -34,8 +38,8 @@ android-companion
 3. Create an `Android notification link`.
 4. Copy the one-time token.
 5. In the Android app:
-   - set backend URL, for example `https://cyber-mzazi.onrender.com`
-   - paste the token
+   - scan the pairing QR from the parent dashboard, or paste the URL/token manually
+   - review or update allow/block package filters
    - save settings
    - open notification access and enable Cyber Mzazi
 6. Press `Send test payload` to confirm the backend receives data.
@@ -46,6 +50,7 @@ android-companion
 - this uses Android notification access, not direct in-app message database access
 - only message content exposed through notifications can be captured automatically
 - deep links are not resolved yet
+- pairing QR currently uses a generated web QR image
 - token rotation is still parent-managed from the dashboard
 
 ## Next refinements
