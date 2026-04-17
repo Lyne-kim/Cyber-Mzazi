@@ -110,7 +110,7 @@ On Render free tier, shell access is not required. The service now bootstraps it
 Render start command:
 
 ```text
-python scripts/bootstrap.py && gunicorn wsgi:app
+python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
 ```
 
 If you want to force a fresh retrain on the next deploy, set:
@@ -134,7 +134,7 @@ Set Railway variables:
 Then use the same startup bootstrap flow:
 
 ```text
-python scripts/bootstrap.py && gunicorn wsgi:app
+python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
 ```
 
 ## External verification hook
