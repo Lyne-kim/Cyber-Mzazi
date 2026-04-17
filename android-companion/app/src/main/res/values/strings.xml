@@ -10,7 +10,11 @@
     <string name="pairing_section_copy">Scan the parent QR or paste the link token manually.</string>
     <string name="actions_section_title">2. Turn on capture</string>
     <string name="actions_section_copy">Open notification access and send a quick test before using real messages.</string>
+    <string name="feature_selector_title">Choose a feature</string>
+    <string name="feature_selector_copy">Open one task at a time instead of scrolling through every setup card.</string>
+    <string name="feature_selector_label">Feature menu</string>
     <string name="filters_section_copy">Use allow and block rules to limit which apps can be screened automatically.</string>
+    <string name="status_section_copy">See the most recent upload result before moving to the next step.</string>
     <string name="log_section_copy">Recent captured notifications and upload outcomes appear here.</string>
     <string name="backend_url_label">Backend URL</string>
     <string name="token_label">Device token</string>
@@ -40,4 +44,11 @@
     <string name="invalid_pairing_qr">That QR code is not a Cyber Mzazi pairing code.</string>
     <string name="qr_pairing_applied">Pairing details added from QR.</string>
     <string name="queue_helper">If the device goes offline, uploads are queued and can be retried later.</string>
+    <string-array name="feature_menu_options">
+        <item>Pair this device</item>
+        <item>Turn on capture</item>
+        <item>Set app filters</item>
+        <item>Check live status</item>
+        <item>Review recent log</item>
+    </string-array>
 </resources>

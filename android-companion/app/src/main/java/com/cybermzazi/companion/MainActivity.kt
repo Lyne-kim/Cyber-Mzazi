@@ -6,14 +6,17 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
-import com.google.zxing.client.android.Intents
+import androidx.core.content.ContextCompat
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
@@ -25,6 +28,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var blockedPackagesInput: EditText
     private lateinit var statusText: TextView
     private lateinit var recentLogText: TextView
+    private lateinit var featureSpinner: Spinner
+    private lateinit var pairingSection: View
+    private lateinit var actionsSection: View
+    private lateinit var filtersSection: View
+    private lateinit var statusSection: View
+    private lateinit var logSection: View
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -51,6 +60,12 @@ class MainActivity : AppCompatActivity() {
         blockedPackagesInput = findViewById(R.id.blockedPackagesInput)
         statusText = findViewById(R.id.statusText)
         recentLogText = findViewById(R.id.recentLogText)
+        featureSpinner = findViewById(R.id.featureSpinner)
+        pairingSection = findViewById(R.id.pairingSection)
+        actionsSection = findViewById(R.id.actionsSection)
+        filtersSection = findViewById(R.id.filtersSection)
+        statusSection = findViewById(R.id.statusSection)
+        logSection = findViewById(R.id.logSection)
 
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             saveSettings()
@@ -68,6 +83,7 @@ class MainActivity : AppCompatActivity() {
             retryQueue()
         }
 
+        bindFeatureMenu()
         populateFields()
     }
 
@@ -90,6 +106,37 @@ class MainActivity : AppCompatActivity() {
         blockedPackagesInput.setText(Prefs.getBlockedPackages(this))
         statusText.text = Prefs.getLastStatus(this)
         recentLogText.text = RecentNotificationLog.render(this)
+    }
+
+    private fun bindFeatureMenu() {
+        val items = resources.getStringArray(R.array.feature_menu_options).toList()
+        val adapter =
+            ArrayAdapter(this, android.R.layout.simple_spinner_item, items).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        featureSpinner.adapter = adapter
+        featureSpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    showSection(position)
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+        featureSpinner.setSelection(0)
+    }
+
+    private fun showSection(position: Int) {
+        pairingSection.visibility = if (position == 0) View.VISIBLE else View.GONE
+        actionsSection.visibility = if (position == 1) View.VISIBLE else View.GONE
+        filtersSection.visibility = if (position == 2) View.VISIBLE else View.GONE
+        statusSection.visibility = if (position == 3) View.VISIBLE else View.GONE
+        logSection.visibility = if (position == 4) View.VISIBLE else View.GONE
     }
 
     private fun saveSettings() {

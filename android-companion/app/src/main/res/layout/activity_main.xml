@@ -48,6 +48,49 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/featureSelectorSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/feature_selector_title"
+                android:textColor="@color/cyber_mzazi_text"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/feature_selector_copy"
+                android:textColor="#5A6B78"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/feature_selector_label"
+                android:textColor="@color/cyber_mzazi_text"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/featureSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:padding="10dp"
+                android:spinnerMode="dropdown" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/pairingSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="14dp"
@@ -145,11 +188,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/actionsSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="14dp"
             android:background="@drawable/bg_card"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -206,11 +251,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/filtersSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="14dp"
             android:background="@drawable/bg_card"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -266,11 +313,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/statusSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="14dp"
             android:background="@drawable/bg_card"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -279,6 +328,14 @@
                 android:textColor="@color/cyber_mzazi_text"
                 android:textSize="20sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/status_section_copy"
+                android:textColor="#5A6B78"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/statusText"
@@ -291,10 +348,12 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/logSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
