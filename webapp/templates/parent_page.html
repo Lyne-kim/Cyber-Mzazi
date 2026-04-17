@@ -170,6 +170,10 @@
             </div>
             <p>{{ message.message_text }}</p>
             <p class="meta">From third-party account: {{ message.sender_handle or "Unknown handle" }}</p>
+            <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
+            {% if message.source_app_package %}
+              <p class="meta">App package: {{ message.source_app_package }}</p>
+            {% endif %}
             <p class="meta">Model: {{ message.predicted_label }} ({{ "%.0f"|format(message.predicted_confidence * 100) }}%)</p>
             <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
             <p class="meta">Indicators: {{ message.risk_indicators }}</p>
@@ -202,9 +206,48 @@
           <div><span>Device</span><strong>{{ t("Shared family session") }}</strong></div>
           <div><span>{{ t("Protected sign-out") }}</span><strong>Parent approval required</strong></div>
           <div><span>Scope</span><strong>{{ t("Incoming third-party messages and links") }}</strong></div>
+          <div><span>Android links</span><strong>{{ linked_devices|length }}</strong></div>
           <div><span>Username</span><strong>{{ selected_child.username if selected_child else "-" }}</strong></div>
           <div><span>{{ t("Language") }}</span><strong>{{ t(supported_languages[selected_child.preferred_language]) if selected_child else "-" }}</strong></div>
         </div>
+        <section class="mini-panel stack">
+          <strong>Android notification link</strong>
+          <form class="stack" method="post" action="{{ url_for('parent.create_android_device') }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <input type="hidden" name="child_user_id" value="{{ selected_child.id if selected_child else '' }}">
+            <label>
+              Device name
+              <input type="text" name="device_name" placeholder="Tecno phone, Samsung A15" required>
+            </label>
+            <button class="button small" type="submit">Create Android link</button>
+          </form>
+          {% if pending_android_link %}
+            <article class="wellness-card">
+              <strong>Copy this one-time token</strong>
+              <p class="meta">{{ pending_android_link.device_name }}</p>
+              <code class="token-block">{{ pending_android_link.ingest_token }}</code>
+              <p class="meta">Endpoint: {{ pending_android_link.endpoint_hint }}</p>
+            </article>
+          {% endif %}
+          <div class="stack">
+            {% for device in linked_devices %}
+              <article class="mini-panel resource-item">
+                <strong>{{ device.device_name }}</strong>
+                <p class="muted">{{ device.platform|title }} / {{ device.status|title }}</p>
+                <p class="meta">Last sync: {{ device.last_ingested_at.strftime("%Y-%m-%d %H:%M") if device.last_ingested_at else "No notifications yet" }}</p>
+                <p class="meta">Last app: {{ device.last_notification_app or "Not received yet" }}</p>
+                {% if device.status == "active" %}
+                  <form method="post" action="{{ url_for('parent.disable_android_device', device_id=device.id) }}">
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button class="button ghost small" type="submit">Disable link</button>
+                  </form>
+                {% endif %}
+              </article>
+            {% else %}
+              <p class="muted">No Android links yet.</p>
+            {% endfor %}
+          </div>
+        </section>
         {% if selected_logout_request %}
           <article class="approval-card inline-card">
             <p class="eyebrow">{{ t("Pending child request") }}</p>
@@ -346,6 +389,19 @@
           <div><span>Connectivity</span><strong>{{ t("Online") }}</strong></div>
           <div><span>Last sync</span><strong>{{ latest_sync }}</strong></div>
           <div><span>Uptime</span><strong>Bootstrap enabled</strong></div>
+          <div><span>Android links</span><strong>{{ linked_devices|length }}</strong></div>
+        </div>
+        <div class="stack">
+          {% for device in linked_devices %}
+            <article class="mini-panel resource-item">
+              <strong>{{ device.device_name }}</strong>
+              <p class="muted">{{ device.permission_scope|replace('_', ' ') }}</p>
+              <p class="meta">Status: {{ device.status|title }}</p>
+              <p class="meta">Last seen: {{ device.last_seen_at.strftime("%Y-%m-%d %H:%M") if device.last_seen_at else "Not connected yet" }}</p>
+            </article>
+          {% else %}
+            <p class="muted">No Android notification devices linked.</p>
+          {% endfor %}
         </div>
       </section>
     {% elif page_key == "insights" %}

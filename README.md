@@ -13,6 +13,7 @@ Cyber Mzazi is a consent-based family safety MVP built around the provided `data
 This project does **not** implement covert browser-history scraping, forced access to private social-media accounts, or hidden device persistence. Instead, it supports:
 
 - Message submission through the child portal or approved integrations.
+- Optional Android notification ingestion through an approved device-link token.
 - Shared family audit logs.
 - Parent approval for child sign-out **inside this app**.
 - Optional external verification through a configured API endpoint.
@@ -90,6 +91,24 @@ Important backend env vars for a separate frontend:
 - `SESSION_COOKIE_SAMESITE`
 
 The backend uses session cookies, so frontend requests should send credentials.
+
+## 6a. Android notification ingestion
+
+Cyber Mzazi now supports an Android-ready ingestion flow for notification-based message screening:
+
+- Parent generates an Android device link for a selected child.
+- The generated one-time token is copied into the Android client.
+- The Android client sends notification payloads to `POST /api/device-ingest/android-notifications`.
+- The backend classifies the notification text and stores it as a `MessageRecord` with `capture_method=android_notification`.
+
+Expected payload fields:
+
+- `app_name` or `source_platform`
+- `app_package`
+- `sender_handle`
+- `notification_title`
+- `notification_text` or `message_text`
+- `deep_link` or `browser_origin`
 
 ## 7. Render deployment
 

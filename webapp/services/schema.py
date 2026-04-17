@@ -44,6 +44,26 @@ def ensure_runtime_schema() -> None:
     if "logout_request" in table_names and not _column_exists(inspector, "logout_request", "request_note"):
         db.session.execute(text("ALTER TABLE logout_request ADD COLUMN request_note TEXT"))
 
+    inspector = inspect(db.engine)
+    if "message_record" in table_names and not _column_exists(inspector, "message_record", "source_app_package"):
+        db.session.execute(
+            text("ALTER TABLE message_record ADD COLUMN source_app_package VARCHAR(255)")
+        )
+
+    inspector = inspect(db.engine)
+    if "message_record" in table_names and not _column_exists(inspector, "message_record", "notification_title"):
+        db.session.execute(
+            text("ALTER TABLE message_record ADD COLUMN notification_title VARCHAR(255)")
+        )
+
+    inspector = inspect(db.engine)
+    if "message_record" in table_names and not _column_exists(inspector, "message_record", "capture_method"):
+        db.session.execute(
+            text(
+                "ALTER TABLE message_record ADD COLUMN capture_method VARCHAR(50) DEFAULT 'manual_report'"
+            )
+        )
+
     db.session.execute(
         text(
             "UPDATE `user` SET preferred_language = 'en' "
@@ -62,6 +82,12 @@ def ensure_runtime_schema() -> None:
             "SET action_description = 'Child requested sign-out from this device. "
             "This request ends only the current child session on this device.' "
             "WHERE action_description IS NULL OR action_description = ''"
+        )
+    )
+    db.session.execute(
+        text(
+            "UPDATE message_record SET capture_method = 'manual_report' "
+            "WHERE capture_method IS NULL OR capture_method = ''"
         )
     )
     db.session.commit()

@@ -587,6 +587,16 @@ select {
   background: rgba(34, 87, 122, 0.08);
 }
 
+.token-block {
+  display: block;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  background: rgba(12, 26, 38, 0.08);
+  border: 1px dashed rgba(12, 26, 38, 0.2);
+  font-family: "Courier New", monospace;
+  overflow-wrap: anywhere;
+}
+
 .mood-row {
   justify-content: flex-start;
   font-size: 1.6rem;

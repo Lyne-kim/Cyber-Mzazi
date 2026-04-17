@@ -7,10 +7,23 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
 
 from .extensions import db
-from .models import ActivityLog, Family, LogoutRequest, MessageRecord, SafetyResourceDocument, User
+from .models import (
+    ActivityLog,
+    Family,
+    LogoutRequest,
+    MessageRecord,
+    NotificationIngestionDevice,
+    SafetyResourceDocument,
+    User,
+)
 from .services.audit import log_event
 from .services.family_context import get_selected_child, set_selected_child
 from .services.ml_service import get_classifier
+from .services.notification_devices import (
+    issue_ingestion_token,
+    touch_ingestion_device,
+    verify_ingestion_token,
+)
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
 
@@ -39,9 +52,12 @@ def _message_payload(message: MessageRecord) -> dict:
     return {
         "id": message.id,
         "source_platform": message.source_platform,
+        "source_app_package": message.source_app_package,
         "sender_handle": message.sender_handle,
         "browser_origin": message.browser_origin,
+        "notification_title": message.notification_title,
         "message_text": message.message_text,
+        "capture_method": message.capture_method,
         "predicted_label": message.predicted_label,
         "predicted_confidence": message.predicted_confidence,
         "risk_indicators": message.risk_indicators,
@@ -51,6 +67,21 @@ def _message_payload(message: MessageRecord) -> dict:
         "verification_notes": message.verification_notes,
         "reviewed_label": message.reviewed_label,
         "created_at": message.created_at.isoformat(),
+    }
+
+
+def _notification_device_payload(device: NotificationIngestionDevice) -> dict:
+    return {
+        "id": device.id,
+        "child_user_id": device.child_user_id,
+        "device_name": device.device_name,
+        "platform": device.platform,
+        "permission_scope": device.permission_scope,
+        "status": device.status,
+        "last_seen_at": device.last_seen_at.isoformat() if device.last_seen_at else None,
+        "last_ingested_at": device.last_ingested_at.isoformat() if device.last_ingested_at else None,
+        "last_notification_app": device.last_notification_app,
+        "created_at": device.created_at.isoformat(),
     }
 
 
@@ -94,6 +125,14 @@ def _logout_request_payload(item: LogoutRequest) -> dict:
 
 def _parent_page_payload() -> dict:
     selected_child, children = get_selected_child(current_user.family_id)
+    linked_devices = (
+        NotificationIngestionDevice.query.filter_by(
+            family_id=current_user.family_id,
+            child_user_id=selected_child.id if selected_child else None,
+        )
+        .order_by(NotificationIngestionDevice.created_at.desc())
+        .all()
+    )
     if selected_child is None:
         messages = []
         logout_requests = []
@@ -165,6 +204,7 @@ def _parent_page_payload() -> dict:
         "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": [_log_payload(log) for log in activity_logs],
         "approval_history": [_logout_request_payload(item) for item in approval_history],
+        "linked_devices": [_notification_device_payload(device) for device in linked_devices],
         "safety_documents": [_document_payload(document) for document in documents],
         "summary": {
             "alert_count": alert_count,
@@ -172,6 +212,7 @@ def _parent_page_payload() -> dict:
             "reviewed_count": reviewed_count,
             "latest_sync": latest_sync,
             "child_display_name": selected_child.name if selected_child else None,
+            "android_device_count": len(linked_devices),
         },
         "language": {"active": get_language(), "options": SUPPORTED_LANGUAGES},
     }
@@ -650,6 +691,150 @@ def parent_upload_resource_documents():
     )
     db.session.commit()
     return jsonify({"ok": True, "documents": [_document_payload(document) for document in documents]}), 201
+
+
+@api_bp.post("/parent/android-devices")
+@login_required
+def parent_create_android_device():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    payload = request.get_json(silent=True) or {}
+    selected_child, _children = get_selected_child(current_user.family_id)
+    child_user_id = int(payload.get("child_user_id") or (selected_child.id if selected_child else 0))
+    device_name = str(payload.get("device_name", "")).strip()
+    if not child_user_id:
+        return _error("Select a child profile before creating an Android link.")
+    if not device_name:
+        return _error("device_name is required.")
+
+    child_user = User.query.filter_by(
+        id=child_user_id,
+        family_id=current_user.family_id,
+        role="child",
+    ).first()
+    if child_user is None:
+        return _error("Child profile not found.", 404)
+
+    ingest_token = issue_ingestion_token()
+    device = NotificationIngestionDevice(
+        family_id=current_user.family_id,
+        child_user_id=child_user.id,
+        device_name=device_name,
+        platform="android",
+        permission_scope="notification_listener",
+        token_hash=NotificationIngestionDevice.hash_token(ingest_token),
+        status="active",
+    )
+    db.session.add(device)
+    db.session.flush()
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "android_device_link_created",
+        f"Created Android notification link '{device_name}' for {child_user.name} via API",
+        subject_user_id=child_user.id,
+    )
+    db.session.commit()
+    return (
+        jsonify(
+            {
+                "ok": True,
+                "device": _notification_device_payload(device),
+                "ingest_token": ingest_token,
+                "instructions": {
+                    "header": "Authorization: Bearer <token> or X-Cyber-Mzazi-Device-Key",
+                    "endpoint": "/api/device-ingest/android-notifications",
+                    "scope": "notification_listener",
+                },
+            }
+        ),
+        201,
+    )
+
+
+@api_bp.post("/parent/android-devices/<int:device_id>/disable")
+@login_required
+def parent_disable_android_device(device_id: int):
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    device = NotificationIngestionDevice.query.filter_by(
+        id=device_id,
+        family_id=current_user.family_id,
+    ).first()
+    if device is None:
+        return _error("Linked Android device not found.", 404)
+    device.status = "disabled"
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "android_device_link_disabled",
+        f"Disabled Android notification link '{device.device_name}' via API",
+        subject_user_id=device.child_user_id,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "device": _notification_device_payload(device)})
+
+
+@api_bp.post("/device-ingest/android-notifications")
+def ingest_android_notification():
+    token = request.headers.get("X-Cyber-Mzazi-Device-Key", "").strip()
+    auth_header = request.headers.get("Authorization", "").strip()
+    if not token and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+    device = verify_ingestion_token(token)
+    if device is None:
+        return _error("Valid device ingestion token is required.", 401)
+
+    classifier = get_classifier()
+    if classifier is None:
+        return _error("Model is not ready.", 503)
+
+    payload = request.get_json(silent=True) or {}
+    message_text = str(payload.get("message_text") or payload.get("notification_text", "")).strip()
+    source_platform = str(payload.get("source_platform") or payload.get("app_name", "")).strip() or "social media"
+    app_package = str(payload.get("app_package", "")).strip() or None
+    sender_handle = str(payload.get("sender_handle", "")).strip() or None
+    browser_origin = str(payload.get("browser_origin") or payload.get("deep_link", "")).strip() or None
+    notification_title = str(payload.get("notification_title", "")).strip() or None
+
+    if not message_text:
+        return _error("message_text or notification_text is required.")
+
+    prediction = classifier.predict(message_text)
+    verification = verify_message(message_text, prediction["label"])
+
+    record = MessageRecord(
+        family_id=device.family_id,
+        submitted_by_id=device.child_user_id,
+        source_platform=source_platform,
+        source_app_package=app_package,
+        sender_handle=sender_handle,
+        browser_origin=browser_origin,
+        notification_title=notification_title,
+        message_text=message_text,
+        capture_method="android_notification",
+        predicted_label=prediction["label"],
+        predicted_confidence=prediction["confidence"],
+        risk_indicators=prediction["risk_indicators"],
+        verification_status=verification["status"],
+        verification_label=verification["label"],
+        verification_confidence=verification["confidence"],
+        verification_notes=verification["notes"],
+    )
+    db.session.add(record)
+    touch_ingestion_device(device, source_platform=source_platform)
+    log_event(
+        device.family_id,
+        None,
+        "android_notification_ingested",
+        (
+            f"Android notification ingested from {source_platform}"
+            f"{f' ({device.device_name})' if device.device_name else ''}."
+        ),
+        subject_user_id=device.child_user_id,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": _message_payload(record), "device": _notification_device_payload(device)}), 201
 
 
 @api_bp.get("/child/dashboard")

@@ -1,14 +1,21 @@
 from io import BytesIO
 from datetime import datetime
-
 from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 
 from .extensions import db
-from .models import ActivityLog, LogoutRequest, MessageRecord, SafetyResourceDocument, User
+from .models import (
+    ActivityLog,
+    LogoutRequest,
+    MessageRecord,
+    NotificationIngestionDevice,
+    SafetyResourceDocument,
+    User,
+)
 from .services.audit import log_event
 from .services.family_context import get_selected_child, set_selected_child
+from .services.notification_devices import issue_ingestion_token
 from .ui_text import SUPPORTED_LANGUAGES
 
 
@@ -50,6 +57,14 @@ def require_parent():
 
 def _parent_data() -> dict:
     selected_child, children = get_selected_child(current_user.family_id)
+    linked_devices = (
+        NotificationIngestionDevice.query.filter_by(
+            family_id=current_user.family_id,
+            child_user_id=selected_child.id if selected_child else None,
+        )
+        .order_by(NotificationIngestionDevice.created_at.desc())
+        .all()
+    )
     messages = (
         MessageRecord.query.filter_by(
             family_id=current_user.family_id,
@@ -130,9 +145,23 @@ def _parent_data() -> dict:
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
+    pending_android_link = None
+    if selected_child:
+        flash_child_id = session.get("android_link_child_id")
+        if flash_child_id == selected_child.id:
+            pending_android_link = {
+                "device_name": session.get("android_link_device_name"),
+                "ingest_token": session.get("android_link_token"),
+                "endpoint_hint": "/api/device-ingest/android-notifications",
+            }
+            session.pop("android_link_child_id", None)
+            session.pop("android_link_device_name", None)
+            session.pop("android_link_token", None)
     return {
         "children": children,
         "selected_child": selected_child,
+        "linked_devices": linked_devices,
+        "pending_android_link": pending_android_link,
         "messages": messages,
         "logout_requests": logout_requests,
         "logout_request_cards": logout_request_cards,
@@ -331,6 +360,73 @@ def attach_resource_documents():
     db.session.commit()
     flash("Safety resource documents uploaded.", "success")
     return redirect(url_for("parent.safety_resources"))
+
+
+@parent_bp.post("/android-devices")
+def create_android_device():
+    selected_child, _children = get_selected_child(current_user.family_id)
+    child_user_id = request.form.get("child_user_id", type=int) or (selected_child.id if selected_child else 0)
+    device_name = request.form.get("device_name", "").strip()
+    if not child_user_id:
+        flash("Select a child profile first.", "warning")
+        return redirect(url_for("parent.child_profile"))
+    if not device_name:
+        flash("Enter an Android device name first.", "warning")
+        return redirect(url_for("parent.child_profile"))
+
+    child_user = User.query.filter_by(
+        id=child_user_id,
+        family_id=current_user.family_id,
+        role="child",
+    ).first()
+    if child_user is None:
+        flash("Child profile not found.", "danger")
+        return redirect(url_for("parent.child_profile"))
+
+    ingest_token = issue_ingestion_token()
+    device = NotificationIngestionDevice(
+        family_id=current_user.family_id,
+        child_user_id=child_user.id,
+        device_name=device_name,
+        platform="android",
+        permission_scope="notification_listener",
+        token_hash=NotificationIngestionDevice.hash_token(ingest_token),
+        status="active",
+    )
+    db.session.add(device)
+    db.session.flush()
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "android_device_link_created",
+        f"Created Android notification link '{device_name}' for {child_user.name}",
+        subject_user_id=child_user.id,
+    )
+    db.session.commit()
+    session["android_link_child_id"] = child_user.id
+    session["android_link_device_name"] = device_name
+    session["android_link_token"] = ingest_token
+    flash("Android notification link created. Copy the token below into the Android app.", "success")
+    return redirect(request.form.get("next") or url_for("parent.child_profile"))
+
+
+@parent_bp.post("/android-devices/<int:device_id>/disable")
+def disable_android_device(device_id: int):
+    device = NotificationIngestionDevice.query.filter_by(
+        id=device_id,
+        family_id=current_user.family_id,
+    ).first_or_404()
+    device.status = "disabled"
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "android_device_link_disabled",
+        f"Disabled Android notification link '{device.device_name}'",
+        subject_user_id=device.child_user_id,
+    )
+    db.session.commit()
+    flash("Android notification link disabled.", "success")
+    return redirect(request.form.get("next") or url_for("parent.child_profile"))
 
 
 @parent_bp.get("/safety-resources/documents/<int:document_id>")

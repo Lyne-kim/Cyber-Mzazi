@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -34,6 +35,9 @@ class Family(TimestampMixin, db.Model):
     )
     safety_resource_documents = db.relationship(
         "SafetyResourceDocument", back_populates="family", lazy="dynamic"
+    )
+    notification_devices = db.relationship(
+        "NotificationIngestionDevice", back_populates="family", lazy="dynamic"
     )
 
 
@@ -87,7 +91,10 @@ class MessageRecord(TimestampMixin, db.Model):
     source_platform = db.Column(db.String(60), nullable=False)
     sender_handle = db.Column(db.String(120))
     browser_origin = db.Column(db.String(255))
+    source_app_package = db.Column(db.String(255))
+    notification_title = db.Column(db.String(255))
     message_text = db.Column(db.Text, nullable=False)
+    capture_method = db.Column(db.String(50), nullable=False, default="manual_report")
     predicted_label = db.Column(db.String(50), nullable=False)
     predicted_confidence = db.Column(db.Float, nullable=False, default=0.0)
     risk_indicators = db.Column(db.Text, nullable=False, default="")
@@ -154,3 +161,26 @@ class SafetyResourceDocument(TimestampMixin, db.Model):
 
     family = db.relationship("Family", back_populates="safety_resource_documents")
     uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])
+
+
+class NotificationIngestionDevice(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
+    child_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    device_name = db.Column(db.String(120), nullable=False)
+    platform = db.Column(db.String(30), nullable=False, default="android")
+    permission_scope = db.Column(
+        db.String(60), nullable=False, default="notification_listener"
+    )
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    status = db.Column(db.String(30), nullable=False, default="active")
+    last_seen_at = db.Column(db.DateTime)
+    last_ingested_at = db.Column(db.DateTime)
+    last_notification_app = db.Column(db.String(120))
+
+    family = db.relationship("Family", back_populates="notification_devices")
+    child_user = db.relationship("User", foreign_keys=[child_user_id])
+
+    @staticmethod
+    def hash_token(token: str) -> str:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()

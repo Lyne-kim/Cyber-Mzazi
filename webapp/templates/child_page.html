@@ -157,6 +157,7 @@
             <p>{{ message.message_text }}</p>
             <p class="meta">From: {{ message.sender_handle or "Unknown account" }}</p>
             <p class="meta">{{ message.source_platform }}</p>
+            <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
             <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
           </article>
         {% else %}
