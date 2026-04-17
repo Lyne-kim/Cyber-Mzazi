@@ -17,19 +17,36 @@ This folder contains the first Android companion app for Cyber Mzazi.
 POST /api/device-ingest/android-notifications
 ```
 
-## Open in Android Studio
+## Use without Android Studio
 
-1. Open Android Studio.
-2. Choose `Open`.
-3. Select:
+Use VS Code plus Android command-line tools.
+
+1. Install the Android SDK command-line tools using:
+
+[C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md)
+
+2. Open this folder in VS Code:
 
 ```text
 android-companion
 ```
 
-4. Let Gradle sync.
-5. Connect a real Android device.
-6. Run the `app` module.
+3. Connect a real Android device with USB debugging enabled.
+4. Build the debug APK:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+```
+
+5. Install it on the phone:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\install-debug.ps1
+```
+
+6. You can also use the included VS Code tasks:
+- `Android: Build Debug APK`
+- `Android: Install Debug APK`
 
 ## Real-device test flow
 
@@ -53,9 +70,16 @@ android-companion
 - pairing QR currently uses a generated web QR image
 - token rotation is still parent-managed from the dashboard
 
-## Next refinements
+## Current refinements already included
 
-- add background retry and offline queueing
-- add allow/block lists per app package
-- add on-device preview of the last captured notification
-- add token QR pairing instead of manual copy/paste
+- QR pairing from the parent dashboard
+- offline queueing and retry
+- per-app allow and block filters
+- recent captured-notification log
+
+## Good next refinements
+
+- signed release APK pipeline
+- background retry using WorkManager
+- token rotation and revoke-all action from the parent dashboard
+- optional per-app risk sensitivity settings

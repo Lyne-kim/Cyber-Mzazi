@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Android: Build Debug APK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/build-debug.ps1"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Install Debug APK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/install-debug.ps1"
+      ],
+      "problemMatcher": [],
+      "dependsOn": "Android: Build Debug APK"
+    }
+  ]
+}
