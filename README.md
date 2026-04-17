@@ -8,6 +8,12 @@ Cyber Mzazi is a consent-based family safety MVP built around the provided `data
 - A training pipeline that uses both `LinearRegression` and `RandomForestClassifier`.
 - A pluggable external verification hook for message confirmation.
 
+For full project documentation, see:
+
+- [PROJECT_DOCUMENTATION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\PROJECT_DOCUMENTATION.md)
+- [ANDROID_COMPANION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md)
+- [ANDROID_DEVICE_SETUP.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_DEVICE_SETUP.md)
+
 ## Important safety scope
 
 This project does **not** implement covert browser-history scraping, forced access to private social-media accounts, or hidden device persistence. Instead, it supports:

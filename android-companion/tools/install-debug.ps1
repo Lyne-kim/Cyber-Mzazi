@@ -6,7 +6,15 @@ $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $ApkPath) {
-    $ApkPath = Join-Path $ProjectRoot "app\build\outputs\apk\debug\app-debug.apk"
+    $CacheRoot = Join-Path $env:LOCALAPPDATA "CyberMzaziAndroid"
+    $ExternalApkPath = Join-Path $CacheRoot "project-build\app\outputs\apk\debug\app-debug.apk"
+    $LegacyApkPath = Join-Path $ProjectRoot "app\build\outputs\apk\debug\app-debug.apk"
+    if (Test-Path $ExternalApkPath) {
+        $ApkPath = $ExternalApkPath
+    }
+    else {
+        $ApkPath = $LegacyApkPath
+    }
 }
 
 if (-not (Test-Path $ApkPath)) {

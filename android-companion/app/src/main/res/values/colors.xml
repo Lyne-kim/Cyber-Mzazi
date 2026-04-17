@@ -2,4 +2,9 @@
     <color name="cyber_mzazi_seed">#1F5B7A</color>
     <color name="cyber_mzazi_surface">#FFF9F2</color>
     <color name="cyber_mzazi_text">#122433</color>
+    <color name="cyber_mzazi_surface_alt">#F3ECE3</color>
+    <color name="cyber_mzazi_line">#D9CDBE</color>
+    <color name="cyber_mzazi_accent">#E8A33B</color>
+    <color name="cyber_mzazi_success">#327C57</color>
+    <color name="cyber_mzazi_white">#FFFFFF</color>
 </resources>

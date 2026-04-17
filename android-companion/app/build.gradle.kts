@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val localAppData = System.getenv("LOCALAPPDATA")
+if (!localAppData.isNullOrBlank()) {
+    layout.buildDirectory.set(file("$localAppData/CyberMzaziAndroid/project-build/app"))
+}
+
 android {
     namespace = "com.cybermzazi.companion"
     compileSdk = 35
