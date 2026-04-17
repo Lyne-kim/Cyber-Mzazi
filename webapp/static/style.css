@@ -606,6 +606,29 @@ select {
   padding: 0.65rem;
 }
 
+.download-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(180px, 220px);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(34, 87, 122, 0.08), rgba(137, 87, 255, 0.08));
+  border: 1px solid var(--line);
+}
+
+.download-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.download-qr-wrap {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  text-align: center;
+}
+
 .mood-row {
   justify-content: flex-start;
   font-size: 1.6rem;
@@ -679,5 +702,9 @@ select {
   .child-bottom-nav .child-nav-item {
     padding: 0.65rem 0.35rem;
     font-size: 0.82rem;
+  }
+
+  .download-card {
+    grid-template-columns: 1fr;
   }
 }

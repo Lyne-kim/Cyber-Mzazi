@@ -29,6 +29,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var recentLogText: TextView
     private lateinit var featureSpinner: Spinner
+    private lateinit var heroMenuButton: TextView
+    private lateinit var navHome: TextView
+    private lateinit var navCapture: TextView
+    private lateinit var navFilters: TextView
+    private lateinit var navLog: TextView
     private lateinit var pairingSection: View
     private lateinit var actionsSection: View
     private lateinit var filtersSection: View
@@ -61,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         recentLogText = findViewById(R.id.recentLogText)
         featureSpinner = findViewById(R.id.featureSpinner)
+        heroMenuButton = findViewById(R.id.heroMenuButton)
+        navHome = findViewById(R.id.navHome)
+        navCapture = findViewById(R.id.navCapture)
+        navFilters = findViewById(R.id.navFilters)
+        navLog = findViewById(R.id.navLog)
         pairingSection = findViewById(R.id.pairingSection)
         actionsSection = findViewById(R.id.actionsSection)
         filtersSection = findViewById(R.id.filtersSection)
@@ -82,6 +92,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
             retryQueue()
         }
+        heroMenuButton.setOnClickListener {
+            featureSpinner.performClick()
+        }
+        navHome.setOnClickListener { featureSpinner.setSelection(0) }
+        navCapture.setOnClickListener { featureSpinner.setSelection(1) }
+        navFilters.setOnClickListener { featureSpinner.setSelection(2) }
+        navLog.setOnClickListener { featureSpinner.setSelection(4) }
 
         bindFeatureMenu()
         populateFields()
@@ -137,6 +154,24 @@ class MainActivity : AppCompatActivity() {
         filtersSection.visibility = if (position == 2) View.VISIBLE else View.GONE
         statusSection.visibility = if (position == 3) View.VISIBLE else View.GONE
         logSection.visibility = if (position == 4) View.VISIBLE else View.GONE
+        syncBottomNav(position)
+    }
+
+    private fun syncBottomNav(position: Int) {
+        updateNavItem(navHome, position == 0)
+        updateNavItem(navCapture, position == 1)
+        updateNavItem(navFilters, position == 2)
+        updateNavItem(navLog, position == 4)
+    }
+
+    private fun updateNavItem(view: TextView, active: Boolean) {
+        if (active) {
+            view.setBackgroundResource(R.drawable.bg_nav_active)
+            view.setTextColor(getColor(R.color.cyber_mzazi_seed))
+        } else {
+            view.background = null
+            view.setTextColor(getColor(R.color.cyber_mzazi_nav_idle))
+        }
     }
 
     private fun saveSettings() {

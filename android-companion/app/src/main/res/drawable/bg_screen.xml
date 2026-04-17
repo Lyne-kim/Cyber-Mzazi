@@ -3,5 +3,5 @@
     <gradient
         android:angle="270"
         android:endColor="@color/cyber_mzazi_surface"
-        android:startColor="@color/cyber_mzazi_surface_alt" />
+        android:startColor="#F5EDFF" />
 </shape>

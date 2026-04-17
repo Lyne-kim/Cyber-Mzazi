@@ -93,6 +93,7 @@ Use the REST API documented in [FRONTEND_API.md](C:\Users\Admin\OneDrive\Documen
 Important backend env vars for a separate frontend:
 
 - `FRONTEND_ORIGIN`
+- `ANDROID_COMPANION_DOWNLOAD_URL`
 - `SESSION_COOKIE_SECURE`
 - `SESSION_COOKIE_SAMESITE`
 

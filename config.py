@@ -37,6 +37,7 @@ class Config:
         os.getenv("LOGOUT_REQUEST_EXPIRY_MINUTES", "30")
     )
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+    ANDROID_COMPANION_DOWNLOAD_URL = os.getenv("ANDROID_COMPANION_DOWNLOAD_URL", "")
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
     MYSQL_SSL_CA_PATH = os.getenv("MYSQL_SSL_CA_PATH", "")

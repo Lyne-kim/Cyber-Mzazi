@@ -2,6 +2,11 @@
     <string name="app_name">Cyber Mzazi Android Link</string>
     <string name="app_subtitle">Grant notification access, save the one-time token from the parent dashboard, and forward supported notifications to Cyber Mzazi.</string>
     <string name="app_tagline">A calm, lightweight safety bridge for real Android notifications.</string>
+    <string name="hero_headline">Cyber Mzazi</string>
+    <string name="hero_copy">Protect the child device with safe pairing, app filters, and quick notification review.</string>
+    <string name="menu_button_symbol">&#9776;</string>
+    <string name="hero_preview_title">Android Link</string>
+    <string name="hero_preview_icon">&#128241;</string>
     <string name="service_label">Cyber Mzazi notification listener</string>
     <string name="base_url_hint">Backend URL, for example https://cyber-mzazi.onrender.com</string>
     <string name="token_hint">One-time device token from the parent dashboard</string>
@@ -44,6 +49,10 @@
     <string name="invalid_pairing_qr">That QR code is not a Cyber Mzazi pairing code.</string>
     <string name="qr_pairing_applied">Pairing details added from QR.</string>
     <string name="queue_helper">If the device goes offline, uploads are queued and can be retried later.</string>
+    <string name="home_nav">Home</string>
+    <string name="capture_nav">Capture</string>
+    <string name="filters_nav">Filters</string>
+    <string name="log_nav">Logs</string>
     <string-array name="feature_menu_options">
         <item>Pair this device</item>
         <item>Turn on capture</item>

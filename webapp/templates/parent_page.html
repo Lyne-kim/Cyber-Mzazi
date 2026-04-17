@@ -211,6 +211,22 @@
           <div><span>{{ t("Language") }}</span><strong>{{ t(supported_languages[selected_child.preferred_language]) if selected_child else "-" }}</strong></div>
         </div>
         <section class="mini-panel stack">
+          {% if android_download %}
+            <article class="download-card">
+              <div class="download-copy">
+                <p class="eyebrow">Android companion</p>
+                <strong>Install Android app</strong>
+                <p class="muted">Download the latest APK or scan the QR on the child device.</p>
+                <div class="button-row">
+                  <a class="button accent small" href="{{ android_download.url }}" target="_blank" rel="noopener">Android App Download</a>
+                </div>
+              </div>
+              <div class="download-qr-wrap">
+                <img class="pairing-qr" src="{{ android_download.qr_image_url }}" alt="QR code for downloading the Android companion app">
+                <p class="meta">QR uses <code>ANDROID_COMPANION_DOWNLOAD_URL</code>.</p>
+              </div>
+            </article>
+          {% endif %}
           <strong>Android notification link</strong>
           <form class="stack" method="post" action="{{ url_for('parent.create_android_device') }}">
             <input type="hidden" name="next" value="{{ request.path }}">

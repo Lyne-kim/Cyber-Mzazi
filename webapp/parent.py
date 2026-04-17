@@ -1,7 +1,7 @@
 from io import BytesIO
 from datetime import datetime
 from urllib.parse import quote
-from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 
@@ -147,6 +147,16 @@ def _parent_data() -> dict:
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
     pending_android_link = None
+    android_download = None
+    download_url = current_app.config.get("ANDROID_COMPANION_DOWNLOAD_URL", "").strip()
+    if download_url:
+        android_download = {
+            "url": download_url,
+            "qr_image_url": (
+                "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data="
+                f"{quote(download_url, safe='')}"
+            ),
+        }
     if selected_child:
         flash_child_id = session.get("android_link_child_id")
         if flash_child_id == selected_child.id:
@@ -174,6 +184,7 @@ def _parent_data() -> dict:
         "selected_child": selected_child,
         "linked_devices": linked_devices,
         "pending_android_link": pending_android_link,
+        "android_download": android_download,
         "messages": messages,
         "logout_requests": logout_requests,
         "logout_request_cards": logout_request_cards,
