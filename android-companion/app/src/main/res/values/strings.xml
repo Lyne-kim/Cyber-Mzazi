@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Cyber Mzazi Android Link</string>
+    <string name="app_subtitle">Grant notification access, save the one-time token from the parent dashboard, and forward supported notifications to Cyber Mzazi.</string>
+    <string name="service_label">Cyber Mzazi notification listener</string>
+    <string name="base_url_hint">Backend URL, for example https://cyber-mzazi.onrender.com</string>
+    <string name="token_hint">One-time device token from the parent dashboard</string>
+    <string name="device_name_hint">This Android device name</string>
+    <string name="save_settings">Save settings</string>
+    <string name="open_notification_access">Open notification access</string>
+    <string name="send_test_payload">Send test payload</string>
+    <string name="status_label">Latest upload status</string>
+    <string name="no_status_yet">No uploads yet.</string>
+    <string name="settings_saved">Settings saved.</string>
+    <string name="test_sent_ok">Test payload sent.</string>
+    <string name="test_sent_failed">Test payload failed.</string>
+</resources>

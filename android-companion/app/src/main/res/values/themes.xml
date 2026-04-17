@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.CyberMzaziCompanion" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/cyber_mzazi_seed</item>
+        <item name="colorSurface">@color/cyber_mzazi_surface</item>
+        <item name="android:statusBarColor">@color/cyber_mzazi_seed</item>
+        <item name="android:navigationBarColor">@color/cyber_mzazi_surface</item>
+        <item name="android:textColorPrimary">@color/cyber_mzazi_text</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
