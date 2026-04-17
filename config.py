@@ -5,11 +5,21 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 
+def _normalize_database_url(raw_url: str) -> str:
+    if raw_url.startswith("mysql://"):
+        return raw_url.replace("mysql://", "mysql+pymysql://", 1)
+    if raw_url.startswith("mysql+mysqldb://"):
+        return raw_url.replace("mysql+mysqldb://", "mysql+pymysql://", 1)
+    return raw_url
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "mysql+pymysql://cyber_mzazi:cyber_mzazi@localhost:3306/cyber_mzazi",
+    SQLALCHEMY_DATABASE_URI = _normalize_database_url(
+        os.getenv(
+            "DATABASE_URL",
+            "mysql+pymysql://cyber_mzazi:cyber_mzazi@localhost:3306/cyber_mzazi",
+        )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DATASET_PATH = os.getenv("DATASET_PATH", str(BASE_DIR / "dataset.csv"))
