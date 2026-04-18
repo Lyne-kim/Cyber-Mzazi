@@ -1,7 +1,7 @@
 from io import BytesIO
 from datetime import datetime
 from urllib.parse import quote
-from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 
@@ -45,6 +45,53 @@ PARENT_ADVANCED_ITEMS = [
     {"endpoint": "parent.notification_log", "icon": "&#128276;", "label": "Notification Log", "key": "notification_log"},
     {"endpoint": "parent.trusted_contacts", "icon": "&#129309;", "label": "Trusted Contacts", "key": "trusted_contacts"},
 ]
+
+
+def _build_notification_items(selected_child, messages, logout_requests) -> list[dict]:
+    notifications: list[dict] = []
+    child_name = selected_child.name if selected_child else "your child"
+
+    for logout_request in logout_requests:
+        notifications.append(
+            {
+                "key": f"logout-request-{logout_request.id}",
+                "type": "logout_request",
+                "severity": "warning",
+                "title": "Child logout approval needed",
+                "body": (
+                    f"{child_name} requested sign-out on a child device. "
+                    "Open Alerts to review and approve the request."
+                ),
+                "created_at": logout_request.created_at.isoformat(),
+                "created_at_label": logout_request.created_at.strftime("%Y-%m-%d %H:%M"),
+                "target_url": url_for("parent.alerts"),
+                "child_name": child_name,
+            }
+        )
+
+    for message in messages:
+        if message.predicted_label == "safe":
+            continue
+        notifications.append(
+            {
+                "key": f"message-alert-{message.id}",
+                "type": "message_alert",
+                "severity": "danger",
+                "title": f"{message.predicted_label.title()} alert detected",
+                "body": (
+                    f"Cyber Mzazi flagged a third-party message for {child_name} "
+                    f"from {message.source_platform.title()}."
+                ),
+                "created_at": message.created_at.isoformat(),
+                "created_at_label": message.created_at.strftime("%Y-%m-%d %H:%M"),
+                "target_url": url_for("parent.alerts"),
+                "child_name": child_name,
+                "message_excerpt": (message.message_text or "")[:140],
+            }
+        )
+
+    notifications.sort(key=lambda item: item["created_at"], reverse=True)
+    return notifications
 
 
 @parent_bp.before_request
@@ -146,6 +193,7 @@ def _parent_data() -> dict:
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
+    notification_items = _build_notification_items(selected_child, messages, logout_requests)
     pending_android_link = None
     android_download = None
     download_url = current_app.config.get("ANDROID_COMPANION_DOWNLOAD_URL", "").strip()
@@ -196,6 +244,7 @@ def _parent_data() -> dict:
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
         "latest_sync": latest_sync,
+        "notification_items": notification_items,
     }
 
 
@@ -215,6 +264,18 @@ def _render_parent_page(page_key: str, page_title: str) -> str:
 @parent_bp.route("/dashboard")
 def dashboard():
     return _render_parent_page("dashboard", "Dashboard")
+
+
+@parent_bp.get("/notification-feed")
+def notification_feed():
+    context = _parent_data()
+    return jsonify(
+        {
+            "ok": True,
+            "alert_count": context["alert_count"],
+            "notification_items": context["notification_items"],
+        }
+    )
 
 
 @parent_bp.route("/alerts")

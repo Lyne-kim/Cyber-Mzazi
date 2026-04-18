@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ t(page_title) }} | Cyber Mzazi{% endblock %}
 {% block content %}
-<div class="workspace-shell">
+<div
+  class="workspace-shell parent-workspace"
+  data-notification-feed-url="{{ url_for('parent.notification_feed') }}"
+  data-family-id="{{ current_user.family_id }}"
+  data-selected-child-id="{{ selected_child.id if selected_child else 'all' }}"
+>
   <aside class="sidebar parent-sidebar">
     <div class="sidebar-top">
       <p class="eyebrow">{{ t("Parent Dashboard") }}</p>
@@ -299,6 +304,16 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Alert Settings") }}</p>
         <h3>{{ t("Alert Settings") }}</h3>
+        <article class="notification-preferences">
+          <div>
+            <strong>Parent/Guardian popup notifications</strong>
+            <p class="muted">Allow Cyber Mzazi to show browser pop-up alerts and in-page notifications when new high-risk messages or child logout requests arrive.</p>
+          </div>
+          <div class="notification-controls">
+            <button class="button small" type="button" id="enable-browser-notifications">Enable popup notifications</button>
+            <p class="meta" id="browser-notification-status">Browser notifications are not enabled yet.</p>
+          </div>
+        </article>
         <div class="setting-row">
           <div>
             <strong>Pause monitoring</strong>
@@ -454,17 +469,17 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Notification Log") }}</p>
         <h3>{{ t("Notification Log") }}</h3>
-        {% for item in approval_history %}
+        {% for item in notification_items %}
           <article class="log-row">
-            <strong>{{ item.status|title }}</strong>
-            <p>{{ item.action_description }}</p>
-            {% if item.request_note %}
-              <p class="meta">Note: {{ item.request_note }}</p>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.body }}</p>
+            {% if item.message_excerpt %}
+              <p class="meta">{{ item.message_excerpt }}</p>
             {% endif %}
-            <span>{{ item.created_at.strftime("%Y-%m-%d %H:%M") }}{% if item.resolved_at %} / {{ item.resolved_at.strftime("%Y-%m-%d %H:%M") }} by {{ item.resolved_by.name if item.resolved_by else "Parent" }}{% endif %}</span>
+            <span>{{ item.created_at_label }}</span>
           </article>
         {% else %}
-          <p class="muted">No approval notifications yet.</p>
+          <p class="muted">No parent/guardian notifications yet.</p>
         {% endfor %}
       </section>
     {% elif page_key == "trusted_contacts" %}
@@ -480,4 +495,158 @@
     {% endif %}
   </section>
 </div>
+<script id="initial-notification-payload" type="application/json">{{ notification_items|tojson }}</script>
+{% endblock %}
+{% block page_scripts %}
+<script>
+  (() => {
+    const workspace = document.querySelector(".parent-workspace");
+    if (!workspace) return;
+
+    const toastContainer = document.createElement("div");
+    toastContainer.className = "notification-toast-stack";
+    document.body.appendChild(toastContainer);
+
+    const feedUrl = workspace.dataset.notificationFeedUrl;
+    const familyId = workspace.dataset.familyId || "family";
+    const childId = workspace.dataset.selectedChildId || "all";
+    const initialPayloadNode = document.getElementById("initial-notification-payload");
+    const initialNotifications = JSON.parse(initialPayloadNode?.textContent || "[]");
+    const storageKey = `cyber-mzazi:last-alert:${familyId}:${childId}`;
+    const titleBase = document.title;
+    const enableButton = document.getElementById("enable-browser-notifications");
+    const statusNode = document.getElementById("browser-notification-status");
+    const alertBadge = document.querySelector(".alert-badge");
+
+    const setStatus = () => {
+      if (!statusNode || !("Notification" in window)) return;
+      const permission = Notification.permission;
+      if (permission === "granted") {
+        statusNode.textContent = "Browser pop-up notifications are enabled for this device.";
+      } else if (permission === "denied") {
+        statusNode.textContent = "Browser pop-up notifications are blocked in this browser. In-page alerts will still appear while Cyber Mzazi is open.";
+      } else {
+        statusNode.textContent = "Browser notifications are not enabled yet.";
+      }
+    };
+
+    const updateTitle = (count) => {
+      document.title = count > 0 ? `(${count}) ${titleBase}` : titleBase;
+    };
+
+    const updateAlertBadge = (count) => {
+      if (!alertBadge) return;
+      alertBadge.textContent = count;
+      alertBadge.style.display = count > 0 ? "inline-block" : "none";
+    };
+
+    const markBaseline = (items) => {
+      if (!items.length || localStorage.getItem(storageKey)) return;
+      localStorage.setItem(storageKey, items[0].key);
+    };
+
+    const showToast = (item) => {
+      const toast = document.createElement("article");
+      toast.className = `notification-toast notification-toast-${item.severity || "info"}`;
+      toast.innerHTML = `
+        <strong>${item.title}</strong>
+        <p>${item.body}</p>
+        <span>${item.created_at_label || ""}</span>
+      `;
+      toast.addEventListener("click", () => {
+        window.location.href = item.target_url || "{{ url_for('parent.alerts') }}";
+      });
+      toastContainer.appendChild(toast);
+      window.setTimeout(() => {
+        toast.classList.add("notification-toast-visible");
+      }, 20);
+      window.setTimeout(() => {
+        toast.classList.remove("notification-toast-visible");
+        window.setTimeout(() => toast.remove(), 220);
+      }, 6500);
+    };
+
+    const showBrowserNotification = (item) => {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const notification = new Notification(item.title, {
+        body: item.body,
+        tag: item.key,
+      });
+      notification.onclick = () => {
+        window.focus();
+        window.location.href = item.target_url || "{{ url_for('parent.alerts') }}";
+      };
+    };
+
+    const deliverNotifications = (items) => {
+      items.forEach((item) => {
+        showToast(item);
+        showBrowserNotification(item);
+      });
+    };
+
+    const processFeed = (items, alertCount, shouldNotify) => {
+      updateAlertBadge(alertCount || 0);
+      updateTitle(alertCount || 0);
+      if (!items.length) return;
+
+      const lastSeenKey = localStorage.getItem(storageKey);
+      if (!lastSeenKey) {
+        markBaseline(items);
+        return;
+      }
+
+      const unseen = [];
+      for (const item of items) {
+        if (item.key === lastSeenKey) break;
+        unseen.push(item);
+      }
+
+      if (items[0]?.key) {
+        localStorage.setItem(storageKey, items[0].key);
+      }
+
+      if (shouldNotify && unseen.length) {
+        deliverNotifications([...unseen].reverse());
+      }
+    };
+
+    const pollNotifications = async (shouldNotify = true) => {
+      try {
+        const response = await fetch(feedUrl, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const payload = await response.json();
+        processFeed(payload.notification_items || [], payload.alert_count || 0, shouldNotify);
+      } catch (error) {
+        console.warn("Cyber Mzazi notification polling failed.", error);
+      }
+    };
+
+    if (enableButton && "Notification" in window) {
+      enableButton.addEventListener("click", async () => {
+        const permission = await Notification.requestPermission();
+        setStatus();
+        if (permission === "granted") {
+          showToast({
+            title: "Popup notifications enabled",
+            body: "Cyber Mzazi will now show parent/guardian alerts on this device while the site is open.",
+            created_at_label: "Now",
+            severity: "success",
+            target_url: "{{ url_for('parent.alert_settings') }}",
+          });
+        }
+      });
+    } else if (statusNode && !("Notification" in window)) {
+      statusNode.textContent = "This browser does not support system notifications. In-page alerts will still appear while Cyber Mzazi is open.";
+    }
+
+    setStatus();
+    processFeed(initialNotifications, {{ alert_count }}, false);
+    window.setInterval(() => pollNotifications(true), 20000);
+  })();
+</script>
 {% endblock %}
