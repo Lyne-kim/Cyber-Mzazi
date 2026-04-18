@@ -52,6 +52,7 @@ class Config:
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
+    ALERT_EMAIL_ENABLED = os.getenv("ALERT_EMAIL_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}
         if MYSQL_SSL_CA_PATH

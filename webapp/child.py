@@ -5,6 +5,7 @@ from .extensions import db
 from .models import LogoutRequest, MessageRecord
 from .services.audit import log_event
 from .services.ml_service import get_classifier
+from .services.parent_alerts import send_high_risk_message_alert
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES
 
@@ -156,6 +157,19 @@ def submit_message():
         f"Flagged an incoming message from {source_platform} for safety analysis",
         subject_user_id=current_user.id,
     )
+    parent_user = current_user.family.users.filter_by(role="parent").first()
+    email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, current_user, record)
+    if email_alert_sent and parent_user:
+        log_event(
+            current_user.family_id,
+            parent_user.id,
+            "parent_alert_emailed",
+            f"Parent alert email sent for message {record.id}.",
+            subject_user_id=current_user.id,
+        )
     db.session.commit()
-    flash("Incoming message analysed and shared with the family safety dashboard.", "success")
+    if email_alert_sent:
+        flash("Incoming message analysed and parent/guardian email alert sent.", "success")
+    else:
+        flash("Incoming message analysed and shared with the family safety dashboard.", "success")
     return redirect(url_for("child.report"))

@@ -26,6 +26,10 @@ from .services.notification_devices import (
     touch_ingestion_device,
     verify_ingestion_token,
 )
+from .services.parent_alerts import (
+    send_high_risk_message_alert,
+    send_logout_request_alert,
+)
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
 
@@ -919,8 +923,30 @@ def ingest_android_notification():
         ),
         subject_user_id=device.child_user_id,
     )
+    parent_user = User.query.filter_by(family_id=device.family_id, role="parent").first()
+    child_user = User.query.filter_by(id=device.child_user_id, role="child").first()
+    email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, child_user, record)
+    if email_alert_sent and parent_user:
+        log_event(
+            device.family_id,
+            parent_user.id,
+            "parent_alert_emailed",
+            f"Parent alert email sent for message {record.id}.",
+            subject_user_id=device.child_user_id,
+        )
     db.session.commit()
-    return jsonify({"ok": True, "message": _message_payload(record), "device": _notification_device_payload(device)}), 201
+    return (
+        jsonify(
+            {
+                "ok": True,
+                "message": _message_payload(record),
+                "device": _notification_device_payload(device),
+                "parent_alert_email_sent": email_alert_sent,
+                "parent_alert_email_message": email_alert_message,
+            }
+        ),
+        201,
+    )
 
 
 @api_bp.get("/child/dashboard")
@@ -1024,8 +1050,25 @@ def submit_message():
         f"Flagged an incoming message from {source_platform} for safety analysis via API",
         subject_user_id=current_user.id,
     )
+    parent_user = User.query.filter_by(family_id=current_user.family_id, role="parent").first()
+    email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, current_user, record)
+    if email_alert_sent and parent_user:
+        log_event(
+            current_user.family_id,
+            parent_user.id,
+            "parent_alert_emailed",
+            f"Parent alert email sent for message {record.id}.",
+            subject_user_id=current_user.id,
+        )
     db.session.commit()
-    return jsonify({"ok": True, "message": _message_payload(record)}), 201
+    return jsonify(
+        {
+            "ok": True,
+            "message": _message_payload(record),
+            "parent_alert_email_sent": email_alert_sent,
+            "parent_alert_email_message": email_alert_message,
+        }
+    ), 201
 
 
 @api_bp.post("/child/logout-request")
@@ -1070,6 +1113,16 @@ def request_logout():
         f"{request_details} Requested via API.",
         subject_user_id=current_user.id,
     )
+    parent_user = User.query.filter_by(family_id=current_user.family_id, role="parent").first()
+    email_alert_sent, email_alert_message = send_logout_request_alert(parent_user, current_user, logout_request)
+    if email_alert_sent and parent_user:
+        log_event(
+            current_user.family_id,
+            parent_user.id,
+            "parent_alert_emailed",
+            f"Parent alert email sent for logout request {logout_request.id}.",
+            subject_user_id=current_user.id,
+        )
     db.session.commit()
     return (
         jsonify(
@@ -1080,6 +1133,8 @@ def request_logout():
                     "status": logout_request.status,
                     "created_at": logout_request.created_at.isoformat(),
                 },
+                "parent_alert_email_sent": email_alert_sent,
+                "parent_alert_email_message": email_alert_message,
             }
         ),
         201,

@@ -13,6 +13,7 @@ from .services.email_verification import (
     send_verification_email,
     verify_email_token,
 )
+from .services.parent_alerts import send_logout_request_alert
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -295,19 +296,18 @@ def request_logout():
     if request_note:
         request_details = f"{request_details} Note from child device: {request_note}"
 
-    db.session.add(
-        LogoutRequest(
-            family_id=current_user.family_id,
-            child_user_id=current_user.id,
-            action_type="session_logout",
-            action_description=(
-                "Child requested sign-out from this device. "
-                "This request ends only the current child session on this device."
-            ),
-            request_note=request_note or None,
-            status="pending",
-        )
+    logout_request = LogoutRequest(
+        family_id=current_user.family_id,
+        child_user_id=current_user.id,
+        action_type="session_logout",
+        action_description=(
+            "Child requested sign-out from this device. "
+            "This request ends only the current child session on this device."
+        ),
+        request_note=request_note or None,
+        status="pending",
     )
+    db.session.add(logout_request)
     log_event(
         current_user.family_id,
         current_user.id,
@@ -315,8 +315,25 @@ def request_logout():
         request_details,
         subject_user_id=current_user.id,
     )
+    parent_user = current_user.family.users.filter_by(role="parent").first()
+    email_alert_sent, _email_alert_message = send_logout_request_alert(
+        parent_user,
+        current_user,
+        logout_request,
+    )
+    if email_alert_sent and parent_user:
+        log_event(
+            current_user.family_id,
+            parent_user.id,
+            "parent_alert_emailed",
+            f"Parent alert email sent for logout request {logout_request.id}.",
+            subject_user_id=current_user.id,
+        )
     db.session.commit()
-    flash("Parent approval requested for sign-out on this device.", "info")
+    if email_alert_sent:
+        flash("Parent approval requested for sign-out on this device. Parent/guardian email alert sent.", "info")
+    else:
+        flash("Parent approval requested for sign-out on this device.", "info")
     return redirect(url_for("child.settings"))
 
 

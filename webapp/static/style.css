@@ -591,6 +591,12 @@ select {
   gap: 0.55rem;
 }
 
+.notification-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .notification-toast-stack {
   position: fixed;
   top: 1rem;
@@ -943,8 +949,26 @@ select {
   }
 
   .notification-toast-stack {
-    left: 1rem;
-    right: 1rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    top: auto;
     width: auto;
+    gap: 0.5rem;
+  }
+
+  .notification-toast {
+    border-radius: 22px 22px 16px 16px;
+    padding: 1rem 1rem 1.1rem;
+    transform: translateY(18px);
+  }
+
+  .notification-preferences {
+    padding: 0.9rem;
+  }
+
+  .notification-control-row {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
