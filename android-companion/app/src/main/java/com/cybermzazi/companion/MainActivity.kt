@@ -1,151 +1,53 @@
 package com.cybermzazi.companion
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Spinner
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var baseUrlInput: EditText
-    private lateinit var tokenInput: EditText
-    private lateinit var deviceNameInput: EditText
-    private lateinit var allowedPackagesInput: EditText
-    private lateinit var blockedPackagesInput: EditText
-    private lateinit var statusText: TextView
-    private lateinit var recentLogText: TextView
-    private lateinit var featureSpinner: Spinner
-    private lateinit var heroMenuButton: TextView
-    private lateinit var navHome: TextView
-    private lateinit var navCapture: TextView
-    private lateinit var navFilters: TextView
-    private lateinit var navLog: TextView
+
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var menuToggle: TextView
+
     private lateinit var pairingSection: View
     private lateinit var actionsSection: View
     private lateinit var filtersSection: View
     private lateinit var statusSection: View
     private lateinit var logSection: View
 
-    private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
-        val contents = result.contents ?: return@registerForActivityResult
-        applyPairingPayload(contents)
-    }
-
-    private val cameraPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) {
-                launchQrScanner()
-            } else {
-                Toast.makeText(this, R.string.camera_permission_required, Toast.LENGTH_SHORT).show()
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        baseUrlInput = findViewById(R.id.baseUrlInput)
-        tokenInput = findViewById(R.id.tokenInput)
-        deviceNameInput = findViewById(R.id.deviceNameInput)
-        allowedPackagesInput = findViewById(R.id.allowedPackagesInput)
-        blockedPackagesInput = findViewById(R.id.blockedPackagesInput)
-        statusText = findViewById(R.id.statusText)
-        recentLogText = findViewById(R.id.recentLogText)
-        featureSpinner = findViewById(R.id.featureSpinner)
-        heroMenuButton = findViewById(R.id.heroMenuButton)
-        navHome = findViewById(R.id.navHome)
-        navCapture = findViewById(R.id.navCapture)
-        navFilters = findViewById(R.id.navFilters)
-        navLog = findViewById(R.id.navLog)
+        drawerLayout = findViewById(R.id.drawerLayout)
+        menuToggle = findViewById(R.id.menuToggle)
+
         pairingSection = findViewById(R.id.pairingSection)
         actionsSection = findViewById(R.id.actionsSection)
         filtersSection = findViewById(R.id.filtersSection)
         statusSection = findViewById(R.id.statusSection)
         logSection = findViewById(R.id.logSection)
 
-        findViewById<Button>(R.id.saveButton).setOnClickListener {
-            saveSettings()
-        }
-        findViewById<Button>(R.id.scanQrButton).setOnClickListener {
-            startQrPairing()
-        }
-        findViewById<Button>(R.id.notificationAccessButton).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
-        findViewById<Button>(R.id.sendTestButton).setOnClickListener {
-            sendTestPayload()
-        }
-        findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
-            retryQueue()
-        }
-        heroMenuButton.setOnClickListener {
-            featureSpinner.performClick()
-        }
-        navHome.setOnClickListener { featureSpinner.setSelection(0) }
-        navCapture.setOnClickListener { featureSpinner.setSelection(1) }
-        navFilters.setOnClickListener { featureSpinner.setSelection(2) }
-        navLog.setOnClickListener { featureSpinner.setSelection(4) }
-
-        bindFeatureMenu()
-        populateFields()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        populateFields()
-        IngestionClient.flushQueuedNotifications(this) { _, message ->
-            runOnUiThread {
-                statusText.text = message
-                recentLogText.text = RecentNotificationLog.render(this)
+        // Toggle sidebar
+        menuToggle.setOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
             }
         }
-    }
 
-    private fun populateFields() {
-        baseUrlInput.setText(Prefs.getBaseUrl(this))
-        tokenInput.setText(Prefs.getDeviceToken(this))
-        deviceNameInput.setText(Prefs.getDeviceName(this))
-        allowedPackagesInput.setText(Prefs.getAllowedPackages(this))
-        blockedPackagesInput.setText(Prefs.getBlockedPackages(this))
-        statusText.text = Prefs.getLastStatus(this)
-        recentLogText.text = RecentNotificationLog.render(this)
-    }
+        // Sidebar clicks
+        findViewById<TextView>(R.id.menuHome).setOnClickListener { showSection(0) }
+        findViewById<TextView>(R.id.menuCapture).setOnClickListener { showSection(1) }
+        findViewById<TextView>(R.id.menuFilters).setOnClickListener { showSection(2) }
+        findViewById<TextView>(R.id.menuStatus).setOnClickListener { showSection(3) }
+        findViewById<TextView>(R.id.menuLog).setOnClickListener { showSection(4) }
 
-    private fun bindFeatureMenu() {
-        val items = resources.getStringArray(R.array.feature_menu_options).toList()
-        val adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_item, items).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-        featureSpinner.adapter = adapter
-        featureSpinner.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long,
-                ) {
-                    showSection(position)
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-            }
-        featureSpinner.setSelection(0)
+        showSection(0)
     }
 
     private fun showSection(position: Int) {
@@ -154,104 +56,7 @@ class MainActivity : AppCompatActivity() {
         filtersSection.visibility = if (position == 2) View.VISIBLE else View.GONE
         statusSection.visibility = if (position == 3) View.VISIBLE else View.GONE
         logSection.visibility = if (position == 4) View.VISIBLE else View.GONE
-        syncBottomNav(position)
-    }
 
-    private fun syncBottomNav(position: Int) {
-        updateNavItem(navHome, position == 0)
-        updateNavItem(navCapture, position == 1)
-        updateNavItem(navFilters, position == 2)
-        updateNavItem(navLog, position == 4)
-    }
-
-    private fun updateNavItem(view: TextView, active: Boolean) {
-        if (active) {
-            view.setBackgroundResource(R.drawable.bg_nav_active)
-            view.setTextColor(getColor(R.color.cyber_mzazi_seed))
-        } else {
-            view.background = null
-            view.setTextColor(getColor(R.color.cyber_mzazi_nav_idle))
-        }
-    }
-
-    private fun saveSettings() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
-        Prefs.setDeviceToken(this, tokenInput.text.toString().trim())
-        Prefs.setDeviceName(this, deviceNameInput.text.toString().trim())
-        Prefs.setAllowedPackages(this, allowedPackagesInput.text.toString().trim())
-        Prefs.setBlockedPackages(this, blockedPackagesInput.text.toString().trim())
-        Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
-        populateFields()
-    }
-
-    private fun sendTestPayload() {
-        saveSettings()
-        val payload = NotificationPayload(
-            appName = "Cyber Mzazi Test",
-            appPackage = packageName,
-            senderHandle = "Test Sender",
-            notificationTitle = "Manual test",
-            notificationText = "Do not tell your parents. Keep this secret.",
-            deepLink = null,
-        )
-        IngestionClient.sendNotification(this, payload) { ok, message ->
-            runOnUiThread {
-                statusText.text = message
-                recentLogText.text = RecentNotificationLog.render(this)
-                Toast.makeText(
-                    this,
-                    if (ok) R.string.test_sent_ok else R.string.test_sent_failed,
-                    Toast.LENGTH_SHORT,
-                ).show()
-            }
-        }
-    }
-
-    private fun retryQueue() {
-        IngestionClient.flushQueuedNotifications(this) { ok, message ->
-            runOnUiThread {
-                statusText.text = message
-                recentLogText.text = RecentNotificationLog.render(this)
-                Toast.makeText(
-                    this,
-                    if (ok) R.string.retry_queue_ok else R.string.retry_queue_partial,
-                    Toast.LENGTH_SHORT,
-                ).show()
-            }
-        }
-    }
-
-    private fun startQrPairing() {
-        when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED ->
-                launchQrScanner()
-            else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    private fun launchQrScanner() {
-        val options = ScanOptions().apply {
-            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setPrompt(getString(R.string.scan_qr_prompt))
-            setBeepEnabled(false)
-            setOrientationLocked(false)
-        }
-        scanLauncher.launch(options)
-    }
-
-    private fun applyPairingPayload(contents: String) {
-        val uri = Uri.parse(contents)
-        if (uri.scheme != "cybermzazi") {
-            Toast.makeText(this, R.string.invalid_pairing_qr, Toast.LENGTH_SHORT).show()
-            return
-        }
-        baseUrlInput.setText(uri.getQueryParameter("base_url").orEmpty())
-        tokenInput.setText(uri.getQueryParameter("token").orEmpty())
-        val qrDeviceName = uri.getQueryParameter("device_name").orEmpty()
-        if (deviceNameInput.text.isNullOrBlank()) {
-            deviceNameInput.setText(qrDeviceName)
-        }
-        saveSettings()
-        Toast.makeText(this, R.string.qr_pairing_applied, Toast.LENGTH_SHORT).show()
+        drawerLayout.closeDrawer(GravityCompat.START)
     }
 }

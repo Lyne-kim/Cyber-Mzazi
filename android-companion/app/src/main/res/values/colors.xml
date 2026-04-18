@@ -1,15 +1,36 @@
 <resources>
-    <color name="cyber_mzazi_seed">#7A33F2</color>
-    <color name="cyber_mzazi_surface">#FBF7FF</color>
-    <color name="cyber_mzazi_text">#122433</color>
-    <color name="cyber_mzazi_surface_alt">#F2EAFE</color>
-    <color name="cyber_mzazi_line">#DDD1F5</color>
-    <color name="cyber_mzazi_accent">#9D63FF</color>
-    <color name="cyber_mzazi_success">#327C57</color>
+    <!-- Primary -->
+    <color name="cyber_mzazi_seed">#0A1F44</color> <!-- deep navy -->
+
+    <!-- Backgrounds -->
+    <color name="cyber_mzazi_surface">#F4F7FB</color>
+    <color name="cyber_mzazi_surface_alt">#E9EFF8</color>
+
+    <!-- Text -->
+    <color name="cyber_mzazi_text">#0F172A</color>
+
+    <!-- Lines / borders -->
+    <color name="cyber_mzazi_line">#D0D9E6</color>
+
+    <!-- Accent (buttons, highlights) -->
+    <color name="cyber_mzazi_accent">#2F6BFF</color> <!-- vibrant blue -->
+
+    <!-- Success -->
+    <color name="cyber_mzazi_success">#2E7D5B</color>
+
+    <!-- White -->
     <color name="cyber_mzazi_white">#FFFFFF</color>
-    <color name="cyber_mzazi_hero_start">#5F10EA</color>
-    <color name="cyber_mzazi_hero_end">#9339FF</color>
-    <color name="cyber_mzazi_soft_purple">#E8D8FF</color>
-    <color name="cyber_mzazi_icon_dark">#362050</color>
-    <color name="cyber_mzazi_nav_idle">#5D5670</color>
+
+    <!-- Hero gradient (IMPORTANT CHANGE) -->
+    <color name="cyber_mzazi_hero_start">#0A1F44</color>
+    <color name="cyber_mzazi_hero_end">#1E3A8A</color>
+
+    <!-- Soft background tint -->
+    <color name="cyber_mzazi_soft_purple">#E3ECFF</color>
+
+    <!-- Icons -->
+    <color name="cyber_mzazi_icon_dark">#1E293B</color>
+
+    <!-- Nav -->
+    <color name="cyber_mzazi_nav_idle">#64748B</color>
 </resources>
