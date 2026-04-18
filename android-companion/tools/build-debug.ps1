@@ -15,12 +15,13 @@ $CacheRoot = Join-Path $env:LOCALAPPDATA "CyberMzaziAndroid"
 $GradleUserHome = Join-Path $CacheRoot "gradle-user-home"
 $ProjectCacheDir = Join-Path $CacheRoot "project-cache"
 $ProjectBuildDir = Join-Path $CacheRoot "project-build"
+$TempRoot = Join-Path $CacheRoot "tmp"
 $ExternalApkPath = Join-Path $ProjectBuildDir "app\outputs\apk\debug\app-debug.apk"
 
 if (-not (Test-Path $ToolsRoot)) {
     New-Item -ItemType Directory -Path $ToolsRoot | Out-Null
 }
-foreach ($Path in @($CacheRoot, $GradleUserHome, $ProjectCacheDir, $ProjectBuildDir)) {
+foreach ($Path in @($CacheRoot, $GradleUserHome, $ProjectCacheDir, $ProjectBuildDir, $TempRoot)) {
     if (-not (Test-Path $Path)) {
         New-Item -ItemType Directory -Path $Path | Out-Null
     }
@@ -60,7 +61,13 @@ if (-not (Test-Path $GradleExe)) {
 Push-Location $ProjectRoot
 try {
     $env:GRADLE_USER_HOME = $GradleUserHome
-    & $GradleExe "--project-cache-dir" $ProjectCacheDir "assembleDebug"
+    $env:TEMP = $TempRoot
+    $env:TMP = $TempRoot
+    $env:JAVA_TOOL_OPTIONS = "-Djava.io.tmpdir=$TempRoot"
+    & $GradleExe "--no-daemon" "--project-cache-dir" $ProjectCacheDir "assembleDebug"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Gradle build failed with exit code $LASTEXITCODE."
+    }
     if (Test-Path $ExternalApkPath) {
         Write-Host "APK ready at $ExternalApkPath"
     }

@@ -37,6 +37,19 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginStart="12dp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/headerLogo"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/cyber_mzazi_logo" />
         </LinearLayout>
 
         <!-- CONTENT -->
@@ -61,14 +74,14 @@
 
                     <EditText
                         android:id="@+id/baseUrlInput"
-                        android:hint="Base URL"
+                        android:hint="@string/base_url_hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_input"/>
 
                     <EditText
                         android:id="@+id/tokenInput"
-                        android:hint="Token"
+                        android:hint="@string/token_hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_input"
@@ -76,7 +89,7 @@
 
                     <EditText
                         android:id="@+id/deviceNameInput"
-                        android:hint="Device Name"
+                        android:hint="@string/device_name_hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_input"
@@ -84,14 +97,14 @@
 
                     <Button
                         android:id="@+id/saveButton"
-                        android:text="Save"
+                        android:text="@string/save_settings"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"/>
 
                     <Button
                         android:id="@+id/scanQrButton"
-                        android:text="Scan QR"
+                        android:text="@string/scan_pairing_qr"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
@@ -108,15 +121,23 @@
 
                     <Button
                         android:id="@+id/sendTestButton"
-                        android:text="Send Test"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/send_test_payload"/>
 
                     <Button
                         android:id="@+id/retryQueueButton"
-                        android:text="Retry Queue"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/retry_queue"/>
 
                     <Button
                         android:id="@+id/notificationAccessButton"
-                        android:text="Notification Access"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/open_notification_access"/>
                 </LinearLayout>
 
                 <!-- Filters -->
@@ -131,15 +152,18 @@
 
                     <EditText
                         android:id="@+id/allowedPackagesInput"
-                        android:hint="Allowed Packages"
+                        android:hint="@string/allow_packages_hint"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_input"/>
 
                     <EditText
                         android:id="@+id/blockedPackagesInput"
-                        android:hint="Blocked Packages"
+                        android:hint="@string/block_packages_hint"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"/>
                 </LinearLayout>
 
                 <!-- Status -->
@@ -149,11 +173,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
-                    android:padding="16dp">
+                    android:padding="16dp"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/statusText"
-                        android:text="Status"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_status"
+                        android:text="@string/no_status_yet"/>
                 </LinearLayout>
 
                 <!-- Logs -->
@@ -163,11 +191,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
-                    android:padding="16dp">
+                    android:padding="16dp"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/recentLogText"
-                        android:text="Logs"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_status"
+                        android:text="@string/no_recent_logs"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -190,6 +222,15 @@
             android:textColor="@android:color/white"
             android:textStyle="bold"
             android:layout_marginBottom="16dp"/>
+
+        <ImageView
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="18dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/cyber_mzazi_logo" />
 
         <TextView android:id="@+id/menuHome" android:text="Home" style="@style/SidebarItem"/>
         <TextView android:id="@+id/menuCapture" android:text="Capture" style="@style/SidebarItem"/>

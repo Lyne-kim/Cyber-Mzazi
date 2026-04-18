@@ -6,9 +6,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_info"
+        android:icon="@drawable/cyber_mzazi_logo"
         android:label="@string/app_name"
-        android:roundIcon="@android:drawable/ic_dialog_info"
+        android:roundIcon="@drawable/cyber_mzazi_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.CyberMzaziCompanion">
 
