@@ -218,6 +218,8 @@
         android:padding="16dp">
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Menu"
             android:textColor="@android:color/white"
             android:textStyle="bold"
@@ -232,11 +234,36 @@
             android:contentDescription="@string/app_name"
             android:src="@drawable/cyber_mzazi_logo" />
 
-        <TextView android:id="@+id/menuHome" android:text="Home" style="@style/SidebarItem"/>
-        <TextView android:id="@+id/menuCapture" android:text="Capture" style="@style/SidebarItem"/>
-        <TextView android:id="@+id/menuFilters" android:text="Filters" style="@style/SidebarItem"/>
-        <TextView android:id="@+id/menuStatus" android:text="Status" style="@style/SidebarItem"/>
-        <TextView android:id="@+id/menuLog" android:text="Logs" style="@style/SidebarItem"/>
+        <TextView
+            android:id="@+id/menuHome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Home"
+            style="@style/SidebarItem"/>
+        <TextView
+            android:id="@+id/menuCapture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Capture"
+            style="@style/SidebarItem"/>
+        <TextView
+            android:id="@+id/menuFilters"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Filters"
+            style="@style/SidebarItem"/>
+        <TextView
+            android:id="@+id/menuStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status"
+            style="@style/SidebarItem"/>
+        <TextView
+            android:id="@+id/menuLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logs"
+            style="@style/SidebarItem"/>
 
     </LinearLayout>
 
