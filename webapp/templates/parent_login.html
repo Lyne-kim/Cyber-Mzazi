@@ -1,36 +1,61 @@
 {% extends "base.html" %}
-{% block title %}Parent Login | Cyber Mzazi{% endblock %}
+{% block title %}Parent/Guardian Login | Cyber Mzazi{% endblock %}
+{% block body_class %}auth-screen{% endblock %}
+{% block page_header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
 {% block content %}
-<section class="hero-card">
-  <div>
-    <p class="eyebrow">Parent Portal</p>
-    <h2>Sign in to the parent dashboard</h2>
-    <p class="muted">Review alerts, activity summaries, and safety settings from the parent workspace.</p>
+<section class="auth-view">
+  <div class="auth-card-shell">
+    <form class="auth-card" method="post">
+      <p class="auth-brand">Cyber Mzazi</p>
+      <h2>Parent/Guardian Login</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="auth-alert-stack">
+            {% for category, message in messages %}
+              <p class="auth-alert auth-alert-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <label>
+        Parent/Guardian email or phone
+        <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or request.form.get('identifier', '') }}" required>
+      </label>
+      <label>
+        Password
+        <div class="password-field">
+          <input id="parent-password" type="password" name="password" required>
+          <button class="password-toggle" type="button" data-target="parent-password" aria-label="Show password">Show</button>
+        </div>
+      </label>
+      <button class="button auth-submit" type="submit">Login</button>
+      <a class="button auth-secondary" href="{{ url_for('auth.register') }}">Register Family Account</a>
+      <p class="auth-footnote">Child device? <a href="{{ url_for('auth.child_login') }}">Open child login</a>.</p>
+    </form>
+
+    <form class="auth-card auth-card-secondary" method="post" action="{{ url_for('auth.resend_verification') }}">
+      <h3>Resend Verification Email</h3>
+      <label>
+        Parent/Guardian email
+        <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
+      </label>
+      <button class="button ghost auth-secondary-action" type="submit">Send Verification Email Again</button>
+    </form>
   </div>
-  <a class="button ghost" href="{{ url_for('auth.child_login') }}">Child login</a>
 </section>
-
-<section class="single-auth-shell">
-  <form class="panel auth-panel" method="post">
-    <h3>Parent login</h3>
-    <label>
-      Email or phone
-      <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or '' }}" required>
-    </label>
-    <label>
-      Password
-      <input type="password" name="password" required>
-    </label>
-    <button class="button" type="submit">Open parent dashboard</button>
-  </form>
-
-  <form class="panel auth-panel" method="post" action="{{ url_for('auth.resend_verification') }}">
-    <h3>Resend verification email</h3>
-    <label>
-      Parent email
-      <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
-    </label>
-    <button class="button ghost" type="submit">Send verification email again</button>
-  </form>
-</section>
+{% endblock %}
+{% block page_scripts %}
+<script>
+  document.querySelectorAll(".password-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.target);
+      if (!input) return;
+      const nextType = input.type === "password" ? "text" : "password";
+      input.type = nextType;
+      button.textContent = nextType === "password" ? "Show" : "Hide";
+      button.setAttribute("aria-label", nextType === "password" ? "Show password" : "Hide password");
+    });
+  });
+</script>
 {% endblock %}

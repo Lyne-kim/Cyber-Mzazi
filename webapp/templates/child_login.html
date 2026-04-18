@@ -1,31 +1,55 @@
 {% extends "base.html" %}
 {% block title %}Child Login | Cyber Mzazi{% endblock %}
+{% block body_class %}auth-screen{% endblock %}
+{% block page_header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
 {% block content %}
-<section class="hero-card">
-  <div>
-    <p class="eyebrow">Child Portal</p>
-    <h2>Sign in to the child safety app</h2>
-    <p class="muted">Use the child account together with the parent contact so the right family safety workspace opens.</p>
+<section class="auth-view child-auth-view">
+  <div class="auth-card-shell">
+    <form class="auth-card auth-card-child" method="post">
+      <p class="auth-brand">Cyber Mzazi</p>
+      <h2>Child Login</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="auth-alert-stack">
+            {% for category, message in messages %}
+              <p class="auth-alert auth-alert-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <label>
+        Parent/Guardian email or phone
+        <input type="text" name="parent_contact" placeholder="parent@example.com or 0712345678" value="{{ request.form.get('parent_contact', '') }}" required>
+      </label>
+      <label>
+        Child username
+        <input type="text" name="child_username" placeholder="child-account" value="{{ request.form.get('child_username', '') }}" required>
+      </label>
+      <label>
+        Password
+        <div class="password-field">
+          <input id="child-password" type="password" name="password" required>
+          <button class="password-toggle" type="button" data-target="child-password" aria-label="Show password">Show</button>
+        </div>
+      </label>
+      <button class="button auth-submit child-submit" type="submit">Login</button>
+      <p class="auth-footnote">Need parent/guardian access? <a href="{{ url_for('auth.parent_login') }}">Open parent/guardian login</a>.</p>
+    </form>
   </div>
-  <a class="button ghost" href="{{ url_for('auth.parent_login') }}">Parent login</a>
 </section>
-
-<section class="single-auth-shell">
-  <form class="panel auth-panel child-panel" method="post">
-    <h3>Child login</h3>
-    <label>
-      Parent email or phone
-      <input type="text" name="parent_contact" placeholder="Parent contact" required>
-    </label>
-    <label>
-      Child username
-      <input type="text" name="child_username" placeholder="child-account" required>
-    </label>
-    <label>
-      Password
-      <input type="password" name="password" required>
-    </label>
-    <button class="button accent" type="submit">Open child app</button>
-  </form>
-</section>
+{% endblock %}
+{% block page_scripts %}
+<script>
+  document.querySelectorAll(".password-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.target);
+      if (!input) return;
+      const nextType = input.type === "password" ? "text" : "password";
+      input.type = nextType;
+      button.textContent = nextType === "password" ? "Show" : "Hide";
+      button.setAttribute("aria-label", nextType === "password" ? "Show password" : "Hide password");
+    });
+  });
+</script>
 {% endblock %}

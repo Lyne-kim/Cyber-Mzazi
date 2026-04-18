@@ -1,43 +1,59 @@
 {% extends "base.html" %}
 {% block title %}Create Family | Cyber Mzazi{% endblock %}
+{% block body_class %}auth-screen{% endblock %}
+{% block page_header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
 {% block content %}
-<form class="panel wide-form" method="post">
-  <div class="section-heading">
-    <p class="eyebrow">Setup</p>
-    <h2>Create a parent and child portal</h2>
-  </div>
+<section class="auth-view">
+  <div class="auth-card-shell auth-card-shell-wide">
+    <form class="auth-card auth-card-wide" method="post">
+      <p class="auth-brand">Cyber Mzazi</p>
+      <h2>Create Family Workspace</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="auth-alert-stack">
+            {% for category, message in messages %}
+              <p class="auth-alert auth-alert-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-  <div class="form-grid">
-    <label>
-      Family name
-      <input type="text" name="family_name" placeholder="Mwangi family" required>
-    </label>
-    <label>
-      Parent full name
-      <input type="text" name="parent_name" placeholder="Jane Mwangi" required>
-    </label>
-    <label>
-      Parent email or phone
-      <input type="text" name="parent_contact" placeholder="jane@example.com or 0712345678" required>
-    </label>
-    <p class="muted">If the parent uses an email address, Cyber Mzazi sends a verification link before the parent can sign in.</p>
-    <label>
-      Parent password
-      <input type="password" name="parent_password" required>
-    </label>
-    <label>
-      Child display name
-      <input type="text" name="child_name" placeholder="Kevin" required>
-    </label>
-    <label>
-      Child username
-      <input type="text" name="child_username" placeholder="kevin-home" required>
-    </label>
-    <label>
-      Child password
-      <input type="password" name="child_password" required>
-    </label>
+      <div class="form-grid auth-form-grid">
+        <label>
+          Family name
+          <input type="text" name="family_name" placeholder="Mwangi family" value="{{ request.form.get('family_name', '') }}" required>
+        </label>
+        <label>
+          Parent/Guardian full name
+          <input type="text" name="parent_name" placeholder="Jane Mwangi" value="{{ request.form.get('parent_name', '') }}" required>
+        </label>
+        <label>
+          Parent/Guardian email or phone
+          <input type="text" name="parent_contact" placeholder="jane@example.com or 0712345678" value="{{ request.form.get('parent_contact', '') }}" required>
+        </label>
+        <label>
+          Parent/Guardian password
+          <input type="password" name="parent_password" required>
+        </label>
+        <label>
+          Child display name
+          <input type="text" name="child_name" placeholder="Kevin" value="{{ request.form.get('child_name', '') }}" required>
+        </label>
+        <label>
+          Child username
+          <input type="text" name="child_username" placeholder="kevin-home" value="{{ request.form.get('child_username', '') }}" required>
+        </label>
+        <label>
+          Child password
+          <input type="password" name="child_password" required>
+        </label>
+      </div>
+
+      <p class="auth-footnote">If the parent/guardian uses an email address, Cyber Mzazi sends a verification link before first sign-in.</p>
+      <button class="button auth-submit" type="submit">Create Family Workspace</button>
+      <p class="auth-footnote">Already registered? <a href="{{ url_for('auth.parent_login') }}">Open parent/guardian login</a>.</p>
+    </form>
   </div>
-  <button class="button" type="submit">Create family workspace</button>
-</form>
+</section>
 {% endblock %}

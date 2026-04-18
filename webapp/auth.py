@@ -171,7 +171,7 @@ def parent_login():
     if request.method == "POST":
         user = _login_user_by_portal("parent", request.form)
         if not user:
-            flash("Parent login details were not recognised.", "danger")
+            flash("Invalid parent/guardian email, phone, or password.", "danger")
             return render_template("parent_login.html")
         if not user.can_log_in:
             flash(
@@ -256,7 +256,7 @@ def child_login():
     if request.method == "POST":
         user = _login_user_by_portal("child", request.form)
         if not user:
-            flash("Child login details were not recognised.", "danger")
+            flash("Invalid child login details. Check the parent/guardian contact, child username, or password.", "danger")
             return render_template("child_login.html")
 
         login_user(user)
