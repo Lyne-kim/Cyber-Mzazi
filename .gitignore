@@ -5,6 +5,7 @@ instance/
 .env
 android-companion/.tools/
 android-companion/.gradle/
+android-companion/build/
 android-companion/app/build/
 android-companion/local.properties
 ~$*
