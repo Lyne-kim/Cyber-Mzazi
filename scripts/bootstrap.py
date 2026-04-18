@@ -40,12 +40,21 @@ def collect_feedback_rows() -> list[dict]:
 def main() -> None:
     with app.app_context():
         ensure_runtime_schema()
-        print("Database tables are ready.")
+        print("Database tables are ready.", flush=True)
 
         artifact_path = Path(app.config["MODEL_ARTIFACT_PATH"])
         force_retrain = os.getenv("FORCE_MODEL_RETRAIN", "false").lower() == "true"
         if artifact_path.exists() and not force_retrain:
-            print("Model artifact already exists. Skipping retraining.")
+            print("Model artifact already exists. Skipping retraining.", flush=True)
+            return
+
+        if not artifact_path.exists() and not force_retrain:
+            print(
+                "Model artifact is missing. Skipping bootstrap retraining so the web "
+                "service can start. Commit the artifact files or set "
+                "FORCE_MODEL_RETRAIN=true for a one-time rebuild.",
+                flush=True,
+            )
             return
 
         metrics = train_and_save(
@@ -56,7 +65,8 @@ def main() -> None:
         )
         print(
             "Model training complete. "
-            f"Ensemble accuracy: {metrics['ensemble_accuracy']:.3f}"
+            f"Ensemble accuracy: {metrics['ensemble_accuracy']:.3f}",
+            flush=True,
         )
 
 

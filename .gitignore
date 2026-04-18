@@ -2,8 +2,6 @@
 __pycache__/
 *.pyc
 instance/
-artifacts/*.joblib
-artifacts/*.json
 .env
 android-companion/.tools/
 android-companion/.gradle/
