@@ -15,6 +15,19 @@
       "problemMatcher": []
     },
     {
+      "label": "Android: Build Release APK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/build-release.ps1"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Android: Install Debug APK",
       "type": "shell",
       "command": "powershell",
@@ -26,6 +39,19 @@
       ],
       "problemMatcher": [],
       "dependsOn": "Android: Build Debug APK"
+    },
+    {
+      "label": "Android: Install Release APK",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/install-release.ps1"
+      ],
+      "problemMatcher": [],
+      "dependsOn": "Android: Build Release APK"
     }
   ]
 }

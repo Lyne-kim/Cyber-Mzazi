@@ -8,4 +8,8 @@ android-companion/.gradle/
 android-companion/build/
 android-companion/app/build/
 android-companion/local.properties
+android-companion/keystore.properties
+android-companion/keys/
+*.jks
+*.keystore
 ~$*

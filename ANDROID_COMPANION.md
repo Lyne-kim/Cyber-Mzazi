@@ -62,7 +62,9 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-debug.ps1
 
 6. You can also use the included VS Code tasks:
 - `Android: Build Debug APK`
+- `Android: Build Release APK`
 - `Android: Install Debug APK`
+- `Android: Install Release APK`
 
 For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Realme/Vivo, Huawei/Honor, and similar Android brands, use:
 
@@ -106,9 +108,55 @@ For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Re
 - per-app allow and block filters
 - recent captured-notification log
 
+## Signed release APK flow
+
+1. Create a keystore folder:
+
+```powershell
+mkdir android-companion\keys
+```
+
+2. Generate a release keystore:
+
+```powershell
+keytool -genkeypair -v -keystore "android-companion\keys\cyber-mzazi-release.jks" -alias cyber_mzazi_release -keyalg RSA -keysize 2048 -validity 3650
+```
+
+3. Copy the signing template:
+
+```powershell
+copy android-companion\keystore.properties.example android-companion\keystore.properties
+```
+
+4. Edit `android-companion\keystore.properties` and set:
+- `storeFile`
+- `storePassword`
+- `keyAlias`
+- `keyPassword`
+
+5. Build the signed release APK:
+
+```powershell
+$env:ANDROID_SDK_ROOT="C:\Android\Sdk"
+powershell -ExecutionPolicy Bypass -File .\android-companion\tools\build-release.ps1 -GradleHomePath "C:\gradle\gradle-9.4.1"
+```
+
+6. The signed release APK will be written to:
+
+```text
+C:\Users\Admin\AppData\Local\CyberMzaziAndroid\project-build\app\outputs\apk\release\app-release.apk
+```
+
+7. If USB debugging is available, install it with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\android-companion\tools\install-release.ps1
+```
+
+`android-companion\keystore.properties` and your keystore file are ignored by Git and should stay private.
+
 ## Good next refinements
 
-- signed release APK pipeline
 - background retry using WorkManager
 - token rotation and revoke-all action from the parent dashboard
 - optional per-app risk sensitivity settings

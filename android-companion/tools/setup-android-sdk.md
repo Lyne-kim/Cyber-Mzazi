@@ -9,6 +9,7 @@ Use the Android SDK command-line tools plus VS Code.
 - Android Platform Tools
 - Android Platform 35
 - Android Build Tools 34.0.0
+- `keytool` from your JDK installation for signed release APKs
 
 ## Suggested setup on Windows
 
