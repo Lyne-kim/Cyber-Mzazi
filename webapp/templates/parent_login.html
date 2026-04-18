@@ -15,13 +15,22 @@
     <h3>Parent login</h3>
     <label>
       Email or phone
-      <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" required>
+      <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or '' }}" required>
     </label>
     <label>
       Password
       <input type="password" name="password" required>
     </label>
     <button class="button" type="submit">Open parent dashboard</button>
+  </form>
+
+  <form class="panel auth-panel" method="post" action="{{ url_for('auth.resend_verification') }}">
+    <h3>Resend verification email</h3>
+    <label>
+      Parent email
+      <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
+    </label>
+    <button class="button ghost" type="submit">Send verification email again</button>
   </form>
 </section>
 {% endblock %}

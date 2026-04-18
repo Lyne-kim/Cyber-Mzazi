@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
@@ -7,6 +9,10 @@ from sqlalchemy import or_
 from .extensions import db, login_manager
 from .models import Family, LogoutRequest, User
 from .services.audit import log_event
+from .services.email_verification import (
+    send_verification_email,
+    verify_email_token,
+)
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -102,6 +108,7 @@ def register():
             phone=parent_contact if "@" not in parent_contact else None,
             logout_requires_parent_approval=False,
             preferred_language="en",
+            email_verified="@" not in parent_contact,
         )
         parent_user.set_password(parent_password)
 
@@ -124,9 +131,31 @@ def register():
             "Family account created",
             subject_user_id=child_user.id,
         )
+        verification_message = None
+        verification_warning = None
+        if parent_user.requires_email_verification:
+            ok, message = send_verification_email(parent_user)
+            if ok:
+                verification_message = message
+                log_event(
+                    family.id,
+                    parent_user.id,
+                    "verification_email_sent",
+                    f"Verification email sent to {parent_user.email}",
+                )
+            else:
+                verification_warning = message
         db.session.commit()
 
-        flash("Family account created. Parent can sign in now.", "success")
+        if verification_message:
+            flash(
+                "Family account created. Check the parent email inbox to verify the account before signing in.",
+                "success",
+            )
+        else:
+            flash("Family account created. Parent can sign in now.", "success")
+        if verification_warning:
+            flash(verification_warning, "warning")
         return redirect(url_for("auth.parent_login"))
 
     return render_template("register.html")
@@ -144,6 +173,15 @@ def parent_login():
         if not user:
             flash("Parent login details were not recognised.", "danger")
             return render_template("parent_login.html")
+        if not user.can_log_in:
+            flash(
+                "Verify the parent email address before signing in. You can request a new verification email below.",
+                "warning",
+            )
+            return render_template(
+                "parent_login.html",
+                pending_identifier=user.email or user.phone or "",
+            )
 
         login_user(user)
         log_event(
@@ -157,6 +195,60 @@ def parent_login():
         return redirect(url_for("parent.dashboard"))
 
     return render_template("parent_login.html")
+
+
+@auth_bp.route("/verify-email/<token>")
+def verify_email(token: str):
+    user, error = verify_email_token(token)
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("auth.parent_login"))
+
+    if user.email_verified:
+        flash("Email address already verified. You can sign in now.", "info")
+        return redirect(url_for("auth.parent_login"))
+
+    user.email_verified = True
+    user.email_verified_at = datetime.utcnow()
+    db.session.add(user)
+    log_event(
+        user.family_id,
+        user.id,
+        "email_verified",
+        f"Parent email {user.email} verified",
+    )
+    db.session.commit()
+    flash("Email verified successfully. You can sign in now.", "success")
+    return redirect(url_for("auth.parent_login"))
+
+
+@auth_bp.route("/resend-verification", methods=["POST"])
+def resend_verification():
+    identifier = request.form.get("identifier", "").strip()
+    user = User.query.filter(
+        User.role == "parent", or_(User.email == identifier, User.phone == identifier)
+    ).first()
+    if user is None or not user.email:
+        flash("Enter the parent email address used during registration.", "danger")
+        return render_template("parent_login.html", pending_identifier=identifier)
+    if user.email_verified:
+        flash("That email is already verified. You can sign in now.", "info")
+        return redirect(url_for("auth.parent_login"))
+
+    ok, message = send_verification_email(user)
+    if ok:
+        log_event(
+            user.family_id,
+            user.id,
+            "verification_email_resent",
+            f"Verification email resent to {user.email}",
+        )
+        db.session.commit()
+        flash("Verification email sent again. Check the inbox and spam folder.", "success")
+    else:
+        db.session.rollback()
+        flash(message, "danger")
+    return render_template("parent_login.html", pending_identifier=identifier)
 
 
 @auth_bp.route("/login/child", methods=["GET", "POST"])

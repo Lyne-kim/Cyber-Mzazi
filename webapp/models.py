@@ -52,6 +52,9 @@ class User(UserMixin, TimestampMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     logout_requires_parent_approval = db.Column(db.Boolean, default=False, nullable=False)
     preferred_language = db.Column(db.String(8), nullable=False, default="en")
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    email_verified_at = db.Column(db.DateTime)
+    verification_email_sent_at = db.Column(db.DateTime)
 
     family = db.relationship("Family", back_populates="users")
     activity_logs = db.relationship(
@@ -78,6 +81,14 @@ class User(UserMixin, TimestampMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def requires_email_verification(self) -> bool:
+        return self.role == "parent" and bool(self.email)
+
+    @property
+    def can_log_in(self) -> bool:
+        return not self.requires_email_verification or self.email_verified
 
     @property
     def display_identifier(self) -> str:

@@ -18,6 +18,7 @@ from .models import (
     User,
 )
 from .services.audit import log_event
+from .services.email_verification import send_verification_email, verify_email_token
 from .services.family_context import get_selected_child, set_selected_child
 from .services.ml_service import get_classifier
 from .services.notification_devices import (
@@ -46,6 +47,8 @@ def _user_payload(user: User) -> dict:
         "username": user.username,
         "family_id": user.family_id,
         "preferred_language": user.preferred_language,
+        "email_verified": user.email_verified,
+        "requires_email_verification": user.requires_email_verification,
     }
 
 
@@ -291,6 +294,7 @@ def register_family():
         phone=parent_contact if "@" not in parent_contact else None,
         logout_requires_parent_approval=False,
         preferred_language="en",
+        email_verified="@" not in parent_contact,
     )
     parent_user.set_password(str(payload["parent_password"]))
 
@@ -313,6 +317,17 @@ def register_family():
         "Family account created via API",
         subject_user_id=child_user.id,
     )
+    verification_sent = False
+    verification_message = None
+    if parent_user.requires_email_verification:
+        verification_sent, verification_message = send_verification_email(parent_user)
+        if verification_sent:
+            log_event(
+                family.id,
+                parent_user.id,
+                "verification_email_sent",
+                f"Verification email sent to {parent_user.email} via API",
+            )
     db.session.commit()
 
     return (
@@ -327,6 +342,9 @@ def register_family():
                 },
                 "parent": _user_payload(parent_user),
                 "child": _user_payload(child_user),
+                "requires_email_verification": parent_user.requires_email_verification,
+                "email_verification_sent": verification_sent,
+                "email_delivery_message": verification_message,
             }
         ),
         201,
@@ -361,6 +379,11 @@ def login():
 
     if not user or not user.check_password(password):
         return _error("Invalid login details.", 401)
+    if portal == "parent" and not user.can_log_in:
+        return _error(
+            "Verify the parent email address before signing in. Request a new verification email if needed.",
+            403,
+        )
 
     login_user(user)
     log_event(
@@ -405,6 +428,62 @@ def logout():
     )
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@api_bp.post("/auth/resend-verification")
+def resend_verification():
+    payload = request.get_json(silent=True) or {}
+    identifier = str(payload.get("identifier", "")).strip()
+    if not identifier:
+        return _error("Parent email is required.")
+
+    user = User.query.filter(
+        User.role == "parent", or_(User.email == identifier, User.phone == identifier)
+    ).first()
+    if user is None or not user.email:
+        return _error("Parent email account was not found.", 404)
+    if user.email_verified:
+        return _error("That email is already verified.", 409)
+
+    ok, message = send_verification_email(user)
+    if not ok:
+        db.session.rollback()
+        return _error(message, 500)
+
+    log_event(
+        user.family_id,
+        user.id,
+        "verification_email_resent",
+        f"Verification email resent to {user.email} via API",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": message})
+
+
+@api_bp.post("/auth/verify-email")
+def verify_email():
+    payload = request.get_json(silent=True) or {}
+    token = str(payload.get("token", "")).strip()
+    if not token:
+        return _error("Verification token is required.")
+
+    user, error = verify_email_token(token)
+    if error:
+        return _error(error, 400)
+    if user.email_verified:
+        return jsonify({"ok": True, "message": "Email already verified.", "user": _user_payload(user)})
+
+    user.email_verified = True
+    user.email_verified_at = datetime.utcnow()
+    db.session.add(user)
+    log_event(
+        user.family_id,
+        user.id,
+        "email_verified",
+        f"Parent email {user.email} verified via API",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Email verified successfully.", "user": _user_payload(user)})
 
 
 @api_bp.get("/me")

@@ -36,11 +36,22 @@ class Config:
     LOGOUT_REQUEST_EXPIRY_MINUTES = int(
         os.getenv("LOGOUT_REQUEST_EXPIRY_MINUTES", "30")
     )
+    APP_BASE_URL = os.getenv("APP_BASE_URL", "").rstrip("/")
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
     ANDROID_COMPANION_DOWNLOAD_URL = os.getenv("ANDROID_COMPANION_DOWNLOAD_URL", "")
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
     MYSQL_SSL_CA_PATH = os.getenv("MYSQL_SSL_CA_PATH", "")
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "").strip()
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "").strip()
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
+    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "").strip()
+    EMAIL_VERIFICATION_MAX_AGE = int(
+        os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
+    )
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}
         if MYSQL_SSL_CA_PATH

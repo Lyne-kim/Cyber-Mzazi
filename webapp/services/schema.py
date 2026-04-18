@@ -21,6 +21,24 @@ def ensure_runtime_schema() -> None:
         )
 
     inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "email_verified"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN email_verified BOOLEAN DEFAULT FALSE")
+        )
+
+    inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "email_verified_at"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN email_verified_at DATETIME NULL")
+        )
+
+    inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "verification_email_sent_at"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN verification_email_sent_at DATETIME NULL")
+        )
+
+    inspector = inspect(db.engine)
     if "activity_log" in table_names and not _column_exists(inspector, "activity_log", "subject_user_id"):
         db.session.execute(
             text("ALTER TABLE activity_log ADD COLUMN subject_user_id INTEGER")
@@ -68,6 +86,12 @@ def ensure_runtime_schema() -> None:
         text(
             "UPDATE `user` SET preferred_language = 'en' "
             "WHERE preferred_language IS NULL OR preferred_language = ''"
+        )
+    )
+    db.session.execute(
+        text(
+            "UPDATE `user` SET email_verified = TRUE "
+            "WHERE role = 'parent' AND (email IS NULL OR email = '')"
         )
     )
     db.session.execute(
