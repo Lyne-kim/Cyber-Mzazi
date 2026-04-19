@@ -5,6 +5,8 @@ from flask import Blueprint, current_app, flash, jsonify, redirect, render_templ
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 
+from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title
+
 from .extensions import db
 from .models import (
     ActivityLog,
@@ -77,7 +79,7 @@ def _build_notification_items(selected_child, messages, logout_requests) -> list
                 "key": f"message-alert-{message.id}",
                 "type": "message_alert",
                 "severity": "danger",
-                "title": f"{message.predicted_label.title()} alert detected",
+                "title": f"{label_title(message.predicted_label)} alert detected",
                 "body": (
                     f"Cyber Mzazi flagged a third-party message for {child_name} "
                     f"from {message.source_platform.title()}."
@@ -192,6 +194,9 @@ def _parent_data() -> dict:
     high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
+    message_label_breakdown = label_summary_rows(
+        [message.predicted_label for message in messages if message.predicted_label and message.predicted_label != "safe"]
+    )
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
     notification_items = _build_notification_items(selected_child, messages, logout_requests)
     pending_android_link = None
@@ -243,6 +248,7 @@ def _parent_data() -> dict:
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
+        "message_label_breakdown": message_label_breakdown,
         "latest_sync": latest_sync,
         "notification_items": notification_items,
     }
@@ -534,6 +540,9 @@ def review_message(message_id: int):
     reviewed_label = request.form.get("reviewed_label", "").strip()
     if not reviewed_label:
         flash("Choose a reviewed label.", "warning")
+        return redirect(url_for("parent.alerts"))
+    if reviewed_label not in SUPPORTED_LABELS:
+        flash("Choose a valid reviewed label.", "warning")
         return redirect(url_for("parent.alerts"))
 
     record.reviewed_label = reviewed_label

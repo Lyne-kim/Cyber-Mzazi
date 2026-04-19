@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 load_dotenv()
 
 from app import app
+from ml.artifacts import transformer_artifact_exists
 from ml.train import train_and_save
 from webapp.extensions import db
 from webapp.models import MessageRecord
@@ -44,11 +45,11 @@ def main() -> None:
 
         artifact_path = Path(app.config["MODEL_ARTIFACT_PATH"])
         force_retrain = os.getenv("FORCE_MODEL_RETRAIN", "false").lower() == "true"
-        if artifact_path.exists() and not force_retrain:
+        if transformer_artifact_exists(artifact_path) and not force_retrain:
             print("Model artifact already exists. Skipping retraining.", flush=True)
             return
 
-        if not artifact_path.exists() and not force_retrain:
+        if not transformer_artifact_exists(artifact_path) and not force_retrain:
             print(
                 "Model artifact is missing. Skipping bootstrap retraining so the web "
                 "service can start. Commit the artifact files or set "
@@ -62,10 +63,16 @@ def main() -> None:
             app.config["MODEL_ARTIFACT_PATH"],
             app.config["MODEL_METRICS_PATH"],
             feedback_rows=collect_feedback_rows(),
+            model_name=app.config["TRANSFORMER_MODEL_NAME"],
+            epochs=app.config["TRANSFORMER_EPOCHS"],
+            batch_size=app.config["TRANSFORMER_BATCH_SIZE"],
+            max_length=app.config["TRANSFORMER_MAX_LENGTH"],
+            max_rows_per_label=app.config["TRAINING_MAX_ROWS_PER_LABEL"],
+            max_rows_per_source_label=app.config["TRAINING_MAX_ROWS_PER_SOURCE_LABEL"],
         )
         print(
             "Model training complete. "
-            f"Ensemble accuracy: {metrics['ensemble_accuracy']:.3f}",
+            f"Validation accuracy: {metrics['validation_accuracy']:.3f}",
             flush=True,
         )
 

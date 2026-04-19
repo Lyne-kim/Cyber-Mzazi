@@ -7,6 +7,8 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
 
+from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title, label_tone
+
 from .extensions import db
 from .models import (
     ActivityLog,
@@ -67,10 +69,13 @@ def _message_payload(message: MessageRecord) -> dict:
         "message_text": message.message_text,
         "capture_method": message.capture_method,
         "predicted_label": message.predicted_label,
+        "predicted_label_title": label_title(message.predicted_label),
+        "predicted_label_tone": label_tone(message.predicted_label),
         "predicted_confidence": message.predicted_confidence,
         "risk_indicators": message.risk_indicators,
         "verification_status": message.verification_status,
         "verification_label": message.verification_label,
+        "verification_label_title": label_title(message.verification_label),
         "verification_confidence": message.verification_confidence,
         "verification_notes": message.verification_notes,
         "reviewed_label": message.reviewed_label,
@@ -203,6 +208,9 @@ def _parent_page_payload() -> dict:
     high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
+    label_breakdown = label_summary_rows(
+        [message.predicted_label for message in messages if message.predicted_label and message.predicted_label != "safe"]
+    )
     latest_sync = activity_logs[0].created_at.isoformat() if activity_logs else None
     return {
         "children": [_user_payload(child) for child in children],
@@ -218,6 +226,7 @@ def _parent_page_payload() -> dict:
             "alert_count": alert_count,
             "high_risk_count": high_risk_count,
             "reviewed_count": reviewed_count,
+            "label_breakdown": label_breakdown,
             "latest_sync": latest_sync,
             "child_display_name": selected_child.name if selected_child else None,
             "android_device_count": len(linked_devices),
@@ -644,6 +653,8 @@ def review_message(message_id: int):
     reviewed_label = str(payload.get("reviewed_label", "")).strip()
     if not reviewed_label:
         return _error("Reviewed label is required.")
+    if reviewed_label not in SUPPORTED_LABELS:
+        return _error("Reviewed label is invalid.")
 
     record = MessageRecord.query.filter_by(
         id=message_id, family_id=current_user.family_id

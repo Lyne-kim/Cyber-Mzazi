@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 instance/
 .env
+artifacts/
 android-companion/.tools/
 android-companion/.gradle/
 android-companion/build/

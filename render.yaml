@@ -15,8 +15,20 @@ services:
       - key: SESSION_COOKIE_SAMESITE
         value: None
       - key: MODEL_ARTIFACT_PATH
-        value: /opt/render/project/src/artifacts/message_model.joblib
+        value: /opt/render/project/src/artifacts/message_model_stage3
       - key: MODEL_METRICS_PATH
         value: /opt/render/project/src/artifacts/training_metrics.json
+      - key: TRANSFORMER_MODEL_NAME
+        value: distilbert-base-multilingual-cased
+      - key: TRANSFORMER_EPOCHS
+        value: "2"
+      - key: TRANSFORMER_BATCH_SIZE
+        value: "8"
+      - key: TRANSFORMER_MAX_LENGTH
+        value: "160"
+      - key: TRAINING_MAX_ROWS_PER_LABEL
+        value: "120"
+      - key: TRAINING_MAX_ROWS_PER_SOURCE_LABEL
+        value: "60"
       - key: FORCE_MODEL_RETRAIN
         value: "false"

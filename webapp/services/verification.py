@@ -3,6 +3,8 @@ from __future__ import annotations
 import requests
 from flask import current_app
 
+from ml.labels import LABEL_HINTS
+
 
 def verify_message(text: str, predicted_label: str) -> dict:
     verifier_url = current_app.config.get("WEB_VERIFIER_URL")
@@ -36,12 +38,7 @@ def verify_message(text: str, predicted_label: str) -> dict:
             }
 
     lowered = text.lower()
-    heuristics = {
-        "betting": ["awin", "instant payout", "odds", "bet", "jackpot", "pesa"],
-        "sextortion": ["nudes", "expose", "leak", "send pics", "video yako"],
-        "grooming": ["don't tell", "secret", "sleep over", "trust me", "tuko sawa"],
-    }
-    for label, keywords in heuristics.items():
+    for label, keywords in LABEL_HINTS.items():
         if any(keyword in lowered for keyword in keywords):
             return {
                 "status": "local_heuristic",

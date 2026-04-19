@@ -96,6 +96,16 @@
           </div>
           <span class="info-chip">Why am I seeing this? Threat scores, manual flags, and sign-out approvals surface here for transparency.</span>
         </div>
+        {% if message_label_breakdown %}
+          <div class="label-summary-grid">
+            {% for item in message_label_breakdown %}
+              <article class="label-summary-card tone-{{ item.tone }}">
+                <span class="label-chip tone-{{ item.tone }}">{{ item.title }}</span>
+                <strong>{{ item.count }}</strong>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
         {% for message in messages %}
           <article class="message-card">
             <div class="message-topline">
@@ -103,8 +113,8 @@
               <span>{{ message.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
             </div>
             <p>{{ message.message_text }}</p>
-            <p class="meta">Model: {{ message.predicted_label }} ({{ "%.0f"|format(message.predicted_confidence * 100) }}%)</p>
-            <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+            <p class="meta">Model: <span class="label-chip tone-{{ label_tone(message.predicted_label) }}">{{ label_title(message.predicted_label) }}</span> ({{ "%.0f"|format(message.predicted_confidence * 100) }}%)</p>
+            <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / <span class="label-chip tone-{{ label_tone(message.verification_label) }}">{{ label_title(message.verification_label) }}</span>{% endif %}</p>
             <p class="meta">Indicators: {{ message.risk_indicators }}</p>
             {% if message.verification_notes %}
               <p class="meta">Notes: {{ message.verification_notes }}</p>
@@ -112,10 +122,9 @@
             <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
               <select name="reviewed_label">
                 <option value="">Review label</option>
-                <option value="safe">safe</option>
-                <option value="grooming">grooming</option>
-                <option value="betting">betting</option>
-                <option value="sextortion">sextortion</option>
+                {% for label in review_labels %}
+                  <option value="{{ label }}">{{ label }}</option>
+                {% endfor %}
               </select>
               <button class="button small" type="submit">Save review</button>
             </form>

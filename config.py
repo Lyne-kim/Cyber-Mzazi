@@ -1,8 +1,39 @@
 import os
+import re
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+def _default_dataset_path() -> str:
+    downloads_dataset_dir = Path.home() / "Downloads" / "datasets"
+    if downloads_dataset_dir.exists():
+        return str(downloads_dataset_dir)
+    return str(BASE_DIR / "dataset.csv")
+
+
+def _default_model_artifact_path() -> str:
+    artifacts_dir = BASE_DIR / "artifacts"
+    candidates = []
+    if artifacts_dir.exists():
+        for item in artifacts_dir.iterdir():
+            if (
+                item.is_dir()
+                and item.name.startswith("message_model")
+                and "backup" not in item.name
+                and (item / "config.json").exists()
+            ):
+                candidates.append(item)
+    if candidates:
+        def sort_key(path: Path) -> tuple[int, float]:
+            match = re.search(r"stage(\d+)$", path.name)
+            stage = int(match.group(1)) if match else 0
+            return (stage, path.stat().st_mtime)
+
+        candidates.sort(key=sort_key, reverse=True)
+        return str(candidates[0])
+    return str(artifacts_dir / "message_model")
 
 
 def _normalize_database_url(raw_url: str) -> str:
@@ -22,14 +53,27 @@ class Config:
         )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DATASET_PATH = os.getenv("DATASET_PATH", str(BASE_DIR / "dataset.csv"))
+    DATASET_PATH = os.getenv("DATASET_PATH", _default_dataset_path())
     MODEL_ARTIFACT_PATH = os.getenv(
         "MODEL_ARTIFACT_PATH",
-        str(BASE_DIR / "artifacts" / "message_model.joblib"),
+        _default_model_artifact_path(),
     )
     MODEL_METRICS_PATH = os.getenv(
         "MODEL_METRICS_PATH",
         str(BASE_DIR / "artifacts" / "training_metrics.json"),
+    )
+    TRANSFORMER_MODEL_NAME = os.getenv(
+        "TRANSFORMER_MODEL_NAME",
+        "distilbert-base-multilingual-cased",
+    ).strip()
+    TRANSFORMER_MAX_LENGTH = int(os.getenv("TRANSFORMER_MAX_LENGTH", "160"))
+    TRANSFORMER_EPOCHS = int(os.getenv("TRANSFORMER_EPOCHS", "2"))
+    TRANSFORMER_BATCH_SIZE = int(os.getenv("TRANSFORMER_BATCH_SIZE", "8"))
+    TRAINING_MAX_ROWS_PER_LABEL = int(
+        os.getenv("TRAINING_MAX_ROWS_PER_LABEL", "180")
+    )
+    TRAINING_MAX_ROWS_PER_SOURCE_LABEL = int(
+        os.getenv("TRAINING_MAX_ROWS_PER_SOURCE_LABEL", "80")
     )
     WEB_VERIFIER_URL = os.getenv("WEB_VERIFIER_URL", "")
     WEB_VERIFIER_TOKEN = os.getenv("WEB_VERIFIER_TOKEN", "")

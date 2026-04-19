@@ -4,6 +4,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from config import Config
+from ml.labels import SUPPORTED_LABELS, label_title, label_tone
 from ml.train import train_and_save
 
 from .api import api_bp
@@ -38,6 +39,9 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             "t": t,
             "ui_language": get_language(),
             "supported_languages": SUPPORTED_LANGUAGES,
+            "review_labels": SUPPORTED_LABELS,
+            "label_title": label_title,
+            "label_tone": label_tone,
         }
 
     @app.cli.command("train-models")
@@ -61,10 +65,15 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             app.config["MODEL_ARTIFACT_PATH"],
             app.config["MODEL_METRICS_PATH"],
             feedback_rows=feedback_rows,
+            model_name=app.config["TRANSFORMER_MODEL_NAME"],
+            epochs=app.config["TRANSFORMER_EPOCHS"],
+            batch_size=app.config["TRANSFORMER_BATCH_SIZE"],
+            max_length=app.config["TRANSFORMER_MAX_LENGTH"],
+            max_rows_per_label=app.config["TRAINING_MAX_ROWS_PER_LABEL"],
+            max_rows_per_source_label=app.config["TRAINING_MAX_ROWS_PER_SOURCE_LABEL"],
         )
         print("Training complete.")
-        print(f"Linear accuracy: {metrics['linear_accuracy']:.3f}")
-        print(f"Random forest accuracy: {metrics['random_forest_accuracy']:.3f}")
-        print(f"Ensemble accuracy: {metrics['ensemble_accuracy']:.3f}")
+        print(f"Validation accuracy: {metrics['validation_accuracy']:.3f}")
+        print(f"Validation macro F1: {metrics['validation_macro_f1']:.3f}")
 
     return app
