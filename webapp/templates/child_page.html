@@ -92,7 +92,7 @@
     </section>
 
     {% if pending_logout %}
-      <section class="panel info-banner">
+      <section class="panel info-banner" data-auto-dismiss="15000">
         <strong>
           {% if pending_logout.status == 'approved' %}
             {{ t("Parent approval received") }}
@@ -121,8 +121,8 @@
             <p>If anything feels weird, you do not need to handle it alone.</p>
           </article>
           <article class="tip-card">
-            <strong>Feeling upset by a message? Tap Talk</strong>
-            <p>You can ask for help quickly and calmly.</p>
+            <strong>Use Safety Check if a message feels strange</strong>
+            <p>You can flag harmful messages quickly so your family dashboard is updated.</p>
           </article>
         </div>
 
@@ -134,18 +134,18 @@
               <p>{{ t("Safety Check") }}</p>
             </div>
           </a>
-          <a class="action-card" href="{{ url_for('child.talk') }}">
-            <span>&#128172;</span>
+          <a class="action-card" href="{{ url_for('child.my_safety') }}">
+            <span>&#128737;</span>
             <div>
-              <strong>I need to talk</strong>
-              <p>{{ t("Talk") }}</p>
+              <strong>See how Cyber Mzazi protects me</strong>
+              <p>{{ t("My Safety") }}</p>
             </div>
           </a>
-          <a class="action-card" href="{{ url_for('child.help_questions') }}">
-            <span>&#128218;</span>
+          <a class="action-card" href="{{ url_for('child.settings') }}">
+            <span>&#9881;</span>
             <div>
-              <strong>Learn about online safety</strong>
-              <p>{{ t("Help") }}</p>
+              <strong>Change language or request sign-out</strong>
+              <p>{{ t("Settings") }}</p>
             </div>
           </a>
         </div>
@@ -216,45 +216,6 @@
           </div>
         </div>
       </section>
-    {% elif page_key == "talk" %}
-      <section class="panel">
-        <p class="eyebrow">Talk to Grown-up</p>
-        <h3>{{ t("Talk") }}</h3>
-        <div class="child-quick-actions">
-          <article class="action-card">
-            <span>&#128172;</span>
-            <div>
-              <strong>Can we chat?</strong>
-              <p>Message: "Something online feels weird. Can we talk?"</p>
-            </div>
-          </article>
-          <article class="action-card">
-            <span>&#128680;</span>
-            <div>
-              <strong>Panic button</strong>
-              <p>Tap twice and hold to alert your grown-up quickly.</p>
-            </div>
-          </article>
-        </div>
-      </section>
-    {% elif page_key == "help" %}
-      <section class="panel">
-        <p class="eyebrow">{{ t("Help") }}</p>
-        <h3>{{ t("Help") }}</h3>
-        <ul class="simple-list">
-          <li>Why is this app here?</li>
-          <li>What happens after a safety check?</li>
-          <li>Who sees alerts?</li>
-        </ul>
-        <div class="wellness-card">
-          <strong>How are you feeling today?</strong>
-          <div class="mood-row">
-            <span>:-)</span>
-            <span>:-|</span>
-            <span>:-(</span>
-          </div>
-        </div>
-      </section>
     {% elif page_key == "settings" %}
       <section class="panel">
         <p class="eyebrow">{{ t("Settings") }}</p>
@@ -297,4 +258,42 @@
     </nav>
   </section>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+  <script>
+    (() => {
+      const dismissAfterDelay = (element, delayMs) => {
+        if (!element) {
+          return;
+        }
+        window.setTimeout(() => {
+          element.style.transition = "opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease";
+          element.style.opacity = "0";
+          element.style.transform = "translateY(-8px)";
+          element.style.maxHeight = `${element.offsetHeight}px`;
+          window.setTimeout(() => {
+            element.style.maxHeight = "0";
+            element.style.margin = "0";
+            element.style.paddingTop = "0";
+            element.style.paddingBottom = "0";
+            element.style.overflow = "hidden";
+          }, 20);
+          window.setTimeout(() => {
+            const parent = element.parentElement;
+            element.remove();
+            if (parent && parent.classList.contains("flash-stack") && parent.children.length === 0) {
+              parent.remove();
+            }
+          }, 340);
+        }, delayMs);
+      };
+
+      document.querySelectorAll(".flash-stack .flash").forEach((flash) => dismissAfterDelay(flash, 15000));
+      document.querySelectorAll("[data-auto-dismiss]").forEach((banner) => {
+        const delay = Number.parseInt(banner.dataset.autoDismiss || "15000", 10);
+        dismissAfterDelay(banner, Number.isFinite(delay) ? delay : 15000);
+      });
+    })();
+  </script>
 {% endblock %}

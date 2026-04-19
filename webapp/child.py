@@ -16,8 +16,6 @@ child_bp = Blueprint("child", __name__, url_prefix="/child")
 CHILD_NAV_ITEMS = [
     {"endpoint": "child.dashboard", "icon": "&#127968;", "label": "Home", "key": "home"},
     {"endpoint": "child.my_safety", "icon": "&#128737;", "label": "My Safety", "key": "my_safety"},
-    {"endpoint": "child.talk", "icon": "&#128172;", "label": "Talk", "key": "talk"},
-    {"endpoint": "child.help_questions", "icon": "&#10067;", "label": "Help", "key": "help"},
     {"endpoint": "child.settings", "icon": "&#9881;", "label": "Settings", "key": "settings"},
 ]
 
@@ -76,12 +74,12 @@ def my_safety():
 
 @child_bp.route("/talk")
 def talk():
-    return _render_child_page("talk", "Talk to Grown-up")
+    return redirect(url_for("child.dashboard"))
 
 
 @child_bp.route("/help")
 def help_questions():
-    return _render_child_page("help", "Help & Questions")
+    return redirect(url_for("child.dashboard"))
 
 
 @child_bp.route("/settings")
