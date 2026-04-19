@@ -4,10 +4,17 @@
 {% block page_header %}{% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block content %}
-<section class="auth-view">
+<section class="auth-view auth-view-cyber">
   <div class="auth-card-shell">
-    <form class="auth-card" method="post">
-      <p class="auth-brand">Cyber Mzazi</p>
+    <div class="auth-masthead">
+      <img class="auth-masthead-logo" src="{{ url_for('static', filename='cyber_mzazi_logo.png') }}" alt="Cyber Mzazi logo">
+      <div class="auth-masthead-copy">
+        <p class="auth-brand">Cyber Mzazi</p>
+        <p class="auth-tagline">Protecting families online</p>
+      </div>
+    </div>
+
+    <form class="auth-card auth-card-cyber" method="post">
       <h2>Parent/Guardian Login</h2>
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -18,29 +25,36 @@
           </div>
         {% endif %}
       {% endwith %}
-      <label>
-        Parent/Guardian email or phone
-        <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or request.form.get('identifier', '') }}" required>
+      <label class="auth-field">
+        <span class="auth-field-label">Parent/Guardian email or phone</span>
+        <div class="auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">✉</span>
+          <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or request.form.get('identifier', '') }}" required>
+        </div>
       </label>
-      <label>
-        Password
-        <div class="password-field">
+      <label class="auth-field">
+        <span class="auth-field-label">Password</span>
+        <div class="password-field auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">🔒</span>
           <input id="parent-password" type="password" name="password" required>
           <button class="password-toggle" type="button" data-target="parent-password" aria-label="Show password">Show</button>
         </div>
       </label>
-      <button class="button auth-submit" type="submit">Login</button>
-      <a class="button auth-secondary" href="{{ url_for('auth.register') }}">Register Family Account</a>
-      <p class="auth-footnote">Child device? <a href="{{ url_for('auth.child_login') }}">Open child login</a>.</p>
+      <button class="button auth-submit auth-submit-cyber" type="submit">Login</button>
+      <a class="button auth-secondary auth-secondary-cyber" href="{{ url_for('auth.register') }}">Register Family Account</a>
+      <p class="auth-footnote auth-footnote-cyber">Child device? <a class="auth-inline-link-button" href="{{ url_for('auth.child_login') }}">Open child login</a></p>
     </form>
 
-    <form class="auth-card auth-card-secondary" method="post" action="{{ url_for('auth.resend_verification') }}">
+    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.resend_verification') }}">
       <h3>Resend Verification Email</h3>
-      <label>
-        Parent/Guardian email
-        <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
+      <label class="auth-field">
+        <span class="auth-field-label">Parent/Guardian email</span>
+        <div class="auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">✉</span>
+          <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
+        </div>
       </label>
-      <button class="button ghost auth-secondary-action" type="submit">Send Verification Email Again</button>
+      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Verification Email Again</button>
     </form>
   </div>
 </section>
