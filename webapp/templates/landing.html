@@ -147,6 +147,28 @@
       background: rgba(255, 255, 255, 0.1);
     }
 
+    .landing-link-auth {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 22px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--landing-white);
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .landing-link-auth:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
     .landing-hero {
       position: relative;
       min-height: 100vh;
@@ -160,14 +182,49 @@
         radial-gradient(ellipse 90% 70% at 50% 25%, rgba(16, 185, 129, 0.2) 0%, transparent 60%),
         radial-gradient(ellipse 60% 50% at 15% 75%, rgba(56, 189, 248, 0.12) 0%, transparent 55%),
         radial-gradient(ellipse 60% 60% at 85% 65%, rgba(16, 185, 129, 0.08) 0%, transparent 55%),
+        linear-gradient(135deg, rgba(7, 18, 31, 0.88), rgba(10, 22, 40, 0.74)),
         var(--landing-bg);
     }
 
+    .landing-hero::before,
     .landing-hero::after {
       content: "";
       position: absolute;
       inset: 0;
+    }
+
+    .landing-hero::before {
+      background:
+        linear-gradient(90deg, rgba(56, 189, 248, 0.14) 0, rgba(56, 189, 248, 0.14) 1px, transparent 1px, transparent 120px),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 120px 120px, 100% 100px;
+      opacity: 0.26;
+      mix-blend-mode: screen;
+    }
+
+    .landing-hero::after {
       background: linear-gradient(to bottom, rgba(13, 21, 32, 0.2), rgba(13, 21, 32, 0.65) 60%, var(--landing-bg) 100%);
+    }
+
+    .landing-hero-art {
+      position: absolute;
+      inset: 84px 0 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .landing-hero-art img {
+      width: min(72vw, 780px);
+      max-width: none;
+      opacity: 0.16;
+      filter: blur(1.5px) saturate(0.75);
+      transform: translateY(10px);
+      border-radius: 44px;
+      box-shadow: 0 50px 120px rgba(0, 0, 0, 0.45);
     }
 
     .landing-hero-content {
@@ -227,7 +284,7 @@
       gap: 14px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: 40px;
+      margin-bottom: 18px;
     }
 
     .landing-microcopy {
@@ -235,6 +292,38 @@
       font-size: 0.84rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .landing-role-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 42px;
+    }
+
+    .landing-role-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 160px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      background: rgba(17, 29, 46, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.94rem;
+      font-weight: 700;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .landing-role-chip:hover {
+      transform: translateY(-2px);
+      background: rgba(25, 40, 60, 0.88);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--landing-white);
     }
 
     .landing-stats {
@@ -576,108 +665,150 @@
       .landing-nav {
         position: sticky;
         height: auto;
-        padding-top: 12px;
-        padding-bottom: 12px;
-        flex-direction: column;
-        align-items: stretch;
+        padding: 14px 16px;
         gap: 12px;
       }
 
       .landing-brand {
-        justify-content: center;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       .landing-brand img {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
       }
 
       .landing-brand-name strong {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
       }
 
       .landing-brand-name span {
-        font-size: 0.68rem;
+        font-size: 0.64rem;
+        letter-spacing: 0.06em;
       }
 
       .landing-nav-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-items: center;
+        display: flex;
+        flex: 0 0 auto;
         gap: 10px;
+        width: auto;
       }
 
-      .landing-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 42px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+      .landing-link-auth,
+      .landing-nav-actions .landing-button {
+        min-height: 48px;
+        padding: 0 18px;
+        font-size: 0.9rem;
+        border-radius: 14px;
       }
 
       .landing-hero {
-        min-height: auto;
-        padding-top: 38px;
-        padding-bottom: 40px;
+        min-height: 100svh;
+        padding: 108px 18px 36px;
+        align-items: flex-start;
+        text-align: center;
       }
 
       .landing-hero-content {
         max-width: 100%;
+        width: 100%;
+        padding-top: 88px;
       }
 
       .landing-pill {
-        display: none;
+        margin-bottom: 22px;
+        padding: 9px 18px;
+        font-size: 0.76rem;
+        color: rgba(255, 255, 255, 0.88);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(10px);
+      }
+
+      .landing-pill-dot {
+        background: var(--landing-green);
+      }
+
+      .landing-hero-art {
+        inset: 78px -40px 0;
+        align-items: flex-start;
+      }
+
+      .landing-hero-art img {
+        width: 148%;
+        opacity: 0.22;
+        filter: blur(0.8px) saturate(0.85);
+        transform: translateY(0);
       }
 
       .landing-hero h1 {
-        font-size: clamp(2.05rem, 9.4vw, 2.95rem);
-        line-height: 1.02;
+        font-size: clamp(3rem, 10vw, 4rem);
+        line-height: 0.98;
         letter-spacing: -0.04em;
-        margin-bottom: 14px;
+        margin-bottom: 20px;
       }
 
       .landing-hero p {
-        max-width: 34rem;
-        margin-bottom: 22px;
-        font-size: 0.92rem;
-        line-height: 1.55;
+        max-width: 22rem;
+        margin-bottom: 26px;
+        font-size: 0.94rem;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.82);
       }
 
-      .landing-button-row,
-      .landing-nav-actions {
+      .landing-button-row {
         width: 100%;
       }
 
       .landing-button-row {
-        gap: 10px;
-        margin-bottom: 24px;
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 18px;
       }
 
       .landing-button,
       .landing-button-secondary {
         width: 100%;
-        min-height: 54px;
-        padding-top: 12px;
-        padding-bottom: 12px;
-        font-size: 0.95rem;
+        min-height: 62px;
+        padding-top: 14px;
+        padding-bottom: 14px;
+        font-size: 0.98rem;
+        border-radius: 18px;
+        backdrop-filter: blur(12px);
       }
 
-      .landing-nav-actions .landing-button {
-        grid-column: 1 / -1;
+      .landing-button-secondary {
+        background: rgba(15, 23, 42, 0.52);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      .landing-role-row {
+        margin-bottom: 28px;
+      }
+
+      .landing-role-chip {
+        min-width: 0;
+        flex: 1 1 0;
+        min-height: 44px;
+        font-size: 0.88rem;
+        border-radius: 13px;
       }
 
       .landing-microcopy {
-        max-width: 20rem;
+        max-width: none;
         margin: 0 auto;
         font-size: 0.7rem;
         line-height: 1.45;
         letter-spacing: 0.06em;
+        opacity: 0.75;
       }
 
       .landing-stats {
-        padding-top: 32px;
+        margin-top: -1px;
+        padding-top: 28px;
         padding-bottom: 32px;
       }
 
@@ -718,17 +849,19 @@
       </span>
     </a>
     <div class="landing-nav-actions">
-      <a class="landing-link" href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
-      <a class="landing-link" href="{{ url_for('auth.child_login') }}">Child</a>
-      <a class="landing-button" href="{{ url_for('auth.register') }}">Create Family Account</a>
+      <a class="landing-link-auth" href="{{ url_for('auth.parent_login') }}">Sign In</a>
+      <a class="landing-button" href="{{ url_for('auth.register') }}">Get Started</a>
     </div>
   </nav>
 
   <section class="landing-hero">
+    <div class="landing-hero-art" aria-hidden="true">
+      <img src="{{ url_for('static', filename='cyber_mzazi_logo.png') }}" alt="">
+    </div>
     <div class="landing-hero-content">
       <div class="landing-pill">
         <span class="landing-pill-dot"></span>
-        Consent-based family monitoring and safety alerts
+        Family safety platform &bull; consent-led alerts and visibility
       </div>
       <h1>
         Keep <span class="landing-highlight">Families Safer</span>
@@ -739,8 +872,12 @@
         support children with a guided app experience, and coordinate through a secure Android companion workflow.
       </p>
       <div class="landing-button-row">
-        <a class="landing-button" href="{{ url_for('auth.parent_login') }}">Open Parent/Guardian Login</a>
-        <a class="landing-button-secondary" href="{{ url_for('auth.child_login') }}">Open Child Login</a>
+        <a class="landing-button" href="{{ url_for('auth.register') }}">Create Family Account &rarr;</a>
+        <a class="landing-button-secondary" href="{{ url_for('auth.parent_login') }}">Sign In &rarr;</a>
+      </div>
+      <div class="landing-role-row">
+        <a class="landing-role-chip" href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
+        <a class="landing-role-chip" href="{{ url_for('auth.child_login') }}">Child</a>
       </div>
       <div class="landing-microcopy">Consent-led &bull; Multi-device &bull; Real-time family safety workflows</div>
     </div>
