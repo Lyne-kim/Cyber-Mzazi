@@ -707,21 +707,25 @@
 
       .landing-hero {
         min-height: 100svh;
-        padding: 108px 18px 36px;
+        padding: 34px 18px 34px;
         align-items: flex-start;
         text-align: center;
+        background:
+          radial-gradient(circle at 50% 18%, rgba(16, 185, 129, 0.16), transparent 34%),
+          radial-gradient(circle at 75% 30%, rgba(56, 189, 248, 0.14), transparent 30%),
+          linear-gradient(180deg, rgba(8, 18, 31, 0.96) 0%, rgba(8, 18, 31, 0.86) 36%, rgba(8, 18, 31, 0.94) 100%);
       }
 
       .landing-hero-content {
         max-width: 100%;
         width: 100%;
-        padding-top: 88px;
+        padding-top: 28px;
       }
 
       .landing-pill {
-        margin-bottom: 22px;
-        padding: 9px 18px;
-        font-size: 0.76rem;
+        margin-bottom: 18px;
+        padding: 8px 16px;
+        font-size: 0.72rem;
         color: rgba(255, 255, 255, 0.88);
         background: rgba(255, 255, 255, 0.08);
         border-color: rgba(255, 255, 255, 0.18);
@@ -733,29 +737,21 @@
       }
 
       .landing-hero-art {
-        inset: 78px -40px 0;
-        align-items: flex-start;
-      }
-
-      .landing-hero-art img {
-        width: 148%;
-        opacity: 0.22;
-        filter: blur(0.8px) saturate(0.85);
-        transform: translateY(0);
+        display: none;
       }
 
       .landing-hero h1 {
-        font-size: clamp(3rem, 10vw, 4rem);
-        line-height: 0.98;
+        font-size: clamp(2.7rem, 9.5vw, 3.5rem);
+        line-height: 0.96;
         letter-spacing: -0.04em;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       .landing-hero p {
-        max-width: 22rem;
-        margin-bottom: 26px;
-        font-size: 0.94rem;
-        line-height: 1.7;
+        max-width: 20rem;
+        margin-bottom: 22px;
+        font-size: 0.9rem;
+        line-height: 1.62;
         color: rgba(255, 255, 255, 0.82);
       }
 
@@ -786,7 +782,7 @@
       }
 
       .landing-role-row {
-        margin-bottom: 28px;
+        margin-bottom: 22px;
       }
 
       .landing-role-chip {
@@ -800,7 +796,7 @@
       .landing-microcopy {
         max-width: none;
         margin: 0 auto;
-        font-size: 0.7rem;
+        font-size: 0.66rem;
         line-height: 1.45;
         letter-spacing: 0.06em;
         opacity: 0.75;
