@@ -22,7 +22,6 @@ from .models import (
 from .services.audit import log_event
 from .services.email_verification import send_verification_email, verify_email_token
 from .services.family_context import get_selected_child, set_selected_child
-from .services.ml_service import get_classifier
 from .services.notification_devices import (
     issue_ingestion_token,
     touch_ingestion_device,
@@ -31,6 +30,11 @@ from .services.notification_devices import (
 from .services.parent_alerts import (
     send_high_risk_message_alert,
     send_logout_request_alert,
+)
+from .services.prediction_service import (
+    PredictionUnavailable,
+    predict_message,
+    prediction_backend_status,
 )
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
@@ -261,12 +265,14 @@ def _child_page_payload() -> dict:
 
 @api_bp.get("/health")
 def health():
-    classifier = get_classifier()
+    backend = prediction_backend_status()
     return jsonify(
         {
             "ok": True,
             "service": "cyber-mzazi-api",
-            "model_loaded": classifier is not None,
+            "model_loaded": backend["model_loaded"],
+            "model_provider": backend["provider"],
+            "model_endpoint": backend["endpoint"],
         }
     )
 
@@ -886,10 +892,6 @@ def ingest_android_notification():
     if device is None:
         return _error("Valid device ingestion token is required.", 401)
 
-    classifier = get_classifier()
-    if classifier is None:
-        return _error("Model is not ready.", 503)
-
     payload = request.get_json(silent=True) or {}
     message_text = str(payload.get("message_text") or payload.get("notification_text", "")).strip()
     source_platform = str(payload.get("source_platform") or payload.get("app_name", "")).strip() or "social media"
@@ -901,8 +903,11 @@ def ingest_android_notification():
     if not message_text:
         return _error("message_text or notification_text is required.")
 
-    prediction = classifier.predict(message_text)
-    verification = verify_message(message_text, prediction["label"])
+    try:
+        prediction = predict_message(message_text)
+    except PredictionUnavailable as exc:
+        return _error(str(exc), 503)
+    verification = verify_message(message_text, prediction.label)
 
     record = MessageRecord(
         family_id=device.family_id,
@@ -914,9 +919,9 @@ def ingest_android_notification():
         notification_title=notification_title,
         message_text=message_text,
         capture_method="android_notification",
-        predicted_label=prediction["label"],
-        predicted_confidence=prediction["confidence"],
-        risk_indicators=prediction["risk_indicators"],
+        predicted_label=prediction.label,
+        predicted_confidence=prediction.confidence,
+        risk_indicators=prediction.risk_indicators,
         verification_status=verification["status"],
         verification_label=verification["label"],
         verification_confidence=verification["confidence"],
@@ -1022,10 +1027,6 @@ def submit_message():
     if current_user.role != "child":
         return _error("Child access only.", 403)
 
-    classifier = get_classifier()
-    if classifier is None:
-        return _error("Train the model first with `flask train-models`.", 503)
-
     payload = request.get_json(silent=True) or {}
     message_text = str(payload.get("message_text", "")).strip()
     source_platform = str(payload.get("source_platform", "social media")).strip() or "social media"
@@ -1035,8 +1036,11 @@ def submit_message():
     if not message_text:
         return _error("Message text is required.")
 
-    prediction = classifier.predict(message_text)
-    verification = verify_message(message_text, prediction["label"])
+    try:
+        prediction = predict_message(message_text)
+    except PredictionUnavailable as exc:
+        return _error(str(exc), 503)
+    verification = verify_message(message_text, prediction.label)
 
     record = MessageRecord(
         family_id=current_user.family_id,
@@ -1045,9 +1049,9 @@ def submit_message():
         sender_handle=sender_handle,
         browser_origin=browser_origin,
         message_text=message_text,
-        predicted_label=prediction["label"],
-        predicted_confidence=prediction["confidence"],
-        risk_indicators=prediction["risk_indicators"],
+        predicted_label=prediction.label,
+        predicted_confidence=prediction.confidence,
+        risk_indicators=prediction.risk_indicators,
         verification_status=verification["status"],
         verification_label=verification["label"],
         verification_confidence=verification["confidence"],

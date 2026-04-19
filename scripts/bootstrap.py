@@ -48,7 +48,15 @@ def main() -> None:
 
         artifact_path = Path(app.config["MODEL_ARTIFACT_PATH"])
         artifact_url = app.config.get("MODEL_ARTIFACT_URL", "").strip()
+        model_api_url = app.config.get("MODEL_API_URL", "").strip()
         force_retrain = os.getenv("FORCE_MODEL_RETRAIN", "false").lower() == "true"
+
+        if model_api_url:
+            print(
+                f"External model service configured at {model_api_url}. Skipping local model bootstrap.",
+                flush=True,
+            )
+            return
 
         if artifact_url and not transformer_artifact_exists(artifact_path):
             print(

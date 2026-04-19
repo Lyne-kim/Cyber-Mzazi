@@ -4,8 +4,8 @@ from flask_login import current_user, login_required
 from .extensions import db
 from .models import LogoutRequest, MessageRecord
 from .services.audit import log_event
-from .services.ml_service import get_classifier
 from .services.parent_alerts import send_high_risk_message_alert
+from .services.prediction_service import PredictionUnavailable, predict_message
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES
 
@@ -117,11 +117,6 @@ def set_language():
 
 @child_bp.post("/messages")
 def submit_message():
-    classifier = get_classifier()
-    if classifier is None:
-        flash("Train the model first with `flask train-models`.", "danger")
-        return redirect(url_for("child.report"))
-
     message_text = request.form.get("message_text", "").strip()
     source_platform = request.form.get("source_platform", "").strip() or "social media"
     sender_handle = request.form.get("sender_handle", "").strip()
@@ -131,8 +126,12 @@ def submit_message():
         flash("Enter a message before submitting.", "warning")
         return redirect(url_for("child.report"))
 
-    prediction = classifier.predict(message_text)
-    verification = verify_message(message_text, prediction["label"])
+    try:
+        prediction = predict_message(message_text)
+    except PredictionUnavailable as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("child.report"))
+    verification = verify_message(message_text, prediction.label)
 
     record = MessageRecord(
         family_id=current_user.family_id,
@@ -141,9 +140,9 @@ def submit_message():
         sender_handle=sender_handle,
         browser_origin=browser_origin,
         message_text=message_text,
-        predicted_label=prediction["label"],
-        predicted_confidence=prediction["confidence"],
-        risk_indicators=prediction["risk_indicators"],
+        predicted_label=prediction.label,
+        predicted_confidence=prediction.confidence,
+        risk_indicators=prediction.risk_indicators,
         verification_status=verification["status"],
         verification_label=verification["label"],
         verification_confidence=verification["confidence"],
