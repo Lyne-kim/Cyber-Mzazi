@@ -46,9 +46,9 @@ body.public-theme {
 
 body.public-theme.auth-screen {
   background:
-    radial-gradient(circle at top left, rgba(59, 149, 217, 0.08), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(54, 207, 115, 0.08), transparent 24%),
-    #f6f6f4;
+    radial-gradient(circle at top left, rgba(61, 145, 216, 0.18), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(31, 76, 120, 0.2), transparent 24%),
+    linear-gradient(145deg, #101924 0%, #121d2a 55%, #162434 100%);
 }
 
 .site-header,
