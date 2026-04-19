@@ -4,6 +4,7 @@ from urllib.parse import quote
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
 
 from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title
 
@@ -23,6 +24,8 @@ from .ui_text import SUPPORTED_LANGUAGES
 
 
 parent_bp = Blueprint("parent", __name__, url_prefix="/parent")
+
+MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
 
 PARENT_NAV_ITEMS = [
@@ -494,26 +497,43 @@ def attach_resource_documents():
         return redirect(url_for("parent.safety_resources"))
 
     saved_names = []
-    for upload in uploads:
-        binary_data = upload.read()
-        document = SafetyResourceDocument(
-            family_id=current_user.family_id,
-            uploaded_by_id=current_user.id,
-            filename=upload.filename,
-            content_type=upload.mimetype,
-            file_size=len(binary_data),
-            binary_data=binary_data,
-        )
-        db.session.add(document)
-        saved_names.append(upload.filename)
+    try:
+        for upload in uploads:
+            binary_data = upload.read()
+            if len(binary_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
+                flash(
+                    f"{upload.filename} is too large. Upload files up to 8 MB each.",
+                    "warning",
+                )
+                db.session.rollback()
+                return redirect(url_for("parent.safety_resources"))
+            document = SafetyResourceDocument(
+                family_id=current_user.family_id,
+                uploaded_by_id=current_user.id,
+                filename=upload.filename,
+                content_type=upload.mimetype,
+                file_size=len(binary_data),
+                binary_data=binary_data,
+            )
+            db.session.add(document)
+            saved_names.append(upload.filename)
 
-    log_event(
-        current_user.family_id,
-        current_user.id,
-        "resource_attachment_added",
-        f"Uploaded safety resource documents: {', '.join(saved_names)}",
-    )
-    db.session.commit()
+        log_event(
+            current_user.family_id,
+            current_user.id,
+            "resource_attachment_added",
+            f"Uploaded safety resource documents: {', '.join(saved_names)}",
+        )
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Failed to save safety resource documents")
+        flash(
+            "Documents could not be uploaded right now. Try a smaller file or retry in a moment.",
+            "danger",
+        )
+        return redirect(url_for("parent.safety_resources"))
+
     flash("Safety resource documents uploaded.", "success")
     return redirect(url_for("parent.safety_resources"))
 

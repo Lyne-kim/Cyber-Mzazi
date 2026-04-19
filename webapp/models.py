@@ -168,7 +168,7 @@ class SafetyResourceDocument(TimestampMixin, db.Model):
     filename = db.Column(db.String(255), nullable=False)
     content_type = db.Column(db.String(120))
     file_size = db.Column(db.Integer, nullable=False, default=0)
-    binary_data = db.Column(db.LargeBinary, nullable=False)
+    binary_data = db.Column(db.LargeBinary(length=16_777_215), nullable=False)
 
     family = db.relationship("Family", back_populates="safety_resource_documents")
     uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])

@@ -6,6 +6,7 @@ from urllib.parse import quote
 from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
 
 from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title, label_tone
 
@@ -41,6 +42,8 @@ from .ui_text import SUPPORTED_LANGUAGES, get_language
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
 
 def _error(message: str, status: int = 400):
@@ -796,27 +799,33 @@ def parent_upload_resource_documents():
 
     documents = []
     saved_names = []
-    for upload in uploads:
-        binary_data = upload.read()
-        document = SafetyResourceDocument(
-            family_id=current_user.family_id,
-            uploaded_by_id=current_user.id,
-            filename=upload.filename,
-            content_type=upload.mimetype,
-            file_size=len(binary_data),
-            binary_data=binary_data,
-        )
-        db.session.add(document)
-        documents.append(document)
-        saved_names.append(upload.filename)
+    try:
+        for upload in uploads:
+            binary_data = upload.read()
+            if len(binary_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
+                return _error(f"{upload.filename} is too large. Upload files up to 8 MB each.")
+            document = SafetyResourceDocument(
+                family_id=current_user.family_id,
+                uploaded_by_id=current_user.id,
+                filename=upload.filename,
+                content_type=upload.mimetype,
+                file_size=len(binary_data),
+                binary_data=binary_data,
+            )
+            db.session.add(document)
+            documents.append(document)
+            saved_names.append(upload.filename)
 
-    log_event(
-        current_user.family_id,
-        current_user.id,
-        "resource_attachment_added",
-        f"Uploaded safety resource documents via API: {', '.join(saved_names)}",
-    )
-    db.session.commit()
+        log_event(
+            current_user.family_id,
+            current_user.id,
+            "resource_attachment_added",
+            f"Uploaded safety resource documents via API: {', '.join(saved_names)}",
+        )
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return _error("Documents could not be uploaded right now. Try a smaller file or retry in a moment.", 500)
     return jsonify({"ok": True, "documents": [_document_payload(document) for document in documents]}), 201
 
 

@@ -12,6 +12,7 @@ def _column_exists(inspector, table_name: str, column_name: str) -> bool:
 def ensure_runtime_schema() -> None:
     db.create_all()
     inspector = inspect(db.engine)
+    dialect_name = db.engine.dialect.name
 
     table_names = set(inspector.get_table_names())
 
@@ -82,6 +83,37 @@ def ensure_runtime_schema() -> None:
             )
         )
 
+    inspector = inspect(db.engine)
+    if "safety_resource_document" in table_names:
+        if not _column_exists(inspector, "safety_resource_document", "uploaded_by_id"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN uploaded_by_id INTEGER")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "content_type"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN content_type VARCHAR(120)")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "file_size"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN file_size INTEGER DEFAULT 0")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "binary_data"):
+            if dialect_name == "mysql":
+                db.session.execute(
+                    text("ALTER TABLE safety_resource_document ADD COLUMN binary_data MEDIUMBLOB")
+                )
+            else:
+                db.session.execute(
+                    text("ALTER TABLE safety_resource_document ADD COLUMN binary_data BLOB")
+                )
+        elif dialect_name == "mysql":
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document MODIFY COLUMN binary_data MEDIUMBLOB NOT NULL")
+            )
+
     db.session.execute(
         text(
             "UPDATE `user` SET preferred_language = 'en' "
@@ -114,4 +146,11 @@ def ensure_runtime_schema() -> None:
             "WHERE capture_method IS NULL OR capture_method = ''"
         )
     )
+    if "safety_resource_document" in table_names:
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_document SET file_size = 0 "
+                "WHERE file_size IS NULL"
+            )
+        )
     db.session.commit()
