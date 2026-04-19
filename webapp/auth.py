@@ -28,7 +28,7 @@ def load_user(user_id: str) -> User | None:
 def unauthorized():
     if request.path.startswith("/api/"):
         return {"ok": False, "error": "Authentication required."}, 401
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.index"))
 
 
 @auth_bp.route("/")
@@ -164,7 +164,7 @@ def register():
 
 @auth_bp.route("/login")
 def login():
-    return render_template("login.html")
+    return redirect(url_for("auth.index"))
 
 
 @auth_bp.route("/login/parent", methods=["GET", "POST"])

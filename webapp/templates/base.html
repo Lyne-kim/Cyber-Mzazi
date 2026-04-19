@@ -19,7 +19,8 @@
             <span class="nav-chip">{{ current_user.role|title }}: {{ current_user.name }}</span>
             <a href="{{ url_for('auth.logout') }}">Sign out</a>
           {% else %}
-            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.parent_login') }}">Parent/Guardian Login</a>
+            <a href="{{ url_for('auth.child_login') }}">Child Login</a>
             <a href="{{ url_for('auth.register') }}">Create family</a>
           {% endif %}
         </nav>
