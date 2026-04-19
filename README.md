@@ -1,40 +1,128 @@
 # Cyber Mzazi
 
-Cyber Mzazi is a consent-based family safety MVP built around the provided `dataset.csv`. It includes:
+Cyber Mzazi is a consent-led family safety platform built for parent/guardian visibility, child-safe workflows, and linked Android companion support.
 
-- A Flask web app with separate parent and child dashboards.
-- A REST API for a separate frontend application.
-- MySQL-backed authentication, message records, logout approvals, and audit logs.
-- A training pipeline that uses both `LinearRegression` and `RandomForestClassifier`.
-- A pluggable external verification hook for message confirmation.
+It currently includes:
 
-For full project documentation, see:
+- A Flask web platform with separate `Parent/Guardian` and `Child` experiences
+- Family registration, role-based login, and parent email verification
+- Parent alerts, logout approval or denial, activity logs, and safety-resource uploads
+- Child-side message safety checks and guided reporting flows
+- Android companion infrastructure, branding, QR/device-link flows, and signed APK release setup
+- Expanded safety classification labels with a lightweight production-safe heuristic mode
+- Optional Hugging Face Space integration for DistilBERT-based inference experiments
+
+## Current project status
+
+### Web platform
+
+Implemented:
+
+- Public landing page at `/`
+- Parent/guardian login and child login
+- Family account registration
+- Parent email verification and resend flow
+- Parent dashboard, alerts, settings, logs, safety resources, and family hub
+- Child dashboard, `My Safety`, settings, and safety-check reporting
+- Parent approval-based child logout workflow
+- Popup, browser, sound, and email alert support for parents
+- Mobile sidebar toggle for parent and child dashboard pages
+
+### AI classification
+
+Current production-safe path:
+
+- `MODEL_PROVIDER=heuristic`
+- free-tier-friendly deployment without loading a large transformer in the main Render service
+
+Available but optional:
+
+- DistilBERT/Hugging Face Space flow for heavier inference experiments
+
+Expanded label coverage includes:
+
+- `safe`
+- `grooming`
+- `sexual_content`
+- `sextortion`
+- `betting`
+- `phishing`
+- `scam`
+- `financial_fraud`
+- `malware`
+- `cyberbullying`
+- `violence`
+- `hate_speech`
+- `bot_activity`
+- `misinformation`
+
+### Android app
+
+Already in place:
+
+- Android companion project and Gradle setup
+- Cyber Mzazi branding and app logo
+- QR/device-link flow
+- notification access flow
+- offline queue and retry actions
+- test payload and recent-log/status actions
+- signed release APK workflow
+
+Current product direction:
+
+- **one Android app with role selection**
+- role choices:
+  - `Parent/Guardian`
+  - `Child`
+
+Still remaining on Android:
+
+- first-launch role selection screen
+- parent/guardian mobile flow
+- child mobile flow
+- role-based permissions and routing inside one APK
+- end-to-end testing on both devices
+
+## Important safety scope
+
+Cyber Mzazi does **not** implement covert spying, forced account access, hidden persistence, or secret scraping of private content.
+
+It is designed around:
+
+- family-linked accounts
+- consent-led monitoring workflows
+- parent visibility into flagged content
+- child-safe reporting and session controls
+- approved Android notification ingestion where configured
+
+## Repository guides
+
+See these project docs for deeper setup details:
 
 - [PROJECT_DOCUMENTATION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\PROJECT_DOCUMENTATION.md)
 - [ANDROID_COMPANION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md)
 - [ANDROID_DEVICE_SETUP.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_DEVICE_SETUP.md)
-
-## Important safety scope
-
-This project does **not** implement covert browser-history scraping, forced access to private social-media accounts, or hidden device persistence. Instead, it supports:
-
-- Message submission through the child portal or approved integrations.
-- Optional Android notification ingestion through an approved device-link token.
-- Shared family audit logs.
-- Parent approval for child sign-out **inside this app**.
-- Optional external verification through a configured API endpoint.
+- [HF_SPACE_DEPLOYMENT.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\HF_SPACE_DEPLOYMENT.md)
+- [FRONTEND_API.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\FRONTEND_API.md)
 
 ## Project structure
 
 ```text
 app.py
 config.py
-dataset.csv
-ml/train.py
+scripts/
+artifacts/
+android-companion/
+hf_space/
+ml/
 webapp/
 ```
 
-## 1. Install dependencies
+## Local setup
+
+### 1. Install dependencies
+
+For the full local development stack:
 
 ```powershell
 python -m venv .venv
@@ -42,73 +130,92 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 2. Configure MySQL
+For slim Render-style runtime installs, the repo also includes:
 
-Run the bootstrap SQL in [database/mysql_bootstrap.sql](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\database\mysql_bootstrap.sql), then copy `.env.example` to `.env` and update the credentials.
+```text
+requirements-render.txt
+```
 
-Initialize the application tables:
+### 2. Configure environment variables
+
+Copy:
+
+```text
+.env.example -> .env
+```
+
+Important variables commonly used in this project:
+
+- `DATABASE_URL`
+- `MYSQL_SSL_CA_PATH`
+- `SECRET_KEY`
+- `APP_BASE_URL`
+- `FRONTEND_ORIGIN`
+- `MAIL_SERVER`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `MAIL_USE_TLS`
+- `MAIL_USE_SSL`
+- `MAIL_DEFAULT_SENDER`
+- `EMAIL_VERIFICATION_MAX_AGE`
+- `ANDROID_COMPANION_DOWNLOAD_URL`
+- `MODEL_PROVIDER`
+- `ENABLE_HEURISTIC_FALLBACK`
+- `FORCE_MODEL_RETRAIN`
+
+### 3. Initialize the database
+
+If needed, run the SQL bootstrap in:
+
+- [database/mysql_bootstrap.sql](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\database\mysql_bootstrap.sql)
+
+Then initialize tables:
 
 ```powershell
 python scripts\init_db.py
 ```
 
-## 3. Train the model
+The app also includes runtime schema repair logic for older deployments.
+
+### 4. Run the web app locally
+
+```powershell
+python app.py
+```
+
+Then open:
+
+- [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+## Training and model work
+
+The repository supports broader training workflows beyond the original CSV-only setup.
+
+Notes:
+
+- production currently favors heuristic mode for free-tier stability
+- DistilBERT experiments and staged artifacts are supported separately
+- reviewed parent labels can still be used for retraining workflows
+
+If you want to trigger training locally:
 
 ```powershell
 $env:FLASK_APP = "app.py"
 flask train-models
 ```
 
-This will:
+## Android companion flow
 
-- read `dataset.csv`
-- train a linear-regression-based scorer
-- train a random forest classifier
-- blend both outputs for prediction
-- save the artifact in `artifacts/message_model.joblib`
+Cyber Mzazi supports Android-ready notification ingestion:
 
-## 4. Run the app
+- parent generates an Android device link for a selected child
+- the generated token is copied into the Android app
+- the Android client sends notification payloads to:
+  - `POST /api/device-ingest/android-notifications`
+- the backend classifies the content and stores it as a `MessageRecord`
 
-```powershell
-python app.py
-```
-
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000).
-
-## 5. Git deployment flow
-
-```powershell
-git add .
-git commit -m "Initial Cyber Mzazi MVP"
-git remote add origin <your-repository-url>
-git push -u origin main
-```
-
-This repository is already initialized with Git locally.
-
-## 6. Separate frontend connection
-
-Use the REST API documented in [FRONTEND_API.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\FRONTEND_API.md).
-
-Important backend env vars for a separate frontend:
-
-- `FRONTEND_ORIGIN`
-- `ANDROID_COMPANION_DOWNLOAD_URL`
-- `SESSION_COOKIE_SECURE`
-- `SESSION_COOKIE_SAMESITE`
-
-The backend uses session cookies, so frontend requests should send credentials.
-
-## 6a. Android notification ingestion
-
-Cyber Mzazi now supports an Android-ready ingestion flow for notification-based message screening:
-
-- Parent generates an Android device link for a selected child.
-- The generated one-time token is copied into the Android client.
-- The Android client sends notification payloads to `POST /api/device-ingest/android-notifications`.
-- The backend classifies the notification text and stores it as a `MessageRecord` with `capture_method=android_notification`.
-
-Expected payload fields:
+Typical payload fields:
 
 - `app_name` or `source_platform`
 - `app_package`
@@ -117,78 +224,82 @@ Expected payload fields:
 - `notification_text` or `message_text`
 - `deep_link` or `browser_origin`
 
-## 7. Render deployment
+## Render deployment
 
-The project includes [render.yaml](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\render.yaml) and [Procfile](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\Procfile).
+The repo includes:
 
-For Render, point your host to:
+- [render.yaml](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\render.yaml)
+- [Procfile](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\Procfile)
+- [wsgi.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\wsgi.py)
 
-- app entry: `app:app`
-- Python version: 3.11+
-- MySQL connection string in environment variables
-- `SECRET_KEY`, `FRONTEND_ORIGIN`, and cookie settings in environment variables
+Current recommended free-tier-safe setup:
 
-On Render free tier, shell access is not required. The service now bootstraps itself on startup by:
+- `MODEL_PROVIDER=heuristic`
+- `ENABLE_HEURISTIC_FALLBACK=true`
+- `FORCE_MODEL_RETRAIN=false`
 
-- creating tables if they do not already exist
-- training the model if the artifact is missing
+Do **not** load the large transformer artifact directly in the main free Render service.
 
-Render start command:
+Typical startup command:
 
 ```text
 python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
 ```
 
-If you want to force a fresh retrain on the next deploy, set:
+Useful production variables:
 
-```text
-FORCE_MODEL_RETRAIN=true
-```
-
-## 8. Railway deployment
-
-The project also includes [railway.json](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\railway.json) and [wsgi.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\wsgi.py).
-
-Set Railway variables:
-
-- `DATABASE_URL`
-- `SECRET_KEY`
-- `FRONTEND_ORIGIN`
+- `APP_BASE_URL=https://cyber-mzazi.onrender.com`
+- `FRONTEND_ORIGIN=https://cyber-mzazi.onrender.com`
 - `SESSION_COOKIE_SECURE=true`
-- `SESSION_COOKIE_SAMESITE=None`
+- `SESSION_COOKIE_SAMESITE=Lax`
+- `ANDROID_COMPANION_DOWNLOAD_URL=<release apk url>`
 
-Then use the same startup bootstrap flow:
+## Gmail email verification setup
 
-```text
-python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
-```
+For real parent email verification with Gmail:
 
-## External verification hook
+- `MAIL_SERVER=smtp.gmail.com`
+- `MAIL_PORT=587`
+- `MAIL_USE_TLS=true`
+- `MAIL_USE_SSL=false`
+- `MAIL_USERNAME=<your gmail>`
+- `MAIL_PASSWORD=<gmail app password>`
+- `MAIL_DEFAULT_SENDER=<your gmail>`
 
-If you want the app to confirm message type through a web service, set:
+Use a Gmail **App Password**, not your normal Gmail password.
 
-- `WEB_VERIFIER_URL`
-- `WEB_VERIFIER_TOKEN` if your service requires bearer auth
+## Hugging Face Space
 
-The endpoint is expected to accept JSON like:
+The repo includes a Hugging Face Space package in:
 
-```json
-{
-  "text": "message body",
-  "predicted_label": "grooming"
-}
-```
+- [hf_space](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\hf_space)
 
-and return:
+This is for optional external inference experiments, not the required free-tier production path.
 
-```json
-{
-  "label": "grooming",
-  "confidence": 0.92,
-  "notes": "Matched provider policy rules."
-}
-```
+Publish helper:
 
-## Retraining loop
+- [tools/publish-hf-space.ps1](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\tools\publish-hf-space.ps1)
 
-Parents can review model outputs in the dashboard. Reviewed labels are included the next time `flask train-models` runs, which gives you a controlled human-in-the-loop learning workflow instead of unsafe autonomous monitoring.
+## What is still remaining
+
+Main unfinished product work:
+
+- complete the **one Android app with role selection** experience
+- finish parent/guardian Android screens
+- finish child Android screens
+- apply role-based routing and permissions inside the Android app
+- do full end-to-end multi-device testing:
+  - parent web
+  - parent phone
+  - child phone
+  - Android companion flow
+
+Other remaining polish:
+
+- more mobile UX refinement across the web app
+- full production verification of all alert flows
+- final decision on long-term transformer inference strategy
+
+## License / usage note
+
+This repository is structured as an educational and product-development project around family safety workflows. Any deployment or real-world use should remain transparent, consent-based, and aligned with local law, child protection guidance, and platform policies.
