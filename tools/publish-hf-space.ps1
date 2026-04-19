@@ -27,6 +27,6 @@ function Invoke-Hf {
 
 Invoke-Hf auth whoami | Out-Null
 Invoke-Hf repos create $spaceCreateId --type space --space-sdk docker --exist-ok
-Invoke-Hf upload-large-folder $spaceCreateId $spacePath --type space
+Invoke-Hf upload $spaceCreateId $spacePath . --type space --commit-message "Update Cyber Mzazi HF Space"
 
 Write-Host "Hugging Face Space uploaded successfully: $spaceCreateId"
