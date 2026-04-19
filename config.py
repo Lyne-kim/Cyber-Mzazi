@@ -66,6 +66,11 @@ class Config:
     MODEL_API_URL = os.getenv("MODEL_API_URL", "").strip()
     MODEL_API_TOKEN = os.getenv("MODEL_API_TOKEN", "").strip()
     MODEL_INFERENCE_TOKEN = os.getenv("MODEL_INFERENCE_TOKEN", "").strip()
+    MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "auto").strip().lower()
+    ENABLE_HEURISTIC_FALLBACK = os.getenv(
+        "ENABLE_HEURISTIC_FALLBACK",
+        "true",
+    ).lower() == "true"
     TRANSFORMER_MODEL_NAME = os.getenv(
         "TRANSFORMER_MODEL_NAME",
         "distilbert-base-multilingual-cased",

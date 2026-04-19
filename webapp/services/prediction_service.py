@@ -21,6 +21,15 @@ class PredictionUnavailable(RuntimeError):
 
 
 def prediction_backend_status() -> dict:
+    provider = current_app.config.get("MODEL_PROVIDER", "auto")
+    if provider == "heuristic":
+        return {
+            "provider": "heuristic",
+            "configured": True,
+            "model_loaded": True,
+            "endpoint": None,
+        }
+
     model_api_url = current_app.config.get("MODEL_API_URL", "").strip()
     if model_api_url:
         return {
@@ -40,6 +49,21 @@ def prediction_backend_status() -> dict:
 
 
 def predict_message(text: str) -> PredictionResult:
+    provider = current_app.config.get("MODEL_PROVIDER", "auto")
+    if provider == "heuristic":
+        classifier = get_classifier()
+        prediction = classifier.predict(text) if classifier is not None else {
+            "label": "safe",
+            "confidence": 0.0,
+            "risk_indicators": "none",
+        }
+        return PredictionResult(
+            label=str(prediction["label"]),
+            confidence=float(prediction["confidence"]),
+            risk_indicators=str(prediction["risk_indicators"]),
+            provider="heuristic",
+        )
+
     model_api_url = current_app.config.get("MODEL_API_URL", "").strip()
     if model_api_url:
         headers = {"Content-Type": "application/json"}

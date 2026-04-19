@@ -2,7 +2,7 @@ services:
   - type: web
     name: cyber-mzazi
     env: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi:app
     envVars:
@@ -14,55 +14,9 @@ services:
         value: "true"
       - key: SESSION_COOKIE_SAMESITE
         value: None
-      - key: MODEL_API_URL
-        value: https://cyber-mzazi-ml.onrender.com/predict
-      - key: MODEL_API_TOKEN
-        sync: false
-      - key: MODEL_ARTIFACT_PATH
-        value: /opt/render/project/src/artifacts/message_model_stage3
-      - key: MODEL_METRICS_PATH
-        value: /opt/render/project/src/artifacts/training_metrics.json
-      - key: TRANSFORMER_MODEL_NAME
-        value: distilbert-base-multilingual-cased
-      - key: TRANSFORMER_EPOCHS
-        value: "2"
-      - key: TRANSFORMER_BATCH_SIZE
-        value: "8"
-      - key: TRANSFORMER_MAX_LENGTH
-        value: "160"
-      - key: TRAINING_MAX_ROWS_PER_LABEL
-        value: "120"
-      - key: TRAINING_MAX_ROWS_PER_SOURCE_LABEL
-        value: "60"
-      - key: FORCE_MODEL_RETRAIN
-        value: "false"
-
-  - type: web
-    name: cyber-mzazi-ml
-    env: python
-    plan: standard
-    buildCommand: pip install -r requirements.txt
-    startCommand: python scripts/bootstrap.py && gunicorn --bind 0.0.0.0:$PORT wsgi_ml:app
-    envVars:
-      - key: MODEL_INFERENCE_TOKEN
-        sync: false
-      - key: MODEL_ARTIFACT_PATH
-        value: /opt/render/project/src/artifacts/message_model_stage3
-      - key: MODEL_ARTIFACT_URL
-        value: https://github.com/Lyne-kim/Cyber-Mzazi/releases/download/model-stage3/message_model_stage3.zip
-      - key: MODEL_METRICS_PATH
-        value: /opt/render/project/src/artifacts/training_metrics.json
-      - key: TRANSFORMER_MODEL_NAME
-        value: distilbert-base-multilingual-cased
-      - key: TRANSFORMER_EPOCHS
-        value: "2"
-      - key: TRANSFORMER_BATCH_SIZE
-        value: "8"
-      - key: TRANSFORMER_MAX_LENGTH
-        value: "160"
-      - key: TRAINING_MAX_ROWS_PER_LABEL
-        value: "120"
-      - key: TRAINING_MAX_ROWS_PER_SOURCE_LABEL
-        value: "60"
+      - key: MODEL_PROVIDER
+        value: heuristic
+      - key: ENABLE_HEURISTIC_FALLBACK
+        value: "true"
       - key: FORCE_MODEL_RETRAIN
         value: "false"
