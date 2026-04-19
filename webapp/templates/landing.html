@@ -574,16 +574,72 @@
 
     @media (max-width: 640px) {
       .landing-nav {
+        position: sticky;
         height: auto;
-        padding-top: 14px;
-        padding-bottom: 14px;
+        padding-top: 12px;
+        padding-bottom: 12px;
         flex-direction: column;
-        gap: 14px;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .landing-brand {
+        justify-content: center;
+      }
+
+      .landing-brand img {
+        width: 44px;
+        height: 44px;
+      }
+
+      .landing-brand-name strong {
+        font-size: 0.9rem;
+      }
+
+      .landing-brand-name span {
+        font-size: 0.68rem;
+      }
+
+      .landing-nav-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: center;
+        gap: 10px;
+      }
+
+      .landing-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .landing-hero {
         min-height: auto;
-        padding-top: 140px;
+        padding-top: 52px;
+        padding-bottom: 56px;
+      }
+
+      .landing-hero-content {
+        max-width: 100%;
+      }
+
+      .landing-pill {
+        display: none;
+      }
+
+      .landing-hero h1 {
+        font-size: clamp(2.45rem, 12vw, 3.55rem);
+        margin-bottom: 18px;
+      }
+
+      .landing-hero p {
+        margin-bottom: 28px;
+        font-size: 0.98rem;
+        line-height: 1.65;
       }
 
       .landing-button-row,
@@ -594,6 +650,15 @@
       .landing-button,
       .landing-button-secondary {
         width: 100%;
+      }
+
+      .landing-nav-actions .landing-button {
+        grid-column: 1 / -1;
+      }
+
+      .landing-microcopy {
+        font-size: 0.74rem;
+        line-height: 1.5;
       }
 
       .landing-stats-grid,
@@ -639,7 +704,7 @@
         <a class="landing-button" href="{{ url_for('auth.parent_login') }}">Open Parent/Guardian Login</a>
         <a class="landing-button-secondary" href="{{ url_for('auth.child_login') }}">Open Child Login</a>
       </div>
-      <div class="landing-microcopy">Consent-led • Multi-device • Real-time family safety workflows</div>
+      <div class="landing-microcopy">Consent-led &bull; Multi-device &bull; Real-time family safety workflows</div>
     </div>
   </section>
 
@@ -803,7 +868,7 @@
   </section>
 
   <footer class="landing-footer">
-    <div class="landing-footer-copy">Cyber Mzazi • Family safety workflows for web and Android</div>
+    <div class="landing-footer-copy">Cyber Mzazi &bull; Family safety workflows for web and Android</div>
     <div class="landing-footer-links">
       <a href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
       <a href="{{ url_for('auth.child_login') }}">Child</a>
