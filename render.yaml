@@ -16,6 +16,8 @@ services:
         value: None
       - key: MODEL_ARTIFACT_PATH
         value: /opt/render/project/src/artifacts/message_model_stage3
+      - key: MODEL_ARTIFACT_URL
+        value: https://github.com/Lyne-kim/Cyber-Mzazi/releases/download/model-stage3/message_model_stage3.zip
       - key: MODEL_METRICS_PATH
         value: /opt/render/project/src/artifacts/training_metrics.json
       - key: TRANSFORMER_MODEL_NAME

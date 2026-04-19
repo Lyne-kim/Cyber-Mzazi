@@ -62,6 +62,7 @@ class Config:
         "MODEL_METRICS_PATH",
         str(BASE_DIR / "artifacts" / "training_metrics.json"),
     )
+    MODEL_ARTIFACT_URL = os.getenv("MODEL_ARTIFACT_URL", "").strip()
     TRANSFORMER_MODEL_NAME = os.getenv(
         "TRANSFORMER_MODEL_NAME",
         "distilbert-base-multilingual-cased",

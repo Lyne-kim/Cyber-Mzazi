@@ -14,7 +14,10 @@ if str(PROJECT_ROOT) not in sys.path:
 load_dotenv()
 
 from app import app
-from ml.artifacts import transformer_artifact_exists
+from ml.artifacts import (
+    download_and_extract_transformer_artifact,
+    transformer_artifact_exists,
+)
 from ml.train import train_and_save
 from webapp.extensions import db
 from webapp.models import MessageRecord
@@ -44,7 +47,20 @@ def main() -> None:
         print("Database tables are ready.", flush=True)
 
         artifact_path = Path(app.config["MODEL_ARTIFACT_PATH"])
+        artifact_url = app.config.get("MODEL_ARTIFACT_URL", "").strip()
         force_retrain = os.getenv("FORCE_MODEL_RETRAIN", "false").lower() == "true"
+
+        if artifact_url and not transformer_artifact_exists(artifact_path):
+            print(
+                f"Model artifact missing locally. Downloading from {artifact_url}",
+                flush=True,
+            )
+            download_and_extract_transformer_artifact(
+                artifact_url,
+                artifact_path,
+            )
+            print("Model artifact download complete.", flush=True)
+
         if transformer_artifact_exists(artifact_path) and not force_retrain:
             print("Model artifact already exists. Skipping retraining.", flush=True)
             return
@@ -52,8 +68,8 @@ def main() -> None:
         if not transformer_artifact_exists(artifact_path) and not force_retrain:
             print(
                 "Model artifact is missing. Skipping bootstrap retraining so the web "
-                "service can start. Commit the artifact files or set "
-                "FORCE_MODEL_RETRAIN=true for a one-time rebuild.",
+                "service can start. Set MODEL_ARTIFACT_URL to a release archive or "
+                "set FORCE_MODEL_RETRAIN=true for a one-time rebuild.",
                 flush=True,
             )
             return
