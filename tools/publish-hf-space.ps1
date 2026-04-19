@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $spacePath = Join-Path $projectRoot "hf_space"
 $spaceRepoId = if ($SpaceId.StartsWith("spaces/")) { $SpaceId } else { "spaces/$SpaceId" }
+$spaceCreateId = if ($SpaceId.StartsWith("spaces/")) { $SpaceId.Substring(7) } else { $SpaceId }
 
 if (-not (Test-Path -LiteralPath $spacePath -PathType Container)) {
     throw "hf_space folder not found at $spacePath"
@@ -26,7 +27,7 @@ function Invoke-Hf {
 }
 
 Invoke-Hf auth whoami | Out-Null
-Invoke-Hf repos create $spaceRepoId --type space --space-sdk docker --exist-ok
+Invoke-Hf repos create $spaceCreateId --type space --space-sdk docker --exist-ok
 Invoke-Hf upload-large-folder $spaceRepoId $spacePath --type space
 
 Write-Host "Hugging Face Space uploaded successfully: $spaceRepoId"
