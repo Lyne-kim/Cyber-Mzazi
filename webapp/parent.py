@@ -49,6 +49,36 @@ PARENT_ADVANCED_ITEMS = [
 ]
 
 
+def _alert_session_key(selected_child_id: int | None) -> str:
+    child_key = selected_child_id if selected_child_id is not None else "all"
+    return f"parent_alert_seen:{current_user.family_id}:{child_key}"
+
+
+def _latest_alert_key(notification_items: list[dict]) -> str:
+    return notification_items[0]["key"] if notification_items else ""
+
+
+def _mark_alerts_seen(selected_child_id: int | None, notification_items: list[dict]) -> None:
+    latest_key = _latest_alert_key(notification_items)
+    session[_alert_session_key(selected_child_id)] = latest_key
+    session.modified = True
+
+
+def _unread_alert_count(selected_child_id: int | None, notification_items: list[dict]) -> int:
+    seen_key = session.get(_alert_session_key(selected_child_id), "")
+    if not notification_items:
+        return 0
+    if not seen_key:
+        return len(notification_items)
+
+    unread = 0
+    for item in notification_items:
+        if item["key"] == seen_key:
+            break
+        unread += 1
+    return unread
+
+
 def _build_notification_items(selected_child, messages, logout_requests) -> list[dict]:
     notifications: list[dict] = []
     child_name = selected_child.name if selected_child else "your child"
@@ -191,14 +221,27 @@ def _parent_data() -> dict:
             }
         )
 
-    high_risk_count = sum(1 for message in messages if message.predicted_label != "safe")
+    active_messages = [
+        message
+        for message in messages
+        if message.predicted_label != "safe" and not message.reviewed_label
+    ]
+    high_risk_count = len(active_messages)
     reviewed_count = sum(1 for message in messages if message.reviewed_label)
     alert_count = high_risk_count + len(logout_requests)
     message_label_breakdown = label_summary_rows(
-        [message.predicted_label for message in messages if message.predicted_label and message.predicted_label != "safe"]
+        [
+            message.predicted_label
+            for message in active_messages
+            if message.predicted_label and message.predicted_label != "safe"
+        ]
     )
     latest_sync = activity_logs[0].created_at.strftime("%Y-%m-%d %H:%M") if activity_logs else "No sync yet"
-    notification_items = _build_notification_items(selected_child, messages, logout_requests)
+    notification_items = _build_notification_items(selected_child, active_messages, logout_requests)
+    unread_alert_count = _unread_alert_count(
+        selected_child.id if selected_child else None,
+        notification_items,
+    )
     pending_android_link = None
     android_download = None
     download_url = current_app.config.get("ANDROID_COMPANION_DOWNLOAD_URL", "").strip()
@@ -239,6 +282,7 @@ def _parent_data() -> dict:
         "pending_android_link": pending_android_link,
         "android_download": android_download,
         "messages": messages,
+        "active_messages": active_messages,
         "logout_requests": logout_requests,
         "logout_request_cards": logout_request_cards,
         "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
@@ -248,6 +292,7 @@ def _parent_data() -> dict:
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
+        "unread_alert_count": unread_alert_count,
         "message_label_breakdown": message_label_breakdown,
         "latest_sync": latest_sync,
         "notification_items": notification_items,
@@ -279,6 +324,7 @@ def notification_feed():
         {
             "ok": True,
             "alert_count": context["alert_count"],
+            "unread_alert_count": context["unread_alert_count"],
             "notification_items": context["notification_items"],
         }
     )
@@ -286,7 +332,27 @@ def notification_feed():
 
 @parent_bp.route("/alerts")
 def alerts():
-    return _render_parent_page("alerts", "Alerts")
+    context = _parent_data()
+    selected_child = context["selected_child"]
+    _mark_alerts_seen(selected_child.id if selected_child else None, context["notification_items"])
+    context["unread_alert_count"] = 0
+    return render_template(
+        "parent_page.html",
+        page_key="alerts",
+        page_title="Alerts",
+        primary_nav_items=PARENT_NAV_ITEMS,
+        support_nav_items=PARENT_SUPPORT_ITEMS,
+        advanced_nav_items=PARENT_ADVANCED_ITEMS,
+        **context,
+    )
+
+
+@parent_bp.post("/alerts/mark-seen")
+def mark_alerts_seen():
+    context = _parent_data()
+    selected_child = context["selected_child"]
+    _mark_alerts_seen(selected_child.id if selected_child else None, context["notification_items"])
+    return jsonify({"ok": True, "unread_alert_count": 0})
 
 
 @parent_bp.route("/child-profile")

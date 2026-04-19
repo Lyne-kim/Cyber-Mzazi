@@ -4,8 +4,10 @@
 <div
   class="workspace-shell parent-workspace"
   data-notification-feed-url="{{ url_for('parent.notification_feed') }}"
+  data-mark-alerts-seen-url="{{ url_for('parent.mark_alerts_seen') }}"
   data-family-id="{{ current_user.family_id }}"
   data-selected-child-id="{{ selected_child.id if selected_child else 'all' }}"
+  data-page-key="{{ page_key }}"
 >
   <aside class="sidebar parent-sidebar">
     <div class="sidebar-top">
@@ -24,8 +26,8 @@
         <a class="sidebar-link{% if page_key == item.key %} active{% endif %}" href="{{ url_for(item.endpoint) }}">
           <span>{{ item.icon|safe }}</span>
           <span>{{ t(item.label) }}</span>
-          {% if item.key == "alerts" and alert_count %}
-            <strong class="alert-badge">{{ alert_count }}</strong>
+          {% if item.key == "alerts" and unread_alert_count %}
+            <strong class="alert-badge">{{ unread_alert_count }}</strong>
           {% endif %}
         </a>
       {% endfor %}
@@ -177,7 +179,7 @@
             </form>
           </article>
         {% endfor %}
-        {% for message in messages %}
+        {% for message in active_messages %}
           <article class="message-card">
             <div class="message-topline">
               <strong>{{ message.source_platform|title }}</strong>
@@ -521,8 +523,10 @@
     document.body.appendChild(toastContainer);
 
     const feedUrl = workspace.dataset.notificationFeedUrl;
+    const markSeenUrl = workspace.dataset.markAlertsSeenUrl;
     const familyId = workspace.dataset.familyId || "family";
     const childId = workspace.dataset.selectedChildId || "all";
+    const isAlertsPage = workspace.dataset.pageKey === "alerts";
     const initialPayloadNode = document.getElementById("initial-notification-payload");
     const initialNotifications = JSON.parse(initialPayloadNode?.textContent || "[]");
     const storageKey = `cyber-mzazi:last-alert:${familyId}:${childId}`;
@@ -563,6 +567,21 @@
       if (!alertBadge) return;
       alertBadge.textContent = count;
       alertBadge.style.display = count > 0 ? "inline-block" : "none";
+    };
+
+    const markAlertsSeen = async () => {
+      if (!isAlertsPage || !markSeenUrl) return;
+      try {
+        await fetch(markSeenUrl, {
+          method: "POST",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          credentials: "same-origin",
+        });
+      } catch (error) {
+        console.warn("Cyber Mzazi could not mark alerts as seen.", error);
+      }
     };
 
     const markBaseline = (items) => {
@@ -629,10 +648,23 @@
       });
     };
 
-    const processFeed = (items, alertCount, shouldNotify) => {
-      updateAlertBadge(alertCount || 0);
-      updateTitle(alertCount || 0);
+    const processFeed = (items, unreadAlertCount, shouldNotify) => {
+      if (isAlertsPage) {
+        updateAlertBadge(0);
+        updateTitle(0);
+      } else {
+        updateAlertBadge(unreadAlertCount || 0);
+        updateTitle(unreadAlertCount || 0);
+      }
       if (!items.length) return;
+
+      if (isAlertsPage) {
+        if (items[0]?.key) {
+          localStorage.setItem(storageKey, items[0].key);
+        }
+        markAlertsSeen();
+        return;
+      }
 
       const lastSeenKey = localStorage.getItem(storageKey);
       if (!lastSeenKey) {
@@ -665,7 +697,7 @@
         });
         if (!response.ok) return;
         const payload = await response.json();
-        processFeed(payload.notification_items || [], payload.alert_count || 0, shouldNotify);
+        processFeed(payload.notification_items || [], payload.unread_alert_count || 0, shouldNotify);
       } catch (error) {
         console.warn("Cyber Mzazi notification polling failed.", error);
       }
@@ -702,7 +734,7 @@
 
     setStatus();
     setSoundStatus();
-    processFeed(initialNotifications, {{ alert_count }}, false);
+    processFeed(initialNotifications, {{ unread_alert_count }}, false);
     window.setInterval(() => pollNotifications(true), 20000);
   })();
 </script>
