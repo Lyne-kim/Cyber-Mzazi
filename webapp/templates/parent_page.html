@@ -76,9 +76,14 @@
             <p class="meta">Note: {{ selected_logout_request.request_note }}</p>
           {% endif %}
           <span class="meta">{{ t("Requested on") }} {{ selected_logout_request.requested_at }}</span>
-          <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
-            <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
-          </form>
+          <div class="inline-form">
+            <form method="post" action="{{ url_for('parent.approve_logout', request_id=selected_logout_request.request.id) }}">
+              <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
+            </form>
+            <form method="post" action="{{ url_for('parent.deny_logout', request_id=selected_logout_request.request.id) }}">
+              <button class="button ghost small" type="submit">{{ t("Deny logout") }}</button>
+            </form>
+          </div>
         </article>
       {% else %}
         <p class="muted">{{ t("No logout request pending.") }}</p>
@@ -174,9 +179,14 @@
               <p class="meta">Note: {{ item.request_note }}</p>
             {% endif %}
             <p class="meta">{{ t("Requested on") }} {{ item.requested_at }}</p>
-            <form method="post" action="{{ url_for('parent.approve_logout', request_id=item.request.id) }}">
-              <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
-            </form>
+            <div class="inline-form">
+              <form method="post" action="{{ url_for('parent.approve_logout', request_id=item.request.id) }}">
+                <button class="button accent small" type="submit">{{ t("Approve logout") }}</button>
+              </form>
+              <form method="post" action="{{ url_for('parent.deny_logout', request_id=item.request.id) }}">
+                <button class="button ghost small" type="submit">{{ t("Deny logout") }}</button>
+              </form>
+            </div>
           </article>
         {% endfor %}
         {% for message in active_messages %}

@@ -43,7 +43,7 @@ def _child_data() -> dict:
             family_id=current_user.family_id,
             child_user_id=current_user.id,
         )
-        .filter(LogoutRequest.status.in_(["pending", "approved"]))
+        .filter(LogoutRequest.status.in_(["pending", "approved", "denied"]))
         .order_by(LogoutRequest.updated_at.desc())
         .first()
     )

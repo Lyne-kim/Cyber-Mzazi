@@ -29,15 +29,36 @@
     <section class="sidebar-footer">
       {% if pending_logout %}
         <article class="approval-card">
-          <p class="eyebrow">{{ t("Waiting for parent approval") }}</p>
+          <p class="eyebrow">
+            {% if pending_logout.status == 'approved' %}
+              {{ t("Parent approval received") }}
+            {% elif pending_logout.status == 'denied' %}
+              {{ t("Parent denied sign-out") }}
+            {% else %}
+              {{ t("Waiting for parent approval") }}
+            {% endif %}
+          </p>
           <strong>{{ t("Request sign-out") }}</strong>
           <p class="muted">{{ pending_logout.action_description or t("This request ends only the current child session on this device.") }}</p>
           {% if pending_logout.request_note %}
             <p class="meta">Note: {{ pending_logout.request_note }}</p>
           {% endif %}
-          <span class="meta">{{ t("Parent approval received") if pending_logout.status == 'approved' else t("Waiting for parent approval") }}</span>
+          <span class="meta">
+            {% if pending_logout.status == 'approved' %}
+              {{ t("Parent approval received") }}
+            {% elif pending_logout.status == 'denied' %}
+              {{ t("Logout denied. The child session remains active.") }}
+            {% else %}
+              {{ t("Waiting for parent approval") }}
+            {% endif %}
+          </span>
           {% if pending_logout.status == 'approved' %}
             <a class="button accent small" href="{{ url_for('auth.logout') }}">Sign out now</a>
+          {% elif pending_logout.status == 'denied' %}
+            <form method="post" action="{{ url_for('auth.request_logout') }}">
+              <input type="hidden" name="request_note" value="Retry sign-out request for this device.">
+              <button class="button ghost small" type="submit">{{ t("Send request") }}</button>
+            </form>
           {% endif %}
         </article>
       {% else %}
@@ -72,7 +93,15 @@
 
     {% if pending_logout %}
       <section class="panel info-banner">
-        <strong>{{ t("Waiting for parent approval") }}</strong>
+        <strong>
+          {% if pending_logout.status == 'approved' %}
+            {{ t("Parent approval received") }}
+          {% elif pending_logout.status == 'denied' %}
+            {{ t("Parent denied sign-out") }}
+          {% else %}
+            {{ t("Waiting for parent approval") }}
+          {% endif %}
+        </strong>
         <p class="muted">{{ pending_logout.action_description or t("This request ends only the current child session on this device.") }}</p>
       </section>
     {% endif %}

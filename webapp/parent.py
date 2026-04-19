@@ -643,3 +643,23 @@ def approve_logout(request_id: int):
     db.session.commit()
     flash("Logout approved. The child can now sign out once.", "success")
     return redirect(url_for("parent.alerts"))
+
+
+@parent_bp.post("/logout-requests/<int:request_id>/deny")
+def deny_logout(request_id: int):
+    logout_request = LogoutRequest.query.filter_by(
+        id=request_id, family_id=current_user.family_id, status="pending"
+    ).first_or_404()
+    logout_request.status = "denied"
+    logout_request.resolved_by_id = current_user.id
+    logout_request.resolved_at = datetime.utcnow()
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "logout_denied",
+        f"Denied sign-out for child user {logout_request.child_user_id}. The child session stays active on this device.",
+        subject_user_id=logout_request.child_user_id,
+    )
+    db.session.commit()
+    flash("Logout denied. The child session remains active.", "info")
+    return redirect(url_for("parent.alerts"))

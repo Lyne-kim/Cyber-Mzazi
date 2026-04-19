@@ -251,7 +251,7 @@ def _child_page_payload() -> dict:
             family_id=current_user.family_id,
             child_user_id=current_user.id,
         )
-        .filter(LogoutRequest.status.in_(["pending", "approved"]))
+        .filter(LogoutRequest.status.in_(["pending", "approved", "denied"]))
         .order_by(LogoutRequest.updated_at.desc())
         .first()
     )
@@ -701,6 +701,32 @@ def approve_logout(request_id: int):
         current_user.id,
         "logout_approved",
         f"Approved sign-out for child user {logout_request.child_user_id} via API. The child device can close the current child session once.",
+        subject_user_id=logout_request.child_user_id,
+    )
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@api_bp.post("/parent/logout-requests/<int:request_id>/deny")
+@login_required
+def deny_logout(request_id: int):
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+
+    logout_request = LogoutRequest.query.filter_by(
+        id=request_id, family_id=current_user.family_id, status="pending"
+    ).first()
+    if logout_request is None:
+        return _error("Logout request not found.", 404)
+
+    logout_request.status = "denied"
+    logout_request.resolved_by_id = current_user.id
+    logout_request.resolved_at = datetime.utcnow()
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "logout_denied",
+        f"Denied sign-out for child user {logout_request.child_user_id} via API. The child session stays active on this device.",
         subject_user_id=logout_request.child_user_id,
     )
     db.session.commit()
