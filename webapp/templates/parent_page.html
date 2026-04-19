@@ -542,6 +542,9 @@
     const setStatus = () => {
       if (!statusNode || !("Notification" in window)) return;
       const permission = Notification.permission;
+      if (enableButton) {
+        enableButton.hidden = permission === "granted";
+      }
       if (permission === "granted") {
         statusNode.textContent = "Browser pop-up notifications are enabled for this device.";
       } else if (permission === "denied") {
