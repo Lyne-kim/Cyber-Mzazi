@@ -1,6 +1,6 @@
 ---
 title: Cyber Mzazi DistilBERT API
-emoji: shield
+emoji: 🛡️
 colorFrom: green
 colorTo: blue
 sdk: docker
