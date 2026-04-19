@@ -18,7 +18,6 @@ from ml.artifacts import (
     download_and_extract_transformer_artifact,
     transformer_artifact_exists,
 )
-from ml.train import train_and_save
 from webapp.extensions import db
 from webapp.models import MessageRecord
 from webapp.services.schema import ensure_runtime_schema
@@ -86,6 +85,8 @@ def main() -> None:
                 flush=True,
             )
             return
+
+        from ml.train import train_and_save
 
         metrics = train_and_save(
             app.config["DATASET_PATH"],

@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 
-import joblib
-import numpy as np
 from flask import current_app
 
 from ml.artifacts import resolve_legacy_artifact_file, resolve_transformer_artifact_dir
@@ -34,12 +32,15 @@ class MessageClassifier:
             metadata = json.loads((transformer_dir / "metadata.json").read_text(encoding="utf-8"))
             self.max_length = int(metadata.get("max_length", 160))
             self.classes = metadata["classes"]
+            self.torch = torch
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.tokenizer = AutoTokenizer.from_pretrained(transformer_dir, use_fast=False)
             self.model = AutoModelForSequenceClassification.from_pretrained(transformer_dir)
             self.model.to(self.device)
             self.model.eval()
             return
+
+        import joblib
 
         legacy_artifact = resolve_legacy_artifact_file(artifact_path)
         artifact = joblib.load(legacy_artifact)
@@ -65,13 +66,17 @@ class MessageClassifier:
         return label, confidence
 
     @staticmethod
-    def _softmax(scores: np.ndarray) -> np.ndarray:
+    def _softmax(scores):
+        import numpy as np
+
         scores = scores - np.max(scores, axis=1, keepdims=True)
         exp_scores = np.exp(scores)
         return exp_scores / exp_scores.sum(axis=1, keepdims=True)
 
     def predict(self, text: str) -> dict:
         if self.backend == "transformer":
+            import numpy as np
+
             encoded = self.tokenizer(
                 [text],
                 truncation=True,
@@ -80,9 +85,9 @@ class MessageClassifier:
                 return_tensors="pt",
             )
             encoded = {key: value.to(self.device) for key, value in encoded.items()}
-            with torch.no_grad():
+            with self.torch.no_grad():
                 logits = self.model(**encoded).logits
-            probabilities = torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
+            probabilities = self.torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
             top_index = int(np.argmax(probabilities))
             label = self.classes[top_index]
             confidence = float(probabilities[top_index])
@@ -92,6 +97,8 @@ class MessageClassifier:
                 "confidence": confidence,
                 "risk_indicators": ",".join(self.risk_terms.get(label, ["review"])),
             }
+
+        import numpy as np
 
         transformed = self.vectorizer.transform([text])
         dense = self.svd.transform(transformed)

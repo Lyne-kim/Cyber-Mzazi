@@ -5,7 +5,6 @@ from flask_cors import CORS
 
 from config import Config
 from ml.labels import SUPPORTED_LABELS, label_title, label_tone
-from ml.train import train_and_save
 
 from .api import api_bp
 from .auth import auth_bp
@@ -46,6 +45,8 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     @app.cli.command("train-models")
     def train_models_command() -> None:
+        from ml.train import train_and_save
+
         feedback_rows = []
         reviewed_messages = MessageRecord.query.filter(
             MessageRecord.reviewed_label.isnot(None)
