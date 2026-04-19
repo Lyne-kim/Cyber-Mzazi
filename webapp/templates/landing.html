@@ -1,0 +1,814 @@
+{% extends "base.html" %}
+{% block title %}Cyber Mzazi | Child Online Safety Platform{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+{% block page_header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block head_extra %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .landing-page {
+      --landing-bg: #0d1520;
+      --landing-bg-2: #111d2e;
+      --landing-bg-3: #0a1628;
+      --landing-card: #141f30;
+      --landing-green: #10b981;
+      --landing-green-dark: #059669;
+      --landing-green-dim: rgba(16, 185, 129, 0.12);
+      --landing-green-border: rgba(16, 185, 129, 0.22);
+      --landing-blue: #38bdf8;
+      --landing-white: #ffffff;
+      --landing-muted: #94a3b8;
+      --landing-dim: #64748b;
+      --landing-border: rgba(255, 255, 255, 0.08);
+      --landing-border-strong: rgba(255, 255, 255, 0.14);
+      font-family: "Inter", sans-serif;
+      background: var(--landing-bg);
+      color: var(--landing-white);
+    }
+
+    .landing-page .page-shell {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .landing-page nav,
+    .landing-page section,
+    .landing-page footer {
+      box-sizing: border-box;
+    }
+
+    .landing-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 64px;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(13, 21, 32, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--landing-border);
+    }
+
+    .landing-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--landing-white);
+      text-decoration: none;
+    }
+
+    .landing-brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .landing-brand-name {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+
+    .landing-brand-name strong {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .landing-brand-name span {
+      font-size: 0.76rem;
+      color: var(--landing-green);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .landing-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .landing-link {
+      color: var(--landing-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .landing-link:hover {
+      color: var(--landing-white);
+    }
+
+    .landing-button,
+    .landing-button-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 26px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.98rem;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .landing-button {
+      background: var(--landing-green);
+      color: #fff;
+      border: 1px solid transparent;
+    }
+
+    .landing-button:hover {
+      transform: translateY(-2px);
+      background: var(--landing-green-dark);
+    }
+
+    .landing-button-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--landing-white);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .landing-button-secondary:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .landing-hero {
+      position: relative;
+      min-height: 100vh;
+      padding: 120px 40px 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 25%, rgba(16, 185, 129, 0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 15% 75%, rgba(56, 189, 248, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 60% at 85% 65%, rgba(16, 185, 129, 0.08) 0%, transparent 55%),
+        var(--landing-bg);
+    }
+
+    .landing-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(13, 21, 32, 0.2), rgba(13, 21, 32, 0.65) 60%, var(--landing-bg) 100%);
+    }
+
+    .landing-hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 980px;
+    }
+
+    .landing-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 16px;
+      margin-bottom: 28px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--landing-green-border);
+      color: var(--landing-green);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .landing-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--landing-green);
+    }
+
+    .landing-hero h1 {
+      font-size: clamp(2.9rem, 6vw, 5.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      font-weight: 800;
+      margin: 0 0 22px;
+    }
+
+    .landing-highlight {
+      color: var(--landing-green);
+    }
+
+    .landing-highlight-blue {
+      color: var(--landing-blue);
+    }
+
+    .landing-hero p {
+      max-width: 660px;
+      margin: 0 auto 36px;
+      color: var(--landing-muted);
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .landing-button-row {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .landing-microcopy {
+      color: var(--landing-dim);
+      font-size: 0.84rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .landing-stats {
+      background: var(--landing-bg-2);
+      border-top: 1px solid var(--landing-border);
+      border-bottom: 1px solid var(--landing-border);
+      padding: 50px 40px;
+    }
+
+    .landing-stats-grid,
+    .landing-role-grid,
+    .landing-feature-grid,
+    .landing-steps {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .landing-stats-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .landing-stat {
+      text-align: center;
+      padding: 0 18px;
+      border-right: 1px solid var(--landing-border);
+    }
+
+    .landing-stat:last-child {
+      border-right: none;
+    }
+
+    .landing-stat strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--landing-green);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .landing-stat span {
+      display: block;
+      font-size: 0.94rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .landing-stat small {
+      color: var(--landing-dim);
+      font-size: 0.78rem;
+    }
+
+    .landing-section {
+      padding: 96px 40px;
+    }
+
+    .landing-section-dark {
+      background: var(--landing-bg-2);
+    }
+
+    .landing-section-shell {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .landing-tag {
+      display: block;
+      text-align: center;
+      color: var(--landing-green);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .landing-section h2 {
+      text-align: center;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      font-weight: 800;
+      margin: 0 0 16px;
+    }
+
+    .landing-section > .landing-section-shell > p,
+    .landing-section-intro {
+      max-width: 640px;
+      margin: 0 auto 56px;
+      text-align: center;
+      color: var(--landing-muted);
+      line-height: 1.8;
+      font-size: 0.95rem;
+    }
+
+    .landing-role-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .landing-role-card,
+    .landing-feature-card {
+      border-radius: 18px;
+      border: 1px solid var(--landing-border);
+      padding: 30px 26px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    }
+
+    .landing-role-card:hover,
+    .landing-feature-card:hover {
+      border-color: var(--landing-border-strong);
+      transform: translateY(-3px);
+    }
+
+    .landing-role-card {
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .landing-role-card-parent {
+      background: linear-gradient(145deg, #0d2240, #0a1a33);
+    }
+
+    .landing-role-card-child {
+      background: linear-gradient(145deg, #0a2a25, #071f1c);
+    }
+
+    .landing-role-card-companion {
+      background: linear-gradient(145deg, #2a1a07, #1f1305);
+    }
+
+    .landing-badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .landing-badge-parent {
+      color: var(--landing-blue);
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+    }
+
+    .landing-badge-child {
+      color: var(--landing-green);
+      background: var(--landing-green-dim);
+      border: 1px solid var(--landing-green-border);
+    }
+
+    .landing-badge-companion {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.13);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    .landing-role-card h3,
+    .landing-feature-card h3,
+    .landing-step h3 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      font-weight: 700;
+    }
+
+    .landing-role-card p,
+    .landing-feature-card p,
+    .landing-step p {
+      color: var(--landing-muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .landing-feature-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .landing-feature-card {
+      background: var(--landing-card);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .landing-feature-card-wide {
+      grid-column: span 2;
+    }
+
+    .landing-feature-icon,
+    .landing-step-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: var(--landing-green-dim);
+      border: 1px solid var(--landing-green-border);
+      color: var(--landing-green);
+      font-weight: 800;
+    }
+
+    .landing-feature-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 18px;
+      font-size: 1rem;
+    }
+
+    .landing-steps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      position: relative;
+      gap: 18px;
+    }
+
+    .landing-step {
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    .landing-step-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 18px;
+      font-size: 1.1rem;
+    }
+
+    .landing-step-number {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--landing-green);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .landing-cta {
+      padding: 112px 40px;
+      text-align: center;
+      background: linear-gradient(135deg, #071a1a 0%, #0a2a20 52%, #071a1a 100%);
+      border-top: 1px solid var(--landing-border);
+    }
+
+    .landing-cta-shell {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .landing-cta h2 {
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin: 0 0 18px;
+      font-weight: 800;
+    }
+
+    .landing-cta p {
+      max-width: 620px;
+      margin: 0 auto 38px;
+      color: var(--landing-muted);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .landing-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 26px 40px;
+      background: var(--landing-bg-3);
+      border-top: 1px solid var(--landing-border);
+    }
+
+    .landing-footer-copy {
+      color: var(--landing-dim);
+      font-size: 0.8rem;
+    }
+
+    .landing-footer-links {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .landing-footer-links a {
+      color: var(--landing-dim);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .landing-footer-links a:hover {
+      color: var(--landing-white);
+    }
+
+    @media (max-width: 960px) {
+      .landing-nav,
+      .landing-hero,
+      .landing-stats,
+      .landing-section,
+      .landing-cta,
+      .landing-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .landing-stats-grid,
+      .landing-role-grid,
+      .landing-feature-grid,
+      .landing-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .landing-feature-card-wide {
+        grid-column: span 1;
+      }
+
+      .landing-stat {
+        border-right: none;
+        border-bottom: 1px solid var(--landing-border);
+        padding: 18px;
+      }
+
+      .landing-stat:last-child {
+        border-bottom: none;
+      }
+
+      .landing-footer {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .landing-nav {
+        height: auto;
+        padding-top: 14px;
+        padding-bottom: 14px;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .landing-hero {
+        min-height: auto;
+        padding-top: 140px;
+      }
+
+      .landing-button-row,
+      .landing-nav-actions {
+        width: 100%;
+      }
+
+      .landing-button,
+      .landing-button-secondary {
+        width: 100%;
+      }
+
+      .landing-stats-grid,
+      .landing-role-grid,
+      .landing-feature-grid,
+      .landing-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <nav class="landing-nav">
+    <a class="landing-brand" href="{{ url_for('auth.index') }}">
+      <img src="{{ url_for('static', filename='cyber_mzazi_logo.png') }}" alt="Cyber Mzazi logo">
+      <span class="landing-brand-name">
+        <strong>Cyber Mzazi</strong>
+        <span>Family Safety Platform</span>
+      </span>
+    </a>
+    <div class="landing-nav-actions">
+      <a class="landing-link" href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
+      <a class="landing-link" href="{{ url_for('auth.child_login') }}">Child</a>
+      <a class="landing-button" href="{{ url_for('auth.register') }}">Create Family Account</a>
+    </div>
+  </nav>
+
+  <section class="landing-hero">
+    <div class="landing-hero-content">
+      <div class="landing-pill">
+        <span class="landing-pill-dot"></span>
+        Consent-based family monitoring and safety alerts
+      </div>
+      <h1>
+        Keep <span class="landing-highlight">Families Safer</span>
+        With <span class="landing-highlight-blue">Cyber Mzazi</span>
+      </h1>
+      <p>
+        Cyber Mzazi helps parents and guardians review risky digital interactions, receive safety alerts,
+        support children with a guided app experience, and coordinate through a secure Android companion workflow.
+      </p>
+      <div class="landing-button-row">
+        <a class="landing-button" href="{{ url_for('auth.parent_login') }}">Open Parent/Guardian Login</a>
+        <a class="landing-button-secondary" href="{{ url_for('auth.child_login') }}">Open Child Login</a>
+      </div>
+      <div class="landing-microcopy">Consent-led • Multi-device • Real-time family safety workflows</div>
+    </div>
+  </section>
+
+  <section class="landing-stats">
+    <div class="landing-stats-grid">
+      <article class="landing-stat">
+        <strong>3</strong>
+        <span>Family Roles</span>
+        <small>Parent/guardian, child, and Android companion support.</small>
+      </article>
+      <article class="landing-stat">
+        <strong>14</strong>
+        <span>Risk Labels</span>
+        <small>Expanded AI safety classification across multiple message types.</small>
+      </article>
+      <article class="landing-stat">
+        <strong>24/7</strong>
+        <span>Alert Visibility</span>
+        <small>Parent alerts, logs, and review workflows in one dashboard.</small>
+      </article>
+      <article class="landing-stat">
+        <strong>1</strong>
+        <span>Unified Space</span>
+        <small>Web portal plus mobile companion working together.</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="landing-section">
+    <div class="landing-section-shell">
+      <span class="landing-tag">Role-Based Access</span>
+      <h2>Designed for the real people using Cyber Mzazi</h2>
+      <p class="landing-section-intro">
+        The homepage follows the style of your provided HTML, but the content is adapted to the actual
+        Cyber Mzazi roles and workflows in this project.
+      </p>
+      <div class="landing-role-grid">
+        <article class="landing-role-card landing-role-card-parent">
+          <span class="landing-badge landing-badge-parent">Parent/Guardian</span>
+          <h3>Review alerts and guide safer choices</h3>
+          <p>
+            Sign in to view flagged messages, receive popup and email alerts, approve child logout requests,
+            and manage family-level settings from the parent dashboard.
+          </p>
+        </article>
+        <article class="landing-role-card landing-role-card-child">
+          <span class="landing-badge landing-badge-child">Child</span>
+          <h3>Access a child-friendly safety experience</h3>
+          <p>
+            Children use a dedicated portal with safer workflows, logout approvals, and clear access boundaries
+            tailored to the family account created by the parent or guardian.
+          </p>
+        </article>
+        <article class="landing-role-card landing-role-card-companion">
+          <span class="landing-badge landing-badge-companion">Android Companion</span>
+          <h3>Connect mobile reporting to the web dashboard</h3>
+          <p>
+            The Android companion app helps relay monitored notifications, offline queue retries, QR pairing,
+            and install/download flows linked from the parent workspace.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section landing-section-dark">
+    <div class="landing-section-shell">
+      <span class="landing-tag">Core Features</span>
+      <h2>Built around visibility, consent, and guided intervention</h2>
+      <p class="landing-section-intro">
+        Cyber Mzazi combines dashboards, alerts, review labels, authentication, and mobile support into one coordinated safety system.
+      </p>
+      <div class="landing-feature-grid">
+        <article class="landing-feature-card landing-feature-card-wide">
+          <div class="landing-feature-icon">AI</div>
+          <h3>Expanded DistilBERT safety classification</h3>
+          <p>
+            Messages are evaluated across broader labels like phishing, grooming, sextortion, financial fraud,
+            cyberbullying, misinformation, hate speech, violence, and more.
+          </p>
+        </article>
+        <article class="landing-feature-card">
+          <div class="landing-feature-icon">AL</div>
+          <h3>Parent notification feed</h3>
+          <p>Popup alerts, browser notifications, sound cues, and email notifications help parents react quickly.</p>
+        </article>
+        <article class="landing-feature-card">
+          <div class="landing-feature-icon">VR</div>
+          <h3>Email verification</h3>
+          <p>Parent accounts can verify real email addresses before sign-in, supporting safer multi-device access.</p>
+        </article>
+        <article class="landing-feature-card">
+          <div class="landing-feature-icon">QR</div>
+          <h3>QR-based Android onboarding</h3>
+          <p>Pair and install the Android companion more smoothly from the parent dashboard and download page.</p>
+        </article>
+        <article class="landing-feature-card">
+          <div class="landing-feature-icon">LG</div>
+          <h3>Audit-ready activity logs</h3>
+          <p>Cyber Mzazi keeps traceable family events, approvals, alerts, and review outcomes for accountability.</p>
+        </article>
+        <article class="landing-feature-card landing-feature-card-wide">
+          <div class="landing-feature-icon">UI</div>
+          <h3>Role-specific login and dashboard flows</h3>
+          <p>
+            Parent/guardian and child users each see focused entry points, messaging, and dashboards that fit their responsibilities in the project.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section">
+    <div class="landing-section-shell">
+      <span class="landing-tag">How It Works</span>
+      <h2>From registration to review in four clear steps</h2>
+      <p class="landing-section-intro">
+        Families can start on the web, connect the child workflow, and extend into Android companion monitoring with a predictable setup path.
+      </p>
+      <div class="landing-steps">
+        <article class="landing-step">
+          <div class="landing-step-icon">1</div>
+          <span class="landing-step-number">Step One</span>
+          <h3>Create a family account</h3>
+          <p>Register the parent or guardian and child together so Cyber Mzazi can create a linked family workspace.</p>
+        </article>
+        <article class="landing-step">
+          <div class="landing-step-icon">2</div>
+          <span class="landing-step-number">Step Two</span>
+          <h3>Verify and sign in</h3>
+          <p>Parent email verification and role-based login help ensure the right person reaches the right portal.</p>
+        </article>
+        <article class="landing-step">
+          <div class="landing-step-icon">3</div>
+          <span class="landing-step-number">Step Three</span>
+          <h3>Review alerts and activity</h3>
+          <p>Use the parent dashboard to review risk labels, notification feeds, logout approvals, and flagged messages.</p>
+        </article>
+        <article class="landing-step">
+          <div class="landing-step-icon">4</div>
+          <span class="landing-step-number">Step Four</span>
+          <h3>Connect Android companion support</h3>
+          <p>Install the mobile companion where needed so message reporting and cross-device safety workflows stay connected.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-cta">
+    <div class="landing-cta-shell">
+      <h2>Bring your family into a safer, guided digital workflow</h2>
+      <p>
+        Open the right portal below to register, sign in, or continue monitoring with Cyber Mzazi across web and Android.
+      </p>
+      <div class="landing-button-row">
+        <a class="landing-button" href="{{ url_for('auth.register') }}">Register Family Account</a>
+        <a class="landing-button-secondary" href="{{ url_for('auth.parent_login') }}">Parent/Guardian Login</a>
+        <a class="landing-button-secondary" href="{{ url_for('auth.child_login') }}">Child Login</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <div class="landing-footer-copy">Cyber Mzazi • Family safety workflows for web and Android</div>
+    <div class="landing-footer-links">
+      <a href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
+      <a href="{{ url_for('auth.child_login') }}">Child</a>
+      <a href="{{ url_for('auth.register') }}">Register</a>
+      <a href="{{ url_for('auth.login') }}">Portal Selection</a>
+    </div>
+  </footer>
+{% endblock %}

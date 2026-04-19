@@ -37,7 +37,7 @@ def index():
         if current_user.role == "parent":
             return redirect(url_for("parent.dashboard"))
         return redirect(url_for("child.dashboard"))
-    return redirect(url_for("auth.login"))
+    return render_template("landing.html")
 
 
 def _login_user_by_portal(portal: str, form_data) -> User | None:

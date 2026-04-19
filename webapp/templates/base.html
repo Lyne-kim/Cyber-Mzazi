@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Cyber Mzazi{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head_extra %}{% endblock %}
   </head>
   <body class="{% if current_user.is_authenticated and current_user.role == 'parent' %}parent-theme{% elif current_user.is_authenticated and current_user.role == 'child' %}child-theme{% else %}public-theme{% endif %} {% block body_class %}{% endblock %}">
     {% block page_header %}
