@@ -20,6 +20,7 @@ from .models import (
 from .services.audit import log_event
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import issue_ingestion_token
+from .services.review_feedback import build_review_signature
 from .ui_text import SUPPORTED_LANGUAGES
 
 
@@ -633,6 +634,7 @@ def review_message(message_id: int):
 
     record.reviewed_label = reviewed_label
     record.reviewed_by_id = current_user.id
+    record.review_signature = build_review_signature(record.message_text)
     log_event(
         current_user.family_id,
         current_user.id,
@@ -641,7 +643,7 @@ def review_message(message_id: int):
         subject_user_id=record.submitted_by_id,
     )
     db.session.commit()
-    flash("Review saved. You can use reviewed labels for later retraining.", "success")
+    flash("Review saved. Future matching messages will now reuse this reviewed label.", "success")
     return redirect(url_for("parent.alerts"))
 
 

@@ -71,6 +71,14 @@ class Config:
         "ENABLE_HEURISTIC_FALLBACK",
         "true",
     ).lower() == "true"
+    ENABLE_REVIEW_FEEDBACK_MATCHING = os.getenv(
+        "ENABLE_REVIEW_FEEDBACK_MATCHING",
+        "true",
+    ).lower() == "true"
+    REVIEW_FEEDBACK_LOOKBACK = int(os.getenv("REVIEW_FEEDBACK_LOOKBACK", "200"))
+    REVIEW_FEEDBACK_SIMILARITY_THRESHOLD = float(
+        os.getenv("REVIEW_FEEDBACK_SIMILARITY_THRESHOLD", "0.92")
+    )
     TRANSFORMER_MODEL_NAME = os.getenv(
         "TRANSFORMER_MODEL_NAME",
         "distilbert-base-multilingual-cased",

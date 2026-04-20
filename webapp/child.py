@@ -6,6 +6,7 @@ from .models import LogoutRequest, MessageRecord
 from .services.audit import log_event
 from .services.parent_alerts import send_high_risk_message_alert
 from .services.prediction_service import PredictionUnavailable, predict_message
+from .services.review_feedback import build_review_signature
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES
 
@@ -125,7 +126,7 @@ def submit_message():
         return redirect(url_for("child.report"))
 
     try:
-        prediction = predict_message(message_text)
+        prediction = predict_message(message_text, family_id=current_user.family_id)
     except PredictionUnavailable as exc:
         flash(str(exc), "danger")
         return redirect(url_for("child.report"))
@@ -138,6 +139,7 @@ def submit_message():
         sender_handle=sender_handle,
         browser_origin=browser_origin,
         message_text=message_text,
+        review_signature=build_review_signature(message_text),
         predicted_label=prediction.label,
         predicted_confidence=prediction.confidence,
         risk_indicators=prediction.risk_indicators,

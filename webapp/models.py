@@ -113,6 +113,7 @@ class MessageRecord(TimestampMixin, db.Model):
     verification_label = db.Column(db.String(50))
     verification_confidence = db.Column(db.Float)
     verification_notes = db.Column(db.Text)
+    review_signature = db.Column(db.String(512), index=True)
     reviewed_label = db.Column(db.String(50))
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 

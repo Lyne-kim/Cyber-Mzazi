@@ -6,6 +6,7 @@ import requests
 from flask import current_app
 
 from .ml_service import get_classifier
+from .review_feedback import find_review_feedback
 
 
 @dataclass
@@ -48,7 +49,16 @@ def prediction_backend_status() -> dict:
     }
 
 
-def predict_message(text: str) -> PredictionResult:
+def predict_message(text: str, family_id: int | None = None) -> PredictionResult:
+    review_feedback = find_review_feedback(text, family_id=family_id)
+    if review_feedback is not None:
+        return PredictionResult(
+            label=str(review_feedback["label"]),
+            confidence=float(review_feedback["confidence"]),
+            risk_indicators=str(review_feedback["risk_indicators"]),
+            provider=str(review_feedback["provider"]),
+        )
+
     provider = current_app.config.get("MODEL_PROVIDER", "auto")
     if provider == "heuristic":
         classifier = get_classifier()

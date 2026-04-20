@@ -3,6 +3,8 @@ from __future__ import annotations
 from sqlalchemy import inspect, text
 
 from ..extensions import db
+from ..models import MessageRecord
+from .review_feedback import build_review_signature
 
 
 def _column_exists(inspector, table_name: str, column_name: str) -> bool:
@@ -84,6 +86,12 @@ def ensure_runtime_schema() -> None:
         )
 
     inspector = inspect(db.engine)
+    if "message_record" in table_names and not _column_exists(inspector, "message_record", "review_signature"):
+        db.session.execute(
+            text("ALTER TABLE message_record ADD COLUMN review_signature VARCHAR(512)")
+        )
+
+    inspector = inspect(db.engine)
     if "safety_resource_document" in table_names:
         if not _column_exists(inspector, "safety_resource_document", "uploaded_by_id"):
             db.session.execute(
@@ -153,4 +161,9 @@ def ensure_runtime_schema() -> None:
                 "WHERE file_size IS NULL"
             )
         )
+    if "message_record" in table_names:
+        for record in MessageRecord.query.filter(
+            (MessageRecord.review_signature.is_(None)) | (MessageRecord.review_signature == "")
+        ).all():
+            record.review_signature = build_review_signature(record.message_text)
     db.session.commit()
