@@ -4,6 +4,15 @@
     <string name="app_tagline">A calm, lightweight safety bridge for real Android notifications.</string>
     <string name="hero_headline">Cyber Mzazi</string>
     <string name="hero_copy">Protect the child device with safe pairing, app filters, and quick notification review.</string>
+    <string name="role_label">Device role</string>
+    <string name="role_parent">Parent/Guardian</string>
+    <string name="role_child">Child</string>
+    <string name="role_selection_title">Choose who uses this phone</string>
+    <string name="role_selection_copy">Use one Cyber Mzazi app on both phones, but only the child phone captures third-party notifications.</string>
+    <string name="role_parent_copy">Parent mode keeps this phone for alerts, pairing, and review. Notification capture stays off on this device.</string>
+    <string name="role_child_copy">Child mode enables notification capture, safety filters, and child-device monitoring setup.</string>
+    <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
+    <string name="role_saved">Device role updated.</string>
     <string name="menu_button_symbol">&#9776;</string>
     <string name="hero_preview_title">Cyber Mzazi</string>
     <string name="hero_preview_icon">&#128241;</string>
@@ -14,7 +23,7 @@
     <string name="pairing_section_title">1. Pair this device</string>
     <string name="pairing_section_copy">Scan the parent QR or paste the link token manually.</string>
     <string name="actions_section_title">2. Turn on capture</string>
-    <string name="actions_section_copy">Open notification access and send a quick test before using real messages.</string>
+    <string name="actions_section_copy">Open notification access and send a quick test before using real messages on the child phone.</string>
     <string name="feature_selector_title">Choose a feature</string>
     <string name="feature_selector_copy">Open one task at a time instead of scrolling through every setup card.</string>
     <string name="feature_selector_label">Feature menu</string>
@@ -52,6 +61,7 @@
     <string name="home_nav">Home</string>
     <string name="capture_nav">Capture</string>
     <string name="filters_nav">Filters</string>
+    <string name="status_nav">Status</string>
     <string name="log_nav">Logs</string>
     <string-array name="feature_menu_options">
         <item>Pair this device</item>

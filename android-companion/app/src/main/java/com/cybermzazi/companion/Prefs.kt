@@ -3,6 +3,9 @@ package com.cybermzazi.companion
 import android.content.Context
 
 object Prefs {
+    const val ROLE_PARENT = "parent"
+    const val ROLE_CHILD = "child"
+
     private const val PREFS_NAME = "cyber_mzazi_companion"
     private const val KEY_BASE_URL = "base_url"
     private const val KEY_DEVICE_TOKEN = "device_token"
@@ -10,6 +13,7 @@ object Prefs {
     private const val KEY_LAST_STATUS = "last_status"
     private const val KEY_ALLOWED_PACKAGES = "allowed_packages"
     private const val KEY_BLOCKED_PACKAGES = "blocked_packages"
+    private const val KEY_DEVICE_ROLE = "device_role"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -54,5 +58,20 @@ object Prefs {
 
     fun setBlockedPackages(context: Context, value: String) {
         prefs(context).edit().putString(KEY_BLOCKED_PACKAGES, value).apply()
+    }
+
+    fun getDeviceRole(context: Context): String =
+        prefs(context).getString(KEY_DEVICE_ROLE, ROLE_CHILD).orEmpty().ifBlank { ROLE_CHILD }
+
+    fun isChildRole(context: Context): Boolean = getDeviceRole(context) == ROLE_CHILD
+
+    fun isParentRole(context: Context): Boolean = getDeviceRole(context) == ROLE_PARENT
+
+    fun setDeviceRole(context: Context, value: String) {
+        val normalized = when (value) {
+            ROLE_PARENT -> ROLE_PARENT
+            else -> ROLE_CHILD
+        }
+        prefs(context).edit().putString(KEY_DEVICE_ROLE, normalized).apply()
     }
 }

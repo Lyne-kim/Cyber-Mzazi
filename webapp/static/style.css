@@ -538,6 +538,19 @@ p {
   color: #8fe1ff;
 }
 
+.summary-visibility-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--child);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.35rem 0.2rem;
+}
+
+.summary-toggle-region[hidden] {
+  display: none !important;
+}
+
 .flash-stack {
   display: grid;
   gap: 0.7rem;

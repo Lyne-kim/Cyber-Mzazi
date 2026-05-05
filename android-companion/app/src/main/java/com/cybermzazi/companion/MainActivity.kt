@@ -23,6 +23,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var menuToggle: TextView
+    private lateinit var roleBadge: TextView
+    private lateinit var roleSummaryText: TextView
+    private lateinit var captureRoleHint: TextView
+    private lateinit var parentRoleButton: Button
+    private lateinit var childRoleButton: Button
     private lateinit var baseUrlInput: EditText
     private lateinit var tokenInput: EditText
     private lateinit var deviceNameInput: EditText
@@ -37,11 +42,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuStatus: TextView
     private lateinit var menuLog: TextView
 
+    private lateinit var roleSection: View
     private lateinit var pairingSection: View
     private lateinit var actionsSection: View
     private lateinit var filtersSection: View
     private lateinit var statusSection: View
     private lateinit var logSection: View
+
+    private var currentSection = 0
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -63,6 +71,11 @@ class MainActivity : AppCompatActivity() {
 
         drawerLayout = findViewById(R.id.drawerLayout)
         menuToggle = findViewById(R.id.menuToggle)
+        roleBadge = findViewById(R.id.roleBadge)
+        roleSummaryText = findViewById(R.id.roleSummaryText)
+        captureRoleHint = findViewById(R.id.captureRoleHint)
+        parentRoleButton = findViewById(R.id.parentRoleButton)
+        childRoleButton = findViewById(R.id.childRoleButton)
         baseUrlInput = findViewById(R.id.baseUrlInput)
         tokenInput = findViewById(R.id.tokenInput)
         deviceNameInput = findViewById(R.id.deviceNameInput)
@@ -77,6 +90,7 @@ class MainActivity : AppCompatActivity() {
         menuStatus = findViewById(R.id.menuStatus)
         menuLog = findViewById(R.id.menuLog)
 
+        roleSection = findViewById(R.id.roleSection)
         pairingSection = findViewById(R.id.pairingSection)
         actionsSection = findViewById(R.id.actionsSection)
         filtersSection = findViewById(R.id.filtersSection)
@@ -97,6 +111,9 @@ class MainActivity : AppCompatActivity() {
         menuStatus.setOnClickListener { showSection(3) }
         menuLog.setOnClickListener { showSection(4) }
 
+        parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_PARENT) }
+        childRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
+
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             saveSettings()
         }
@@ -104,26 +121,42 @@ class MainActivity : AppCompatActivity() {
             startQrPairing()
         }
         findViewById<Button>(R.id.notificationAccessButton).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            if (!Prefs.isChildRole(this)) {
+                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
+            } else {
+                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            }
         }
         findViewById<Button>(R.id.sendTestButton).setOnClickListener {
-            sendTestPayload()
+            if (!Prefs.isChildRole(this)) {
+                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
+            } else {
+                sendTestPayload()
+            }
         }
         findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
-            retryQueue()
+            if (!Prefs.isChildRole(this)) {
+                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
+            } else {
+                retryQueue()
+            }
         }
 
         populateFields()
+        updateRoleUi()
         showSection(0)
     }
 
     override fun onResume() {
         super.onResume()
         populateFields()
-        IngestionClient.flushQueuedNotifications(this) { _, message ->
-            runOnUiThread {
-                statusText.text = message
-                recentLogText.text = RecentNotificationLog.render(this)
+        updateRoleUi()
+        if (Prefs.isChildRole(this)) {
+            IngestionClient.flushQueuedNotifications(this) { _, message ->
+                runOnUiThread {
+                    statusText.text = message
+                    recentLogText.text = RecentNotificationLog.render(this)
+                }
             }
         }
     }
@@ -138,13 +171,47 @@ class MainActivity : AppCompatActivity() {
         recentLogText.text = RecentNotificationLog.render(this)
     }
 
+    private fun updateRoleUi() {
+        val isChildRole = Prefs.isChildRole(this)
+        roleBadge.text = getString(if (isChildRole) R.string.role_child else R.string.role_parent)
+        roleSummaryText.text = getString(if (isChildRole) R.string.role_child_copy else R.string.role_parent_copy)
+        captureRoleHint.text = getString(if (isChildRole) R.string.actions_section_copy else R.string.parent_mode_capture_disabled)
+
+        setRoleButtonState(parentRoleButton, !isChildRole)
+        setRoleButtonState(childRoleButton, isChildRole)
+
+        menuCapture.visibility = if (isChildRole) View.VISIBLE else View.GONE
+        menuFilters.visibility = if (isChildRole) View.VISIBLE else View.GONE
+
+        if (!isChildRole && (currentSection == 1 || currentSection == 2)) {
+            currentSection = 0
+        }
+        syncDrawerState(currentSection)
+        showSection(currentSection)
+    }
+
+    private fun setRoleButtonState(button: Button, active: Boolean) {
+        button.alpha = if (active) 1f else 0.72f
+        button.isAllCaps = false
+    }
+
+    private fun setDeviceRole(role: String) {
+        Prefs.setDeviceRole(this, role)
+        Toast.makeText(this, R.string.role_saved, Toast.LENGTH_SHORT).show()
+        updateRoleUi()
+    }
+
     private fun showSection(position: Int) {
-        pairingSection.visibility = if (position == 0) View.VISIBLE else View.GONE
-        actionsSection.visibility = if (position == 1) View.VISIBLE else View.GONE
-        filtersSection.visibility = if (position == 2) View.VISIBLE else View.GONE
-        statusSection.visibility = if (position == 3) View.VISIBLE else View.GONE
-        logSection.visibility = if (position == 4) View.VISIBLE else View.GONE
-        syncDrawerState(position)
+        val resolvedPosition = if (!Prefs.isChildRole(this) && (position == 1 || position == 2)) 0 else position
+        currentSection = resolvedPosition
+
+        roleSection.visibility = if (resolvedPosition == 0) View.VISIBLE else View.GONE
+        pairingSection.visibility = if (resolvedPosition == 0) View.VISIBLE else View.GONE
+        actionsSection.visibility = if (resolvedPosition == 1 && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
+        filtersSection.visibility = if (resolvedPosition == 2 && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
+        statusSection.visibility = if (resolvedPosition == 3) View.VISIBLE else View.GONE
+        logSection.visibility = if (resolvedPosition == 4) View.VISIBLE else View.GONE
+        syncDrawerState(resolvedPosition)
         drawerLayout.closeDrawer(GravityCompat.START)
     }
 
@@ -243,7 +310,12 @@ class MainActivity : AppCompatActivity() {
         if (deviceNameInput.text.isNullOrBlank()) {
             deviceNameInput.setText(qrDeviceName)
         }
+        when (uri.getQueryParameter("role").orEmpty().trim().lowercase()) {
+            Prefs.ROLE_PARENT -> Prefs.setDeviceRole(this, Prefs.ROLE_PARENT)
+            Prefs.ROLE_CHILD -> Prefs.setDeviceRole(this, Prefs.ROLE_CHILD)
+        }
         saveSettings()
+        updateRoleUi()
         Toast.makeText(this, R.string.qr_pairing_applied, Toast.LENGTH_SHORT).show()
     }
 }

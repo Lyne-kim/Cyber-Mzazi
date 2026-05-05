@@ -40,24 +40,19 @@
             {% endif %}
           </p>
           <strong>{{ t("Request sign-out") }}</strong>
-          <p class="muted">{{ pending_logout.action_description or t("This request ends only the current child session on this device.") }}</p>
-          {% if pending_logout.request_note %}
-            <p class="meta">Note: {{ pending_logout.request_note }}</p>
-          {% endif %}
           <span class="meta">
             {% if pending_logout.status == 'approved' %}
-              {{ t("Parent approval received") }}
+              {{ t("Sign-out approved") }}
             {% elif pending_logout.status == 'denied' %}
-              {{ t("Logout denied. The child session remains active.") }}
+              {{ t("Sign-out denied") }}
             {% else %}
-              {{ t("Waiting for parent approval") }}
+              {{ t("Request pending") }}
             {% endif %}
           </span>
           {% if pending_logout.status == 'approved' %}
             <a class="button accent small" href="{{ url_for('auth.logout') }}">Sign out now</a>
           {% elif pending_logout.status == 'denied' %}
             <form method="post" action="{{ url_for('auth.request_logout') }}">
-              <input type="hidden" name="request_note" value="Retry sign-out request for this device.">
               <button class="button ghost small" type="submit">{{ t("Send request") }}</button>
             </form>
           {% endif %}
@@ -66,9 +61,7 @@
         <article class="approval-card">
           <p class="eyebrow">{{ t("Request sign-out") }}</p>
           <strong>{{ t("Request sign-out") }}</strong>
-          <p class="muted">{{ t("Ask to end this child session on this device.") }}</p>
           <form method="post" action="{{ url_for('auth.request_logout') }}">
-            <input type="hidden" name="request_note" value="End the current child session on this device only.">
             <button class="button accent small" type="submit">{{ t("Send request") }}</button>
           </form>
         </article>
@@ -114,7 +107,6 @@
             {{ t("Waiting for parent approval") }}
           {% endif %}
         </strong>
-        <p class="muted">{{ pending_logout.action_description or t("This request ends only the current child session on this device.") }}</p>
       </section>
     {% endif %}
 
@@ -187,23 +179,40 @@
         </form>
       </section>
       <section class="panel">
-        <p class="eyebrow">{{ t("Recent Safety Checks") }}</p>
-        <h3>{{ t("Recent summaries") }}</h3>
-        {% for message in messages %}
-          <article class="message-card compact">
-            <div class="message-topline">
-              <strong>{{ message.predicted_label }}</strong>
-              <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
-            </div>
-            <p>{{ message.message_text }}</p>
-            <p class="meta">From: {{ message.sender_handle or "Unknown account" }}</p>
-            <p class="meta">{{ message.source_platform }}</p>
-            <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
-            <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
-          </article>
-        {% else %}
-          <p class="muted">No safety checks yet.</p>
-        {% endfor %}
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">{{ t("Recent Safety Checks") }}</p>
+            <h3>{{ t("Recent summaries") }}</h3>
+          </div>
+          <button
+            class="summary-visibility-toggle"
+            type="button"
+            data-summary-toggle
+            data-show-label="{{ t('Show') }}"
+            data-hide-label="{{ t('Hide') }}"
+            aria-expanded="false"
+            aria-controls="recent-safety-summaries"
+          >
+            {{ t("Show") }}
+          </button>
+        </div>
+        <div class="summary-toggle-region" id="recent-safety-summaries" hidden>
+          {% for message in messages %}
+            <article class="message-card compact">
+              <div class="message-topline">
+                <strong>{{ message.predicted_label }}</strong>
+                <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+              </div>
+              <p>{{ message.message_text }}</p>
+              <p class="meta">From: {{ message.sender_handle or "Unknown account" }}</p>
+              <p class="meta">{{ message.source_platform }}</p>
+              <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
+              <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / {{ message.verification_label }}{% endif %}</p>
+            </article>
+          {% else %}
+            <p class="muted">No safety checks yet.</p>
+          {% endfor %}
+        </div>
       </section>
     {% elif page_key == "my_safety" %}
       <section class="panel">
@@ -305,6 +314,41 @@
       document.querySelectorAll("[data-auto-dismiss]").forEach((banner) => {
         const delay = Number.parseInt(banner.dataset.autoDismiss || "15000", 10);
         dismissAfterDelay(banner, Number.isFinite(delay) ? delay : 15000);
+      });
+
+      document.querySelectorAll("[data-summary-toggle]").forEach((toggle) => {
+        const targetId = toggle.getAttribute("aria-controls");
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (!target) {
+          return;
+        }
+
+        const showLabel = toggle.dataset.showLabel || "Show";
+        const hideLabel = toggle.dataset.hideLabel || "Hide";
+        const storageKey = `child-summary-visibility:${targetId}`;
+        const syncState = (expanded) => {
+          toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+          toggle.textContent = expanded ? hideLabel : showLabel;
+          target.hidden = !expanded;
+          try {
+            window.localStorage.setItem(storageKey, expanded ? "shown" : "hidden");
+          } catch (error) {
+            // Ignore storage access issues and keep the toggle working in-memory.
+          }
+        };
+
+        let initialExpanded = false;
+        try {
+          initialExpanded = window.localStorage.getItem(storageKey) === "shown";
+        } catch (error) {
+          initialExpanded = false;
+        }
+
+        syncState(initialExpanded);
+        toggle.addEventListener("click", () => {
+          const expanded = toggle.getAttribute("aria-expanded") === "true";
+          syncState(!expanded);
+        });
       });
     })();
   </script>

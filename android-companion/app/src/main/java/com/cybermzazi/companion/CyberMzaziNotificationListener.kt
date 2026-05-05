@@ -7,6 +7,7 @@ import android.service.notification.StatusBarNotification
 class CyberMzaziNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
+        if (!Prefs.isChildRole(applicationContext)) return
         if (sbn.packageName == packageName) return
         if (sbn.notification.flags and Notification.FLAG_ONGOING_EVENT != 0) return
         if (!FilterRules.shouldIngest(applicationContext, sbn.packageName)) return

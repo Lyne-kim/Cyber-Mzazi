@@ -43,6 +43,19 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
+            <TextView
+                android:id="@+id/roleBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_menu_button"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:text="@string/role_child"
+                android:textColor="@color/cyber_mzazi_white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
             <ImageView
                 android:id="@+id/headerLogo"
                 android:layout_width="34dp"
@@ -62,6 +75,63 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/roleSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/role_selection_title"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/role_selection_copy"
+                        android:textColor="@color/cyber_mzazi_white" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/parentRoleButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/role_parent" />
+
+                        <Button
+                            android:id="@+id/childRoleButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/role_child" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/roleSummaryText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/role_child_copy"
+                        android:textColor="@color/cyber_mzazi_white" />
+                </LinearLayout>
 
                 <!-- Pairing Section -->
                 <LinearLayout
@@ -118,6 +188,16 @@
                     android:background="@drawable/bg_card"
                     android:padding="16dp"
                     android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/captureRoleHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/actions_section_copy"
+                        android:textColor="@color/cyber_mzazi_white" />
 
                     <Button
                         android:id="@+id/sendTestButton"
@@ -238,31 +318,31 @@
             android:id="@+id/menuHome"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Home"
+            android:text="@string/home_nav"
             style="@style/SidebarItem"/>
         <TextView
             android:id="@+id/menuCapture"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Capture"
+            android:text="@string/capture_nav"
             style="@style/SidebarItem"/>
         <TextView
             android:id="@+id/menuFilters"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Filters"
+            android:text="@string/filters_nav"
             style="@style/SidebarItem"/>
         <TextView
             android:id="@+id/menuStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Status"
+            android:text="@string/status_nav"
             style="@style/SidebarItem"/>
         <TextView
             android:id="@+id/menuLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Logs"
+            android:text="@string/log_nav"
             style="@style/SidebarItem"/>
 
     </LinearLayout>
