@@ -62,6 +62,76 @@ object ParentApiClient {
         }
     }
 
+    fun registerFamily(
+        context: Context,
+        familyName: String,
+        parentName: String,
+        parentContact: String,
+        parentPassword: String,
+        childName: String,
+        childUsername: String,
+        childPassword: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postPublicJson(
+            context = context,
+            path = "/api/auth/register",
+            body = JSONObject()
+                .put("family_name", familyName)
+                .put("parent_name", parentName)
+                .put("parent_contact", parentContact)
+                .put("parent_password", parentPassword)
+                .put("child_name", childName)
+                .put("child_username", childUsername)
+                .put("child_password", childPassword),
+            successMessage = "Family account created. Verify the parent contact before signing in.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun childLogin(
+        context: Context,
+        parentContact: String,
+        childUsername: String,
+        password: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
+        if (baseUrl.isBlank()) {
+            onComplete(false, "Save the backend URL first.")
+            return
+        }
+        executor.execute {
+            val result = runCatching {
+                val connection = (URL("$baseUrl/api/auth/login").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15000
+                    readTimeout = 15000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("Accept", "application/json")
+                }
+                val body = JSONObject().apply {
+                    put("portal", "child")
+                    put("parent_contact", parentContact)
+                    put("child_username", childUsername)
+                    put("password", password)
+                }
+                OutputStreamWriter(connection.outputStream).use { writer ->
+                    writer.write(body.toString())
+                }
+                val response = readResponse(connection)
+                if (connection.responseCode !in 200..299) {
+                    return@runCatching ParentApiResult(false, parseError(response, "Child sign-in failed."))
+                }
+                ParentApiResult(true, "Child sign-in ready.")
+            }.getOrElse { throwable ->
+                ParentApiResult(false, "Child sign-in error: ${throwable.message ?: "Unknown error"}")
+            }
+            onComplete(result.ok, result.message)
+        }
+    }
+
     fun resendPhoneVerification(
         context: Context,
         identifier: String,

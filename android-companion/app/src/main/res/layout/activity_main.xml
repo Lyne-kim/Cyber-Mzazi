@@ -85,10 +85,40 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/role_selection_title"
+                        android:text="@string/homepage_title"
                         android:textColor="@color/cyber_mzazi_white"
                         android:textSize="18sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/homepage_copy"
+                        android:textColor="@color/cyber_mzazi_white" />
+
+                    <Button
+                        android:id="@+id/openParentLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/parent_sign_in" />
+
+                    <Button
+                        android:id="@+id/openRegisterFamilyButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/register_family_account" />
+
+                    <Button
+                        android:id="@+id/openChildLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/child_sign_in" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -256,6 +286,168 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/open_parent_alerts" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/registerFamilySection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register_family_account"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/registerFamilyNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_family_name_hint"
+                        android:inputType="textCapWords" />
+
+                    <EditText
+                        android:id="@+id/registerParentNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_parent_name_hint"
+                        android:inputType="textCapWords" />
+
+                    <EditText
+                        android:id="@+id/registerParentContactInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/parent_identifier_hint"
+                        android:inputType="textEmailAddress" />
+
+                    <EditText
+                        android:id="@+id/registerParentPasswordInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/parent_password_hint"
+                        android:inputType="textPassword" />
+
+                    <EditText
+                        android:id="@+id/registerChildNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_child_name_hint"
+                        android:inputType="textCapWords" />
+
+                    <EditText
+                        android:id="@+id/registerChildUsernameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_child_username_hint"
+                        android:inputType="text" />
+
+                    <EditText
+                        android:id="@+id/registerChildPasswordInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_child_password_hint"
+                        android:inputType="textPassword" />
+
+                    <Button
+                        android:id="@+id/registerFamilyButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/create_family_account" />
+
+                    <TextView
+                        android:id="@+id/registerFamilyStatusText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/register_family_status"
+                        android:textColor="@color/cyber_mzazi_white" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/childLoginSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/child_sign_in"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/childParentContactInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/parent_identifier_hint"
+                        android:inputType="textEmailAddress" />
+
+                    <EditText
+                        android:id="@+id/childUsernameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_child_username_hint"
+                        android:inputType="text" />
+
+                    <EditText
+                        android:id="@+id/childPasswordInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/register_child_password_hint"
+                        android:inputType="textPassword" />
+
+                    <Button
+                        android:id="@+id/childLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/child_sign_in" />
+
+                    <TextView
+                        android:id="@+id/childLoginStatusText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/child_login_status"
+                        android:textColor="@color/cyber_mzazi_white" />
                 </LinearLayout>
 
                 <LinearLayout
