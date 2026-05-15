@@ -99,11 +99,12 @@ It is designed around:
 
 See these project docs for deeper setup details:
 
-- [PROJECT_DOCUMENTATION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\PROJECT_DOCUMENTATION.md)
-- [ANDROID_COMPANION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md)
-- [ANDROID_DEVICE_SETUP.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_DEVICE_SETUP.md)
-- [HF_SPACE_DEPLOYMENT.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\HF_SPACE_DEPLOYMENT.md)
-- [FRONTEND_API.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\FRONTEND_API.md)
+- [TECHNICAL_PROJECT_DOCUMENTATION.md](TECHNICAL_PROJECT_DOCUMENTATION.md)
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)
+- [ANDROID_COMPANION.md](ANDROID_COMPANION.md)
+- [ANDROID_DEVICE_SETUP.md](ANDROID_DEVICE_SETUP.md)
+- [HF_SPACE_DEPLOYMENT.md](HF_SPACE_DEPLOYMENT.md)
+- [FRONTEND_API.md](FRONTEND_API.md)
 
 ## Project structure
 
@@ -168,7 +169,7 @@ Important variables commonly used in this project:
 
 If needed, run the SQL bootstrap in:
 
-- [database/mysql_bootstrap.sql](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\database\mysql_bootstrap.sql)
+- [database/mysql_bootstrap.sql](database/mysql_bootstrap.sql)
 
 Then initialize tables:
 
@@ -228,9 +229,9 @@ Typical payload fields:
 
 The repo includes:
 
-- [render.yaml](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\render.yaml)
-- [Procfile](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\Procfile)
-- [wsgi.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\wsgi.py)
+- [render.yaml](render.yaml)
+- [Procfile](Procfile)
+- [wsgi.py](wsgi.py)
 
 Current recommended free-tier-safe setup:
 
@@ -272,13 +273,13 @@ Use a Gmail **App Password**, not your normal Gmail password.
 
 The repo includes a Hugging Face Space package in:
 
-- [hf_space](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\hf_space)
+- [hf_space](hf_space)
 
 This is for optional external inference experiments, not the required free-tier production path.
 
 Publish helper:
 
-- [tools/publish-hf-space.ps1](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\tools\publish-hf-space.ps1)
+- [tools/publish-hf-space.ps1](tools/publish-hf-space.ps1)
 
 ## What is still remaining
 

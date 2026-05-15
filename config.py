@@ -110,9 +110,14 @@ class Config:
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
     MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "").strip()
+    MAIL_FORCE_IPV4 = os.getenv("MAIL_FORCE_IPV4", "true").lower() == "true"
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
+    BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE = os.getenv(
+        "BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE",
+        "true",
+    ).lower() == "true"
     ALERT_EMAIL_ENABLED = os.getenv("ALERT_EMAIL_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}

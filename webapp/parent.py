@@ -265,6 +265,7 @@ def _parent_data() -> dict:
                 f"?base_url={quote(request.url_root.rstrip('/'), safe='')}"
                 f"&token={quote(session.get('android_link_token') or '', safe='')}"
                 f"&device_name={quote(session.get('android_link_device_name') or '', safe='')}"
+                "&role=child"
             )
             pending_android_link = {
                 "device_name": session.get("android_link_device_name"),

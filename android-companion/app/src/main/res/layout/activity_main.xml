@@ -5,38 +5,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- MAIN CONTENT -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@drawable/bg_screen">
+        android:background="@drawable/bg_screen"
+        android:orientation="vertical">
 
-        <!-- TOP BAR -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="60dp"
+            android:background="@drawable/bg_hero"
             android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:background="@drawable/bg_hero">
+            android:paddingHorizontal="16dp">
 
             <TextView
                 android:id="@+id/menuToggle"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:gravity="center"
-                android:text="☰"
-                android:textSize="22sp"
-                android:textColor="@color/cyber_mzazi_white" />
+                android:text="@string/menu_button_symbol"
+                android:textColor="@color/cyber_mzazi_white"
+                android:textSize="22sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cyber Mzazi"
+                android:layout_marginStart="12dp"
+                android:text="@string/app_name"
                 android:textColor="@color/cyber_mzazi_white"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginStart="12dp"/>
+                android:textStyle="bold" />
 
             <Space
                 android:layout_width="0dp"
@@ -65,7 +63,6 @@
                 android:src="@drawable/cyber_mzazi_logo" />
         </LinearLayout>
 
-        <!-- CONTENT -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -92,13 +89,6 @@
                         android:textColor="@color/cyber_mzazi_white"
                         android:textSize="18sp"
                         android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/role_selection_copy"
-                        android:textColor="@color/cyber_mzazi_white" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -133,67 +123,295 @@
                         android:textColor="@color/cyber_mzazi_white" />
                 </LinearLayout>
 
-                <!-- Pairing Section -->
                 <LinearLayout
-                    android:id="@+id/pairingSection"
+                    android:id="@+id/parentHomeSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_card"
+                    android:orientation="vertical"
                     android:padding="16dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
 
-                    <EditText
-                        android:id="@+id/baseUrlInput"
-                        android:hint="@string/base_url_hint"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_input"/>
+                        android:text="@string/auth_nav"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
                     <EditText
-                        android:id="@+id/tokenInput"
-                        android:hint="@string/token_hint"
+                        android:id="@+id/parentIdentifierInput"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
                         android:background="@drawable/bg_input"
-                        android:layout_marginTop="8dp"/>
+                        android:hint="@string/parent_identifier_hint"
+                        android:inputType="textEmailAddress" />
 
                     <EditText
-                        android:id="@+id/deviceNameInput"
-                        android:hint="@string/device_name_hint"
+                        android:id="@+id/parentPasswordInput"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:background="@drawable/bg_input"
-                        android:layout_marginTop="8dp"/>
+                        android:hint="@string/parent_password_hint"
+                        android:inputType="textPassword" />
 
                     <Button
-                        android:id="@+id/saveButton"
-                        android:text="@string/save_settings"
+                        android:id="@+id/parentLoginButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"/>
+                        android:layout_marginTop="12dp"
+                        android:text="@string/parent_sign_in" />
+
+                    <Button
+                        android:id="@+id/refreshParentAlertsButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/refresh_parent_alerts" />
+
+                    <TextView
+                        android:id="@+id/parentAlertSummaryText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/parent_alerts_not_loaded"
+                        android:textColor="@color/cyber_mzazi_white" />
+
+                    <Button
+                        android:id="@+id/reviewLatestSafeButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/review_latest_safe" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/approveLogoutButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/approve_logout" />
+
+                        <Button
+                            android:id="@+id/denyLogoutButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/deny_logout" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/openParentDashboardButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/open_parent_dashboard" />
+
+                    <Button
+                        android:id="@+id/openParentAlertsButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/open_parent_alerts" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/childHomeSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/child_home_title"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/goPairChildButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/qr_nav" />
+
+                    <Button
+                        android:id="@+id/goCaptureChildButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/capture_nav" />
+
+                    <Button
+                        android:id="@+id/goFiltersChildButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/filters_nav" />
+
+                    <TextView
+                        android:id="@+id/childSetupStatusText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/child_setup_status_placeholder"
+                        android:textColor="@color/cyber_mzazi_white" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/qrSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/qr_nav"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/parentChildDeviceNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/parent_child_device_name_hint"
+                        android:inputType="textCapWords" />
+
+                    <Button
+                        android:id="@+id/createChildDeviceLinkButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/create_child_device_link" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/copyPairingLinkButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/copy_pairing_link" />
+
+                        <Button
+                            android:id="@+id/sharePairingLinkButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/share_pairing_link" />
+                    </LinearLayout>
 
                     <Button
                         android:id="@+id/scanQrButton"
-                        android:text="@string/scan_pairing_qr"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/scan_pairing_qr" />
+
+                    <Button
+                        android:id="@+id/openChildDevicesButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/open_child_devices" />
                 </LinearLayout>
 
-                <!-- Actions -->
                 <LinearLayout
-                    android:id="@+id/actionsSection"
-                    android:visibility="gone"
+                    android:id="@+id/settingsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_card"
+                    android:orientation="vertical"
                     android:padding="16dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_nav"
+                        android:textColor="@color/cyber_mzazi_white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/baseUrlInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/base_url_hint" />
+
+                    <EditText
+                        android:id="@+id/tokenInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/token_hint" />
+
+                    <EditText
+                        android:id="@+id/deviceNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/device_name_hint" />
+
+                    <Button
+                        android:id="@+id/saveButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/save_settings"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/actionsSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
 
                     <TextView
                         android:id="@+id/captureRoleHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
                         android:background="@drawable/bg_status"
                         android:padding="12dp"
                         android:text="@string/actions_section_copy"
@@ -203,107 +421,125 @@
                         android:id="@+id/sendTestButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/send_test_payload"/>
+                        android:layout_marginTop="12dp"
+                        android:text="@string/send_test_payload" />
 
                     <Button
                         android:id="@+id/retryQueueButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/retry_queue"/>
+                        android:text="@string/retry_queue" />
 
                     <Button
                         android:id="@+id/notificationAccessButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/open_notification_access"/>
+                        android:text="@string/open_notification_access" />
                 </LinearLayout>
 
-                <!-- Filters -->
                 <LinearLayout
                     android:id="@+id/filtersSection"
-                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_card"
+                    android:orientation="vertical"
                     android:padding="16dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
 
                     <EditText
                         android:id="@+id/allowedPackagesInput"
-                        android:hint="@string/allow_packages_hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_input"/>
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/allow_packages_hint" />
 
                     <EditText
                         android:id="@+id/blockedPackagesInput"
-                        android:hint="@string/block_packages_hint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"/>
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/block_packages_hint" />
                 </LinearLayout>
 
-                <!-- Status -->
                 <LinearLayout
                     android:id="@+id/statusSection"
-                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_card"
+                    android:orientation="vertical"
                     android:padding="16dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/parentCaptureStatusText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_status"
+                        android:padding="12dp"
+                        android:text="@string/parent_capture_status_disabled"
+                        android:textColor="@color/cyber_mzazi_white" />
+
+                    <Button
+                        android:id="@+id/openParentNotificationSettingsButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/open_parent_notification_settings" />
 
                     <TextView
                         android:id="@+id/statusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
                         android:background="@drawable/bg_status"
-                        android:text="@string/no_status_yet"/>
+                        android:padding="12dp"
+                        android:text="@string/no_status_yet"
+                        android:textColor="@color/cyber_mzazi_white" />
                 </LinearLayout>
 
-                <!-- Logs -->
                 <LinearLayout
                     android:id="@+id/logSection"
-                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_card"
+                    android:orientation="vertical"
                     android:padding="16dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
 
                     <TextView
                         android:id="@+id/recentLogText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_status"
-                        android:text="@string/no_recent_logs"/>
+                        android:padding="12dp"
+                        android:text="@string/no_recent_logs"
+                        android:textColor="@color/cyber_mzazi_white" />
                 </LinearLayout>
-
             </LinearLayout>
         </ScrollView>
-
     </LinearLayout>
 
-    <!-- SIDEBAR -->
     <LinearLayout
         android:id="@+id/sidebar"
         android:layout_width="260dp"
         android:layout_height="match_parent"
+        android:layout_gravity="start"
         android:background="#0A1F44"
         android:orientation="vertical"
-        android:layout_gravity="start"
         android:padding="16dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Menu"
+            android:layout_marginBottom="16dp"
+            android:text="@string/menu_title"
             android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
+            android:textStyle="bold" />
 
         <ImageView
             android:layout_width="96dp"
@@ -316,35 +552,58 @@
 
         <TextView
             android:id="@+id/menuHome"
+            style="@style/SidebarItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/home_nav"
-            style="@style/SidebarItem"/>
+            android:text="@string/home_nav" />
+
+        <TextView
+            android:id="@+id/menuAuth"
+            style="@style/SidebarItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/auth_nav" />
+
+        <TextView
+            android:id="@+id/menuQr"
+            style="@style/SidebarItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/qr_nav" />
+
+        <TextView
+            android:id="@+id/menuSettings"
+            style="@style/SidebarItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_nav" />
+
         <TextView
             android:id="@+id/menuCapture"
+            style="@style/SidebarItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/capture_nav"
-            style="@style/SidebarItem"/>
+            android:text="@string/capture_nav" />
+
         <TextView
             android:id="@+id/menuFilters"
+            style="@style/SidebarItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/filters_nav"
-            style="@style/SidebarItem"/>
+            android:text="@string/filters_nav" />
+
         <TextView
             android:id="@+id/menuStatus"
+            style="@style/SidebarItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/status_nav"
-            style="@style/SidebarItem"/>
+            android:text="@string/status_nav" />
+
         <TextView
             android:id="@+id/menuLog"
+            style="@style/SidebarItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/log_nav"
-            style="@style/SidebarItem"/>
-
+            android:text="@string/log_nav" />
     </LinearLayout>
-
 </androidx.drawerlayout.widget.DrawerLayout>

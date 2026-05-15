@@ -14,7 +14,7 @@ The APK produced by this project is usually here:
 
 Legacy path if you are using an older build flow:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\app\build\outputs\apk\debug\app-debug.apk](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\app\build\outputs\apk\debug\app-debug.apk)
+- [android-companion/app/build/outputs/apk/debug/app-debug.apk](android-companion/app/build/outputs/apk/debug/app-debug.apk)
 
 ## Before You Start
 
@@ -24,16 +24,16 @@ Make sure you already have:
 - `Android SDK command-line tools`
 - `platform-tools`
 - `platforms;android-35`
-- `build-tools;34.0.0`
+- `build-tools;35.0.0`
 
 If not, follow:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md)
+- [android-companion/tools/setup-android-sdk.md](android-companion/tools/setup-android-sdk.md)
 
 Then build the APK:
 
 ```powershell
-cd "C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion"
+cd android-companion
 powershell -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
 ```
 
@@ -106,7 +106,7 @@ If you see `unauthorized`, unlock the phone and approve the trust prompt.
 ### 5. Install the APK
 
 ```powershell
-cd "C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion"
+cd android-companion
 powershell -ExecutionPolicy Bypass -File .\tools\install-debug.ps1
 ```
 
@@ -157,7 +157,7 @@ adb devices
 ### 3. Install the APK
 
 ```powershell
-cd "C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion"
+cd android-companion
 powershell -ExecutionPolicy Bypass -File .\tools\install-debug.ps1
 ```
 
@@ -243,39 +243,61 @@ Menu names vary, but these patterns are the ones most people hit:
 
 ## After the App Installs
 
-### 1. Create a Device Link in Cyber Mzazi
+Install the same APK on both phones if you want to test the full parent and child flow.
 
-1. Open [https://cyber-mzazi.onrender.com](https://cyber-mzazi.onrender.com)
-2. Log in as parent
-3. Select a child
-4. Open `Child Profile`
-5. Create an `Android notification link`
+### 1. Set Up the Parent Phone
 
-### 2. Pair the App
+1. Open `Cyber Mzazi`.
+2. Choose `Parent/Guardian`.
+3. Confirm the parent capture safety panel says notification capture is off.
+4. If it warns that notification access is enabled, tap `Open notification access settings` and disable Cyber Mzazi on the parent phone.
+5. Enter the backend URL, for example `https://cyber-mzazi.onrender.com`.
+6. Enter the parent email or phone and password.
+7. Tap `Sign in for native alerts`.
+8. Tap `Refresh native alert summary` to confirm the parent session works.
+9. Enter a child phone name.
+10. Tap `Create child pairing link`.
+11. Copy or share the pairing link to the child phone.
 
-In the Android app:
+The parent phone should not have Android notification access enabled. Parent mode is for viewing alerts, approving or denying child logout requests, reviewing flagged messages, and creating child pairing links.
 
-- scan the QR code
-- or enter:
-  - base URL
-  - device token
-  - device name
+### 2. Set Up the Child Phone
 
-Then tap `Save settings`.
+1. Open `Cyber Mzazi`.
+2. Choose `Child`.
+3. Use `Scan pairing QR`, or open or paste the pairing link from the parent phone.
+4. Confirm the backend URL, device token, and device name are filled in.
+5. Tap `Save settings`.
+6. Tap `Open notification access`.
+7. Enable `Cyber Mzazi notification listener`.
+8. Return to Cyber Mzazi.
+9. Confirm the child readiness panel shows the role, backend settings, and notification access are ready.
+10. Optional: configure app filters.
+11. Tap `Send test payload`.
 
-### 3. Enable Notification Access
+Only the child phone should have Android notification access enabled.
 
-Tap `Open notification access` in the app and enable:
+### 3. Test the Connection
 
-- `Cyber Mzazi Android Link`
+1. On the child phone, tap `Send test payload`.
+2. On the parent phone, tap `Refresh native alert summary`.
+3. Check the parent dashboard in:
+   - `Alerts`
+   - `Dashboard`
+   - `Activity Log`
+4. Send or receive a real notification on the child phone.
+5. Refresh the parent phone again and confirm the real notification appears.
 
-### 4. Test the Connection
+### 4. Web Fallback
 
-Tap `Send test payload`, then check the parent dashboard in:
+If the parent phone is not available yet, you can still create the child device link from the web app:
 
-- `Alerts`
-- `Dashboard`
-- `Activity Log`
+1. Open [https://cyber-mzazi.onrender.com](https://cyber-mzazi.onrender.com).
+2. Log in as parent.
+3. Select a child.
+4. Open `Child Profile`.
+5. Create an `Android notification link`.
+6. Pair the child phone with that link or QR code.
 
 ## Troubleshooting
 
@@ -300,8 +322,10 @@ Tap `Send test payload`, then check the parent dashboard in:
 
 ### Notifications are not reaching Cyber Mzazi
 
+- make sure the phone is in `Child` mode
 - make sure the app is paired with a valid token
-- confirm notification access is enabled
+- confirm notification access is enabled on the child phone
+- confirm notification access is disabled on the parent phone
 - check allow/block package filters
 - send a test payload first
 - then test with a real incoming notification

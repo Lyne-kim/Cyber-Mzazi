@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import smtplib
 from datetime import datetime
-from email.message import EmailMessage
 
 from flask import current_app, has_request_context, url_for
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from ..extensions import db
 from ..models import User
+from .mail_delivery import is_mail_delivery_configured, send_email
 
 EMAIL_VERIFICATION_SALT = "cyber-mzazi-email-verification"
 
@@ -18,10 +17,11 @@ def _serializer() -> URLSafeTimedSerializer:
 
 
 def is_mail_configured() -> bool:
-    return bool(
-        current_app.config.get("MAIL_SERVER")
-        and current_app.config.get("MAIL_DEFAULT_SENDER")
-    )
+    return is_mail_delivery_configured()
+
+
+def should_bypass_email_verification_when_delivery_fails() -> bool:
+    return bool(current_app.config.get("BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE", True))
 
 
 def generate_email_verification_token(user: User) -> str:
@@ -68,40 +68,18 @@ def send_verification_email(user: User) -> tuple[bool, str]:
         return False, "Email delivery is not configured yet."
 
     verification_link = build_email_verification_link(user)
-    sender = current_app.config["MAIL_DEFAULT_SENDER"]
-    message = EmailMessage()
-    message["Subject"] = "Verify your Cyber Mzazi email"
-    message["From"] = sender
-    message["To"] = user.email
-    message.set_content(
+    ok, message = send_email(
+        user.email,
+        "Verify your Cyber Mzazi email",
         (
             f"Hello {user.name},\n\n"
             "Verify your Cyber Mzazi parent account by opening the link below:\n\n"
             f"{verification_link}\n\n"
             "If you did not create this account, you can ignore this email."
-        )
+        ),
     )
-
-    server = current_app.config["MAIL_SERVER"]
-    port = current_app.config["MAIL_PORT"]
-    username = current_app.config["MAIL_USERNAME"]
-    password = current_app.config["MAIL_PASSWORD"]
-    use_tls = current_app.config["MAIL_USE_TLS"]
-    use_ssl = current_app.config["MAIL_USE_SSL"]
-
-    try:
-        if use_ssl:
-            smtp: smtplib.SMTP = smtplib.SMTP_SSL(server, port, timeout=20)
-        else:
-            smtp = smtplib.SMTP(server, port, timeout=20)
-        with smtp:
-            if use_tls and not use_ssl:
-                smtp.starttls()
-            if username:
-                smtp.login(username, password)
-            smtp.send_message(message)
-    except Exception as exc:  # pragma: no cover - network dependent
-        return False, f"Verification email could not be sent: {exc}"
+    if not ok:
+        return False, f"Verification email could not be sent. {message}"
 
     user.verification_email_sent_at = datetime.utcnow()
     db.session.add(user)

@@ -1,6 +1,6 @@
 # Hugging Face Space Deployment
 
-This project includes a ready-to-publish Hugging Face Space in [hf_space](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\hf_space) for free DistilBERT inference hosting.
+This project includes a ready-to-publish Hugging Face Space in [hf_space](hf_space) for free DistilBERT inference hosting.
 
 ## What it does
 

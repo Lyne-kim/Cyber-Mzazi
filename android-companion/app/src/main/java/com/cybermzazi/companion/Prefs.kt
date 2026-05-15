@@ -14,6 +14,8 @@ object Prefs {
     private const val KEY_ALLOWED_PACKAGES = "allowed_packages"
     private const val KEY_BLOCKED_PACKAGES = "blocked_packages"
     private const val KEY_DEVICE_ROLE = "device_role"
+    private const val KEY_PARENT_IDENTIFIER = "parent_identifier"
+    private const val KEY_PARENT_SESSION_COOKIE = "parent_session_cookie"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -73,5 +75,23 @@ object Prefs {
             else -> ROLE_CHILD
         }
         prefs(context).edit().putString(KEY_DEVICE_ROLE, normalized).apply()
+    }
+
+    fun getParentIdentifier(context: Context): String =
+        prefs(context).getString(KEY_PARENT_IDENTIFIER, "").orEmpty()
+
+    fun setParentIdentifier(context: Context, value: String) {
+        prefs(context).edit().putString(KEY_PARENT_IDENTIFIER, value).apply()
+    }
+
+    fun getParentSessionCookie(context: Context): String =
+        prefs(context).getString(KEY_PARENT_SESSION_COOKIE, "").orEmpty()
+
+    fun setParentSessionCookie(context: Context, value: String) {
+        prefs(context).edit().putString(KEY_PARENT_SESSION_COOKIE, value).apply()
+    }
+
+    fun clearParentSession(context: Context) {
+        prefs(context).edit().remove(KEY_PARENT_SESSION_COOKIE).apply()
     }
 }

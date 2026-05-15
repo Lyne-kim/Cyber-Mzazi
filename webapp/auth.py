@@ -11,6 +11,7 @@ from .models import Family, LogoutRequest, User
 from .services.audit import log_event
 from .services.email_verification import (
     send_verification_email,
+    should_bypass_email_verification_when_delivery_fails,
     verify_email_token,
 )
 from .services.parent_alerts import send_logout_request_alert
@@ -145,12 +146,23 @@ def register():
                     f"Verification email sent to {parent_user.email}",
                 )
             else:
-                verification_warning = message
+                if should_bypass_email_verification_when_delivery_fails():
+                    parent_user.email_verified = True
+                    parent_user.email_verified_at = datetime.utcnow()
+                    verification_message = "Email verification bypassed because email delivery is unavailable."
+                    log_event(
+                        family.id,
+                        parent_user.id,
+                        "verification_email_bypassed",
+                        f"Email verification bypassed for {parent_user.email}: {message}",
+                    )
+                else:
+                    verification_warning = message
         db.session.commit()
 
         if verification_message:
             flash(
-                "Family account created. Check the parent email inbox to verify the account before signing in.",
+                "Family account created. Parent can sign in now.",
                 "success",
             )
         else:
@@ -174,6 +186,29 @@ def parent_login():
         if not user:
             flash("Invalid parent/guardian email, phone, or password.", "danger")
             return render_template("parent_login.html")
+        if not user.can_log_in:
+            if should_bypass_email_verification_when_delivery_fails():
+                user.email_verified = True
+                user.email_verified_at = datetime.utcnow()
+                db.session.add(user)
+                log_event(
+                    user.family_id,
+                    user.id,
+                    "verification_email_bypassed",
+                    f"Email verification bypassed for {user.email or user.phone} during login.",
+                )
+                db.session.commit()
+                flash("Email delivery is unavailable, so the parent account has been enabled.", "success")
+            else:
+                flash(
+                    "Verify the parent email address before signing in. You can request a new verification email below.",
+                    "warning",
+                )
+                return render_template(
+                    "parent_login.html",
+                    pending_identifier=user.email or user.phone or "",
+                )
+
         if not user.can_log_in:
             flash(
                 "Verify the parent email address before signing in. You can request a new verification email below.",
@@ -247,8 +282,21 @@ def resend_verification():
         db.session.commit()
         flash("Verification email sent again. Check the inbox and spam folder.", "success")
     else:
-        db.session.rollback()
-        flash(message, "danger")
+        if should_bypass_email_verification_when_delivery_fails():
+            user.email_verified = True
+            user.email_verified_at = datetime.utcnow()
+            db.session.add(user)
+            log_event(
+                user.family_id,
+                user.id,
+                "verification_email_bypassed",
+                f"Email verification bypassed for {user.email}: {message}",
+            )
+            db.session.commit()
+            flash("Email delivery is unavailable, so the parent account has been enabled. You can sign in now.", "success")
+        else:
+            db.session.rollback()
+            flash(message, "danger")
     return render_template("parent_login.html", pending_identifier=identifier)
 
 

@@ -84,18 +84,18 @@ artifacts/
 
 Important files:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\app.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\app.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\config.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\config.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ml\train.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ml\train.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\__init__.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\__init__.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\models.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\models.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\auth.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\auth.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\child.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\child.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\scripts\bootstrap.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\scripts\bootstrap.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\scripts\init_db.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\scripts\init_db.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion)
+- [app.py](app.py)
+- [config.py](config.py)
+- [ml/train.py](ml/train.py)
+- [webapp/__init__.py](webapp/__init__.py)
+- [webapp/models.py](webapp/models.py)
+- [webapp/api.py](webapp/api.py)
+- [webapp/auth.py](webapp/auth.py)
+- [webapp/parent.py](webapp/parent.py)
+- [webapp/child.py](webapp/child.py)
+- [scripts/bootstrap.py](scripts/bootstrap.py)
+- [scripts/init_db.py](scripts/init_db.py)
+- [android-companion](android-companion)
 
 ## 5. High-Level Architecture
 
@@ -124,11 +124,11 @@ flowchart LR
 
 The application starts in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\app.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\app.py)
+- [app.py](app.py)
 
 This file loads environment variables and creates the Flask app through:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\__init__.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\__init__.py)
+- [webapp/__init__.py](webapp/__init__.py)
 
 ### Registered modules
 
@@ -150,7 +150,7 @@ These correspond to:
 
 The main configuration is in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\config.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\config.py)
+- [config.py](config.py)
 
 Important configuration areas:
 
@@ -167,7 +167,7 @@ Important configuration areas:
 
 The core schema is defined in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\models.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\models.py)
+- [webapp/models.py](webapp/models.py)
 
 ### Main entities
 
@@ -278,7 +278,7 @@ Fields include:
 
 The authentication logic is defined in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\auth.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\auth.py)
+- [webapp/auth.py](webapp/auth.py)
 
 ### Parent login
 
@@ -289,7 +289,7 @@ Parent authentication uses:
 
 Parent login page:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\parent_login.html](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\parent_login.html)
+- [webapp/templates/parent_login.html](webapp/templates/parent_login.html)
 
 ### Child login
 
@@ -301,7 +301,7 @@ Child authentication uses:
 
 Child login page:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\child_login.html](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\child_login.html)
+- [webapp/templates/child_login.html](webapp/templates/child_login.html)
 
 ### Registration
 
@@ -325,8 +325,8 @@ API routes also enforce the same role checks.
 
 The parent interface logic is primarily in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\parent_page.html](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\parent_page.html)
+- [webapp/parent.py](webapp/parent.py)
+- [webapp/templates/parent_page.html](webapp/templates/parent_page.html)
 
 ### Parent pages
 
@@ -372,8 +372,8 @@ Parents can:
 
 The child interface logic is primarily in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\child.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\child.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\child_page.html](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\templates\child_page.html)
+- [webapp/child.py](webapp/child.py)
+- [webapp/templates/child_page.html](webapp/templates/child_page.html)
 
 ### Child pages
 
@@ -400,11 +400,11 @@ The child app uses supportive language and avoids surveillance-heavy framing.
 
 Training logic:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ml\train.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ml\train.py)
+- [ml/train.py](ml/train.py)
 
 Runtime classifier:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\ml_service.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\ml_service.py)
+- [webapp/services/ml_service.py](webapp/services/ml_service.py)
 
 ### Training flow
 
@@ -440,7 +440,7 @@ Those reviewed labels are included during later retraining, which improves the d
 
 Verification logic:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\verification.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\verification.py)
+- [webapp/services/verification.py](webapp/services/verification.py)
 
 Two modes are supported:
 
@@ -486,7 +486,7 @@ This approval is consumed after use.
 
 Multi-child support is handled through:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\family_context.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\family_context.py)
+- [webapp/services/family_context.py](webapp/services/family_context.py)
 
 The parent can:
 
@@ -500,7 +500,7 @@ The selected child determines which data appears on parent pages.
 
 Language support is defined in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\ui_text.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\ui_text.py)
+- [webapp/ui_text.py](webapp/ui_text.py)
 
 Currently supported languages:
 
@@ -513,11 +513,11 @@ Language preference is stored per user in the database and is also reflected in 
 
 The API is defined in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py)
+- [webapp/api.py](webapp/api.py)
 
 Related guide:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\FRONTEND_API.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\FRONTEND_API.md)
+- [FRONTEND_API.md](FRONTEND_API.md)
 
 ### API categories
 
@@ -557,9 +557,9 @@ Related guide:
 
 The Android ingestion backend support is implemented through:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\notification_devices.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\notification_devices.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\api.py)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\parent.py)
+- [webapp/services/notification_devices.py](webapp/services/notification_devices.py)
+- [webapp/api.py](webapp/api.py)
+- [webapp/parent.py](webapp/parent.py)
 
 ### Flow
 
@@ -584,8 +584,8 @@ The Android ingestion backend support is implemented through:
 
 Android companion files:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md)
+- [android-companion](android-companion)
+- [ANDROID_COMPANION.md](ANDROID_COMPANION.md)
 
 ### Purpose
 
@@ -633,14 +633,14 @@ The project now supports:
 
 Use the shorter operational instructions in:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\README.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\README.md)
+- [README.md](README.md)
 
 ### Android companion setup
 
 Use:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_COMPANION.md)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md)
+- [ANDROID_COMPANION.md](ANDROID_COMPANION.md)
+- [android-companion/tools/setup-android-sdk.md](android-companion/tools/setup-android-sdk.md)
 
 ## 20. Deployment
 
@@ -648,9 +648,9 @@ Use:
 
 Deployment files:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\render.yaml](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\render.yaml)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\Procfile](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\Procfile)
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\wsgi.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\wsgi.py)
+- [render.yaml](render.yaml)
+- [Procfile](Procfile)
+- [wsgi.py](wsgi.py)
 
 Startup command:
 
@@ -675,7 +675,7 @@ The project supports MySQL SSL paths for providers such as Aiven.
 
 Runtime schema handling:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\schema.py](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\webapp\services\schema.py)
+- [webapp/services/schema.py](webapp/services/schema.py)
 
 This helper allows safer deployment evolution by:
 

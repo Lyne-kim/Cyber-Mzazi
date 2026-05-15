@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import smtplib
-from email.message import EmailMessage
-
 from flask import current_app, has_request_context, url_for
 
 from ..models import LogoutRequest, MessageRecord, User
+from .mail_delivery import is_mail_delivery_configured, send_email
 
 
 def _can_send_parent_alerts(parent_user: User | None) -> bool:
@@ -14,8 +12,7 @@ def _can_send_parent_alerts(parent_user: User | None) -> bool:
         and parent_user.email
         and parent_user.email_verified
         and current_app.config.get("ALERT_EMAIL_ENABLED", True)
-        and current_app.config.get("MAIL_SERVER")
-        and current_app.config.get("MAIL_DEFAULT_SENDER")
+        and is_mail_delivery_configured()
     )
 
 
@@ -32,34 +29,8 @@ def _alerts_url() -> str:
 
 
 def _send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
-    sender = current_app.config["MAIL_DEFAULT_SENDER"]
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = sender
-    message["To"] = recipient
-    message.set_content(body)
-
-    server = current_app.config["MAIL_SERVER"]
-    port = current_app.config["MAIL_PORT"]
-    username = current_app.config["MAIL_USERNAME"]
-    password = current_app.config["MAIL_PASSWORD"]
-    use_tls = current_app.config["MAIL_USE_TLS"]
-    use_ssl = current_app.config["MAIL_USE_SSL"]
-
-    try:
-        if use_ssl:
-            smtp: smtplib.SMTP = smtplib.SMTP_SSL(server, port, timeout=20)
-        else:
-            smtp = smtplib.SMTP(server, port, timeout=20)
-        with smtp:
-            if use_tls and not use_ssl:
-                smtp.starttls()
-            if username:
-                smtp.login(username, password)
-            smtp.send_message(message)
-    except Exception as exc:  # pragma: no cover - network dependent
-        return False, f"Parent alert email could not be sent: {exc}"
-    return True, "Parent alert email sent."
+    ok, message = send_email(recipient, subject, body)
+    return ok, "Parent alert email sent." if ok else f"Parent alert email could not be sent: {message}"
 
 
 def send_high_risk_message_alert(parent_user: User | None, child_user: User | None, record: MessageRecord) -> tuple[bool, str]:

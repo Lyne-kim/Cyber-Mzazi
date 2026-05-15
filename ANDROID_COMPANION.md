@@ -23,7 +23,7 @@ Use VS Code plus Android command-line tools.
 
 1. Install the Android SDK command-line tools using:
 
-[C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\android-companion\tools\setup-android-sdk.md)
+[android-companion/tools/setup-android-sdk.md](android-companion/tools/setup-android-sdk.md)
 
 2. Open this folder in VS Code:
 
@@ -68,7 +68,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-debug.ps1
 
 For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Realme/Vivo, Huawei/Honor, and similar Android brands, use:
 
-- [C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_DEVICE_SETUP.md](C:\Users\Admin\OneDrive\Documents\Cyber Mzazi\ANDROID_DEVICE_SETUP.md)
+- [ANDROID_DEVICE_SETUP.md](ANDROID_DEVICE_SETUP.md)
 
 ## Real-device test flow
 
@@ -144,7 +144,7 @@ powershell -ExecutionPolicy Bypass -File .\android-companion\tools\build-release
 6. The signed release APK will be written to:
 
 ```text
-C:\Users\Admin\AppData\Local\CyberMzaziAndroid\project-build\app\outputs\apk\release\app-release.apk
+C:\Users\lyne\AppData\Local\CyberMzaziAndroid\project-build\app\outputs\apk\release\app-release.apk
 ```
 
 7. If USB debugging is available, install it with:

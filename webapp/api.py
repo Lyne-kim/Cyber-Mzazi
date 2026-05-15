@@ -21,7 +21,11 @@ from .models import (
     User,
 )
 from .services.audit import log_event
-from .services.email_verification import send_verification_email, verify_email_token
+from .services.email_verification import (
+    send_verification_email,
+    should_bypass_email_verification_when_delivery_fails,
+    verify_email_token,
+)
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import (
     issue_ingestion_token,
@@ -351,6 +355,16 @@ def register_family():
                 "verification_email_sent",
                 f"Verification email sent to {parent_user.email} via API",
             )
+        elif should_bypass_email_verification_when_delivery_fails():
+            parent_user.email_verified = True
+            parent_user.email_verified_at = datetime.utcnow()
+            verification_message = "Email delivery is unavailable, so parent email verification was bypassed."
+            log_event(
+                family.id,
+                parent_user.id,
+                "verification_email_bypassed",
+                f"Email verification bypassed for {parent_user.email} via API.",
+            )
     db.session.commit()
 
     return (
@@ -402,6 +416,24 @@ def login():
 
     if not user or not user.check_password(password):
         return _error("Invalid login details.", 401)
+    if portal == "parent" and not user.can_log_in:
+        if should_bypass_email_verification_when_delivery_fails():
+            user.email_verified = True
+            user.email_verified_at = datetime.utcnow()
+            db.session.add(user)
+            log_event(
+                user.family_id,
+                user.id,
+                "verification_email_bypassed",
+                f"Email verification bypassed for {user.email or user.phone} during API login.",
+            )
+            db.session.commit()
+        else:
+            return _error(
+                "Verify the parent email address before signing in. Request a new verification email if needed.",
+                403,
+            )
+
     if portal == "parent" and not user.can_log_in:
         return _error(
             "Verify the parent email address before signing in. Request a new verification email if needed.",
@@ -470,6 +502,23 @@ def resend_verification():
 
     ok, message = send_verification_email(user)
     if not ok:
+        if should_bypass_email_verification_when_delivery_fails():
+            user.email_verified = True
+            user.email_verified_at = datetime.utcnow()
+            db.session.add(user)
+            log_event(
+                user.family_id,
+                user.id,
+                "verification_email_bypassed",
+                f"Email verification bypassed for {user.email} via API.",
+            )
+            db.session.commit()
+            return jsonify(
+                {
+                    "ok": True,
+                    "message": "Email delivery is unavailable, so the parent account has been enabled.",
+                }
+            )
         db.session.rollback()
         return _error(message, 500)
 
@@ -888,6 +937,7 @@ def parent_create_android_device():
                         f"?base_url={quote(request.url_root.rstrip('/'), safe='')}"
                         f"&token={quote(ingest_token, safe='')}"
                         f"&device_name={quote(device_name, safe='')}"
+                        "&role=child"
                     ),
                 },
             }
