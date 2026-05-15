@@ -67,7 +67,7 @@
     <string name="menu_button_symbol">&#9776;</string>
     <string name="hero_preview_title">Cyber Mzazi</string>
     <string name="hero_preview_icon">&#128241;</string>
-    <string name="service_label">Cyber Mzazi notification listener</string>
+    <string name="service_label">Cyber Mzazi</string>
     <string name="base_url_hint">Backend URL, for example https://cyber-mzazi.onrender.com</string>
     <string name="token_hint">One-time device token from the parent dashboard</string>
     <string name="device_name_hint">This Android device name</string>
