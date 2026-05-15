@@ -1,8 +1,8 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, logout_user
 
 from .extensions import db
-from .models import LogoutRequest, MessageRecord
+from .models import LogoutRequest, MessageRecord, User
 from .services.audit import log_event
 from .services.parent_alerts import send_high_risk_message_alert
 from .services.prediction_service import PredictionUnavailable, predict_message
@@ -27,6 +27,11 @@ def require_child():
     if current_user.role != "child":
         flash("Child access only.", "danger")
         return redirect(url_for("parent.dashboard"))
+    parent_user = User.query.filter_by(family_id=current_user.family_id, role="parent").first()
+    if parent_user is None or not parent_user.can_log_in:
+        logout_user()
+        flash("Verify the parent/guardian account before continuing.", "warning")
+        return redirect(url_for("auth.parent_login"))
     return None
 
 

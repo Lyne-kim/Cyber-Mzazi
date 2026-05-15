@@ -55,6 +55,10 @@ class User(UserMixin, TimestampMixin, db.Model):
     email_verified = db.Column(db.Boolean, nullable=False, default=False)
     email_verified_at = db.Column(db.DateTime)
     verification_email_sent_at = db.Column(db.DateTime)
+    phone_verified = db.Column(db.Boolean, nullable=False, default=False)
+    phone_verified_at = db.Column(db.DateTime)
+    phone_verification_code_hash = db.Column(db.String(255))
+    phone_verification_sent_at = db.Column(db.DateTime)
 
     family = db.relationship("Family", back_populates="users")
     activity_logs = db.relationship(
@@ -87,8 +91,14 @@ class User(UserMixin, TimestampMixin, db.Model):
         return self.role == "parent" and bool(self.email)
 
     @property
+    def requires_phone_verification(self) -> bool:
+        return self.role == "parent" and bool(self.phone)
+
+    @property
     def can_log_in(self) -> bool:
-        return not self.requires_email_verification or self.email_verified
+        email_ready = not self.requires_email_verification or self.email_verified
+        phone_ready = not self.requires_phone_verification or self.phone_verified
+        return email_ready and phone_ready
 
     @property
     def display_identifier(self) -> str:

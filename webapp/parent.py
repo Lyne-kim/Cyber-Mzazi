@@ -2,7 +2,7 @@ from io import BytesIO
 from datetime import datetime
 from urllib.parse import quote
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -136,6 +136,11 @@ def require_parent():
     if current_user.role != "parent":
         flash("Parent access only.", "danger")
         return redirect(url_for("child.dashboard"))
+    if not current_user.can_log_in:
+        pending_identifier = current_user.email or current_user.phone or ""
+        logout_user()
+        flash("Verify the parent account before continuing.", "warning")
+        return redirect(url_for("auth.parent_login", pending_identifier=pending_identifier))
     return None
 
 

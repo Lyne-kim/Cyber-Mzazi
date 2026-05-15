@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var deviceNameInput: EditText
     private lateinit var parentIdentifierInput: EditText
     private lateinit var parentPasswordInput: EditText
+    private lateinit var parentPhoneCodeInput: EditText
     private lateinit var parentChildDeviceNameInput: EditText
     private lateinit var parentAlertSummaryText: TextView
     private lateinit var parentCaptureStatusText: TextView
@@ -70,6 +71,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openParentAlertsButton: Button
     private lateinit var openChildDevicesButton: Button
     private lateinit var parentLoginButton: Button
+    private lateinit var parentVerifyPhoneButton: Button
+    private lateinit var parentResendPhoneCodeButton: Button
     private lateinit var refreshParentAlertsButton: Button
     private lateinit var openParentNotificationSettingsButton: Button
     private lateinit var reviewLatestSafeButton: Button
@@ -117,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         deviceNameInput = findViewById(R.id.deviceNameInput)
         parentIdentifierInput = findViewById(R.id.parentIdentifierInput)
         parentPasswordInput = findViewById(R.id.parentPasswordInput)
+        parentPhoneCodeInput = findViewById(R.id.parentPhoneCodeInput)
         parentChildDeviceNameInput = findViewById(R.id.parentChildDeviceNameInput)
         parentAlertSummaryText = findViewById(R.id.parentAlertSummaryText)
         parentCaptureStatusText = findViewById(R.id.parentCaptureStatusText)
@@ -149,6 +153,8 @@ class MainActivity : AppCompatActivity() {
         openParentAlertsButton = findViewById(R.id.openParentAlertsButton)
         openChildDevicesButton = findViewById(R.id.openChildDevicesButton)
         parentLoginButton = findViewById(R.id.parentLoginButton)
+        parentVerifyPhoneButton = findViewById(R.id.parentVerifyPhoneButton)
+        parentResendPhoneCodeButton = findViewById(R.id.parentResendPhoneCodeButton)
         refreshParentAlertsButton = findViewById(R.id.refreshParentAlertsButton)
         openParentNotificationSettingsButton = findViewById(R.id.openParentNotificationSettingsButton)
         reviewLatestSafeButton = findViewById(R.id.reviewLatestSafeButton)
@@ -187,6 +193,8 @@ class MainActivity : AppCompatActivity() {
         openParentAlertsButton.setOnClickListener { openWebPath("/parent/alerts") }
         openChildDevicesButton.setOnClickListener { openWebPath("/parent/child-profile") }
         parentLoginButton.setOnClickListener { signInParent() }
+        parentVerifyPhoneButton.setOnClickListener { verifyParentPhone() }
+        parentResendPhoneCodeButton.setOnClickListener { resendParentPhoneCode() }
         refreshParentAlertsButton.setOnClickListener { refreshParentAlerts() }
         openParentNotificationSettingsButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -468,6 +476,40 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT,
                 ).show()
                 if (ok) refreshParentAlerts()
+            }
+        }
+    }
+
+    private fun verifyParentPhone() {
+        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
+        val identifier = parentIdentifierInput.text.toString().trim()
+        val code = parentPhoneCodeInput.text.toString().trim()
+        if (identifier.isBlank() || code.isBlank()) {
+            Toast.makeText(this, R.string.phone_verification_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        parentAlertSummaryText.text = getString(R.string.phone_verification_running)
+        ParentApiClient.verifyPhone(this, identifier, code) { ok, message ->
+            runOnUiThread {
+                if (ok) parentPhoneCodeInput.text?.clear()
+                parentAlertSummaryText.text = message
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun resendParentPhoneCode() {
+        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
+        val identifier = parentIdentifierInput.text.toString().trim()
+        if (identifier.isBlank()) {
+            Toast.makeText(this, R.string.parent_phone_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        parentAlertSummaryText.text = getString(R.string.phone_verification_sending)
+        ParentApiClient.resendPhoneVerification(this, identifier) { _, message ->
+            runOnUiThread {
+                parentAlertSummaryText.text = message
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             }
         }
     }

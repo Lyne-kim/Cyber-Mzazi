@@ -11,10 +11,14 @@ from .models import Family, LogoutRequest, User
 from .services.audit import log_event
 from .services.email_verification import (
     send_verification_email,
-    should_bypass_email_verification_when_delivery_fails,
     verify_email_token,
 )
 from .services.parent_alerts import send_logout_request_alert
+from .services.phone_verification import (
+    normalize_phone,
+    send_phone_verification_code,
+    verify_phone_code,
+)
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -45,18 +49,21 @@ def _login_user_by_portal(portal: str, form_data) -> User | None:
     password = form_data.get("password", "")
     if portal == "parent":
         identifier = form_data.get("identifier", "").strip()
+        normalized_identifier = identifier if "@" in identifier else normalize_phone(identifier)
         user = User.query.filter(
-            User.role == "parent", or_(User.email == identifier, User.phone == identifier)
+            User.role == "parent",
+            or_(User.email == identifier, User.phone == identifier, User.phone == normalized_identifier),
         ).first()
     else:
-        parent_contact = form_data.get("parent_contact", "").strip()
+        raw_parent_contact = form_data.get("parent_contact", "").strip()
+        parent_contact = raw_parent_contact if "@" in raw_parent_contact else normalize_phone(raw_parent_contact)
         child_username = form_data.get("child_username", "").strip()
         user = (
             User.query.join(Family)
             .filter(
                 User.role == "child",
                 User.username == child_username,
-                Family.parent_contact == parent_contact,
+                or_(Family.parent_contact == raw_parent_contact, Family.parent_contact == parent_contact),
             )
             .first()
         )
@@ -65,12 +72,27 @@ def _login_user_by_portal(portal: str, form_data) -> User | None:
     return user
 
 
+def _family_parent_for(user: User) -> User | None:
+    return User.query.filter_by(family_id=user.family_id, role="parent").first()
+
+
+def _verification_message_for(parent_user: User | None) -> str:
+    if parent_user is None:
+        return "Parent/guardian verification is required before continuing."
+    if parent_user.requires_email_verification and not parent_user.email_verified:
+        return "Verify the parent email address before signing in."
+    if parent_user.requires_phone_verification and not parent_user.phone_verified:
+        return "Verify the parent phone number before signing in."
+    return "Verify the parent account before signing in."
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         family_name = request.form.get("family_name", "").strip()
         parent_name = request.form.get("parent_name", "").strip()
         parent_contact = request.form.get("parent_contact", "").strip()
+        parent_contact = parent_contact if "@" in parent_contact else normalize_phone(parent_contact)
         parent_password = request.form.get("parent_password", "")
         child_name = request.form.get("child_name", "").strip()
         child_username = request.form.get("child_username", "").strip()
@@ -110,7 +132,8 @@ def register():
             phone=parent_contact if "@" not in parent_contact else None,
             logout_requires_parent_approval=False,
             preferred_language="en",
-            email_verified="@" not in parent_contact,
+            email_verified=False,
+            phone_verified=False,
         )
         parent_user.set_password(parent_password)
 
@@ -146,23 +169,29 @@ def register():
                     f"Verification email sent to {parent_user.email}",
                 )
             else:
-                if should_bypass_email_verification_when_delivery_fails():
-                    parent_user.email_verified = True
-                    parent_user.email_verified_at = datetime.utcnow()
-                    verification_message = "Email verification bypassed because email delivery is unavailable."
-                    log_event(
-                        family.id,
-                        parent_user.id,
-                        "verification_email_bypassed",
-                        f"Email verification bypassed for {parent_user.email}: {message}",
-                    )
-                else:
-                    verification_warning = message
+                verification_warning = message
+        if parent_user.requires_phone_verification:
+            ok, message = send_phone_verification_code(parent_user)
+            if ok:
+                verification_message = message
+                log_event(
+                    family.id,
+                    parent_user.id,
+                    "phone_verification_sent",
+                    f"Phone verification code sent to {parent_user.phone}",
+                )
+            else:
+                verification_warning = message
         db.session.commit()
 
-        if verification_message:
+        if parent_user.requires_email_verification:
             flash(
-                "Family account created. Parent can sign in now.",
+                "Family account created. Verify the parent email before signing in.",
+                "success",
+            )
+        elif parent_user.requires_phone_verification:
+            flash(
+                "Family account created. Verify the parent phone number before signing in.",
                 "success",
             )
         else:
@@ -187,33 +216,7 @@ def parent_login():
             flash("Invalid parent/guardian email, phone, or password.", "danger")
             return render_template("parent_login.html")
         if not user.can_log_in:
-            if should_bypass_email_verification_when_delivery_fails():
-                user.email_verified = True
-                user.email_verified_at = datetime.utcnow()
-                db.session.add(user)
-                log_event(
-                    user.family_id,
-                    user.id,
-                    "verification_email_bypassed",
-                    f"Email verification bypassed for {user.email or user.phone} during login.",
-                )
-                db.session.commit()
-                flash("Email delivery is unavailable, so the parent account has been enabled.", "success")
-            else:
-                flash(
-                    "Verify the parent email address before signing in. You can request a new verification email below.",
-                    "warning",
-                )
-                return render_template(
-                    "parent_login.html",
-                    pending_identifier=user.email or user.phone or "",
-                )
-
-        if not user.can_log_in:
-            flash(
-                "Verify the parent email address before signing in. You can request a new verification email below.",
-                "warning",
-            )
+            flash(_verification_message_for(user), "warning")
             return render_template(
                 "parent_login.html",
                 pending_identifier=user.email or user.phone or "",
@@ -258,6 +261,36 @@ def verify_email(token: str):
     return redirect(url_for("auth.parent_login"))
 
 
+@auth_bp.route("/verify-phone", methods=["POST"])
+def verify_phone():
+    identifier = request.form.get("identifier", "").strip()
+    code = request.form.get("code", "").strip()
+    normalized_identifier = normalize_phone(identifier)
+    user = User.query.filter(
+        User.role == "parent",
+        or_(User.phone == identifier, User.phone == normalized_identifier),
+    ).first()
+    if user is None or not user.phone:
+        flash("Enter the parent phone number used during registration.", "danger")
+        return render_template("parent_login.html", pending_identifier=identifier)
+
+    ok, message = verify_phone_code(user, code)
+    if ok:
+        log_event(
+            user.family_id,
+            user.id,
+            "phone_verified",
+            f"Parent phone {user.phone} verified",
+        )
+        db.session.commit()
+        flash("Phone number verified successfully. You can sign in now.", "success")
+        return redirect(url_for("auth.parent_login"))
+
+    db.session.rollback()
+    flash(message, "danger")
+    return render_template("parent_login.html", pending_identifier=identifier)
+
+
 @auth_bp.route("/resend-verification", methods=["POST"])
 def resend_verification():
     identifier = request.form.get("identifier", "").strip()
@@ -282,21 +315,39 @@ def resend_verification():
         db.session.commit()
         flash("Verification email sent again. Check the inbox and spam folder.", "success")
     else:
-        if should_bypass_email_verification_when_delivery_fails():
-            user.email_verified = True
-            user.email_verified_at = datetime.utcnow()
-            db.session.add(user)
-            log_event(
-                user.family_id,
-                user.id,
-                "verification_email_bypassed",
-                f"Email verification bypassed for {user.email}: {message}",
-            )
-            db.session.commit()
-            flash("Email delivery is unavailable, so the parent account has been enabled. You can sign in now.", "success")
-        else:
-            db.session.rollback()
-            flash(message, "danger")
+        db.session.rollback()
+        flash(message, "danger")
+    return render_template("parent_login.html", pending_identifier=identifier)
+
+
+@auth_bp.route("/resend-phone-verification", methods=["POST"])
+def resend_phone_verification():
+    identifier = request.form.get("identifier", "").strip()
+    normalized_identifier = normalize_phone(identifier)
+    user = User.query.filter(
+        User.role == "parent",
+        or_(User.phone == identifier, User.phone == normalized_identifier),
+    ).first()
+    if user is None or not user.phone:
+        flash("Enter the parent phone number used during registration.", "danger")
+        return render_template("parent_login.html", pending_identifier=identifier)
+    if user.phone_verified:
+        flash("That phone number is already verified. You can sign in now.", "info")
+        return redirect(url_for("auth.parent_login"))
+
+    ok, message = send_phone_verification_code(user)
+    if ok:
+        log_event(
+            user.family_id,
+            user.id,
+            "phone_verification_resent",
+            f"Phone verification code resent to {user.phone}",
+        )
+        db.session.commit()
+        flash("Phone verification code sent again.", "success")
+    else:
+        db.session.rollback()
+        flash(message, "danger")
     return render_template("parent_login.html", pending_identifier=identifier)
 
 
@@ -306,6 +357,10 @@ def child_login():
         user = _login_user_by_portal("child", request.form)
         if not user:
             flash("Invalid child login details. Check the parent/guardian contact, child username, or password.", "danger")
+            return render_template("child_login.html")
+        parent_user = _family_parent_for(user)
+        if parent_user is None or not parent_user.can_log_in:
+            flash(_verification_message_for(parent_user), "warning")
             return render_template("child_login.html")
 
         login_user(user)

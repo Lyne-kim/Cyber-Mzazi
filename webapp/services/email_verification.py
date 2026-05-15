@@ -20,10 +20,6 @@ def is_mail_configured() -> bool:
     return is_mail_delivery_configured()
 
 
-def should_bypass_email_verification_when_delivery_fails() -> bool:
-    return bool(current_app.config.get("BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE", True))
-
-
 def generate_email_verification_token(user: User) -> str:
     return _serializer().dumps({"user_id": user.id, "email": user.email}, salt=EMAIL_VERIFICATION_SALT)
 

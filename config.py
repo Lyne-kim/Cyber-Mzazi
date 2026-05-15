@@ -114,10 +114,12 @@ class Config:
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
-    BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE = os.getenv(
-        "BYPASS_EMAIL_VERIFICATION_ON_DELIVERY_FAILURE",
-        "true",
-    ).lower() == "true"
+    PHONE_VERIFICATION_CODE_MAX_AGE = int(
+        os.getenv("PHONE_VERIFICATION_CODE_MAX_AGE", "900")
+    )
+    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
     ALERT_EMAIL_ENABLED = os.getenv("ALERT_EMAIL_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}

@@ -62,6 +62,37 @@ object ParentApiClient {
         }
     }
 
+    fun resendPhoneVerification(
+        context: Context,
+        identifier: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postPublicJson(
+            context = context,
+            path = "/api/auth/resend-phone-verification",
+            body = JSONObject().put("identifier", identifier),
+            successMessage = "Phone verification code sent.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun verifyPhone(
+        context: Context,
+        identifier: String,
+        code: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postPublicJson(
+            context = context,
+            path = "/api/auth/verify-phone",
+            body = JSONObject()
+                .put("identifier", identifier)
+                .put("code", code),
+            successMessage = "Phone number verified. Sign in again to continue.",
+            onComplete = onComplete,
+        )
+    }
+
     fun fetchAlerts(context: Context, onComplete: (Boolean, String) -> Unit) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val cookie = Prefs.getParentSessionCookie(context)
@@ -215,6 +246,43 @@ object ParentApiClient {
                 ParentApiResult(true, successMessage)
             }.getOrElse { throwable ->
                 ParentApiResult(false, "Parent action error: ${throwable.message ?: "Unknown error"}")
+            }
+            onComplete(result.ok, result.message)
+        }
+    }
+
+    private fun postPublicJson(
+        context: Context,
+        path: String,
+        body: JSONObject,
+        successMessage: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
+        if (baseUrl.isBlank()) {
+            onComplete(false, "Save the backend URL first.")
+            return
+        }
+        executor.execute {
+            val result = runCatching {
+                val connection = (URL("$baseUrl$path").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15000
+                    readTimeout = 15000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("Accept", "application/json")
+                }
+                OutputStreamWriter(connection.outputStream).use { writer ->
+                    writer.write(body.toString())
+                }
+                val response = readResponse(connection)
+                if (connection.responseCode !in 200..299) {
+                    return@runCatching ParentApiResult(false, parseError(response, "Verification action failed."))
+                }
+                ParentApiResult(true, successMessage)
+            }.getOrElse { throwable ->
+                ParentApiResult(false, "Verification error: ${throwable.message ?: "Unknown error"}")
             }
             onComplete(result.ok, result.message)
         }

@@ -42,6 +42,30 @@ def ensure_runtime_schema() -> None:
         )
 
     inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "phone_verified"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN phone_verified BOOLEAN DEFAULT FALSE")
+        )
+
+    inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "phone_verified_at"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN phone_verified_at DATETIME NULL")
+        )
+
+    inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "phone_verification_code_hash"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN phone_verification_code_hash VARCHAR(255)")
+        )
+
+    inspector = inspect(db.engine)
+    if "user" in table_names and not _column_exists(inspector, "user", "phone_verification_sent_at"):
+        db.session.execute(
+            text("ALTER TABLE `user` ADD COLUMN phone_verification_sent_at DATETIME NULL")
+        )
+
+    inspector = inspect(db.engine)
     if "activity_log" in table_names and not _column_exists(inspector, "activity_log", "subject_user_id"):
         db.session.execute(
             text("ALTER TABLE activity_log ADD COLUMN subject_user_id INTEGER")
@@ -130,8 +154,14 @@ def ensure_runtime_schema() -> None:
     )
     db.session.execute(
         text(
-            "UPDATE `user` SET email_verified = TRUE "
-            "WHERE role = 'parent' AND (email IS NULL OR email = '')"
+            "UPDATE `user` SET email_verified = FALSE "
+            "WHERE role = 'parent' AND email IS NOT NULL AND email != '' AND email_verified IS NULL"
+        )
+    )
+    db.session.execute(
+        text(
+            "UPDATE `user` SET phone_verified = FALSE "
+            "WHERE role = 'parent' AND phone IS NOT NULL AND phone != '' AND phone_verified IS NULL"
         )
     )
     db.session.execute(

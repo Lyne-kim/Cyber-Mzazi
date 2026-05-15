@@ -166,6 +166,37 @@
                         android:layout_marginTop="12dp"
                         android:text="@string/parent_sign_in" />
 
+                    <EditText
+                        android:id="@+id/parentPhoneCodeInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_input"
+                        android:hint="@string/parent_phone_code_hint"
+                        android:inputType="number" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/parentVerifyPhoneButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/verify_phone" />
+
+                        <Button
+                            android:id="@+id/parentResendPhoneCodeButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/resend_phone_code" />
+                    </LinearLayout>
+
                     <Button
                         android:id="@+id/refreshParentAlertsButton"
                         android:layout_width="match_parent"

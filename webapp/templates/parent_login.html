@@ -56,6 +56,37 @@
       </label>
       <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Verification Email Again</button>
     </form>
+
+    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.verify_phone') }}">
+      <h3>Verify Phone Number</h3>
+      <label class="auth-field">
+        <span class="auth-field-label">Parent/Guardian phone</span>
+        <div class="auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">#</span>
+          <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
+        </div>
+      </label>
+      <label class="auth-field">
+        <span class="auth-field-label">Verification code</span>
+        <div class="auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">#</span>
+          <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="123456" required>
+        </div>
+      </label>
+      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Verify Phone</button>
+    </form>
+
+    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.resend_phone_verification') }}">
+      <h3>Resend Phone Code</h3>
+      <label class="auth-field">
+        <span class="auth-field-label">Parent/Guardian phone</span>
+        <div class="auth-input-shell">
+          <span class="auth-input-icon" aria-hidden="true">#</span>
+          <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
+        </div>
+      </label>
+      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Phone Code Again</button>
+    </form>
   </div>
 </section>
 {% endblock %}

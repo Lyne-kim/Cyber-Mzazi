@@ -23,7 +23,6 @@ from .models import (
 from .services.audit import log_event
 from .services.email_verification import (
     send_verification_email,
-    should_bypass_email_verification_when_delivery_fails,
     verify_email_token,
 )
 from .services.family_context import get_selected_child, set_selected_child
@@ -35,6 +34,11 @@ from .services.notification_devices import (
 from .services.parent_alerts import (
     send_high_risk_message_alert,
     send_logout_request_alert,
+)
+from .services.phone_verification import (
+    normalize_phone,
+    send_phone_verification_code,
+    verify_phone_code,
 )
 from .services.prediction_service import (
     PredictionUnavailable,
@@ -49,6 +53,33 @@ from .ui_text import SUPPORTED_LANGUAGES, get_language
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
+
+PUBLIC_API_ENDPOINTS = {
+    "api.health",
+    "api.register_family",
+    "api.login",
+    "api.logout",
+    "api.resend_verification",
+    "api.resend_phone_verification",
+    "api.verify_phone",
+    "api.verify_email",
+    "api.ingest_android_notification",
+}
+
+
+@api_bp.before_request
+def require_verified_family_session():
+    if request.endpoint in PUBLIC_API_ENDPOINTS or not current_user.is_authenticated:
+        return None
+    if current_user.role == "parent" and not current_user.can_log_in:
+        logout_user()
+        return _error("Verify the parent account before continuing.", 403)
+    if current_user.role == "child":
+        parent_user = _family_parent_for(current_user)
+        if parent_user is None or not parent_user.can_log_in:
+            logout_user()
+            return _error("Verify the parent/guardian account before continuing.", 403)
+    return None
 
 
 def _error(message: str, status: int = 400):
@@ -67,7 +98,23 @@ def _user_payload(user: User) -> dict:
         "preferred_language": user.preferred_language,
         "email_verified": user.email_verified,
         "requires_email_verification": user.requires_email_verification,
+        "phone_verified": user.phone_verified,
+        "requires_phone_verification": user.requires_phone_verification,
     }
+
+
+def _family_parent_for(user: User) -> User | None:
+    return User.query.filter_by(family_id=user.family_id, role="parent").first()
+
+
+def _verification_error_for(parent_user: User | None) -> str:
+    if parent_user is None:
+        return "Parent/guardian verification is required before continuing."
+    if parent_user.requires_email_verification and not parent_user.email_verified:
+        return "Verify the parent email address before signing in. Request a new verification email if needed."
+    if parent_user.requires_phone_verification and not parent_user.phone_verified:
+        return "Verify the parent phone number before signing in. Request a phone code if needed."
+    return "Verify the parent account before signing in."
 
 
 def _message_payload(message: MessageRecord) -> dict:
@@ -302,6 +349,7 @@ def register_family():
         return _error(f"Missing required fields: {', '.join(missing)}")
 
     parent_contact = str(payload["parent_contact"]).strip()
+    parent_contact = parent_contact if "@" in parent_contact else normalize_phone(parent_contact)
     child_username = str(payload["child_username"]).strip()
     if Family.query.filter_by(parent_contact=parent_contact).first():
         return _error("Parent contact already exists.", 409)
@@ -318,10 +366,11 @@ def register_family():
         role="parent",
         name=str(payload["parent_name"]).strip(),
         email=parent_contact if "@" in parent_contact else None,
-        phone=parent_contact if "@" not in parent_contact else None,
+        phone=normalize_phone(parent_contact) if "@" not in parent_contact else None,
         logout_requires_parent_approval=False,
         preferred_language="en",
-        email_verified="@" not in parent_contact,
+        email_verified=False,
+        phone_verified=False,
     )
     parent_user.set_password(str(payload["parent_password"]))
 
@@ -346,6 +395,8 @@ def register_family():
     )
     verification_sent = False
     verification_message = None
+    phone_verification_sent = False
+    phone_verification_message = None
     if parent_user.requires_email_verification:
         verification_sent, verification_message = send_verification_email(parent_user)
         if verification_sent:
@@ -355,15 +406,14 @@ def register_family():
                 "verification_email_sent",
                 f"Verification email sent to {parent_user.email} via API",
             )
-        elif should_bypass_email_verification_when_delivery_fails():
-            parent_user.email_verified = True
-            parent_user.email_verified_at = datetime.utcnow()
-            verification_message = "Email delivery is unavailable, so parent email verification was bypassed."
+    if parent_user.requires_phone_verification:
+        phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)
+        if phone_verification_sent:
             log_event(
                 family.id,
                 parent_user.id,
-                "verification_email_bypassed",
-                f"Email verification bypassed for {parent_user.email} via API.",
+                "phone_verification_sent",
+                f"Phone verification code sent to {parent_user.phone} via API",
             )
     db.session.commit()
 
@@ -380,8 +430,11 @@ def register_family():
                 "parent": _user_payload(parent_user),
                 "child": _user_payload(child_user),
                 "requires_email_verification": parent_user.requires_email_verification,
+                "requires_phone_verification": parent_user.requires_phone_verification,
                 "email_verification_sent": verification_sent,
                 "email_delivery_message": verification_message,
+                "phone_verification_sent": phone_verification_sent,
+                "phone_delivery_message": phone_verification_message,
             }
         ),
         201,
@@ -396,18 +449,21 @@ def login():
 
     if portal == "parent":
         identifier = str(payload.get("identifier", "")).strip()
+        normalized_identifier = identifier if "@" in identifier else normalize_phone(identifier)
         user = User.query.filter(
-            User.role == "parent", or_(User.email == identifier, User.phone == identifier)
+            User.role == "parent",
+            or_(User.email == identifier, User.phone == identifier, User.phone == normalized_identifier),
         ).first()
     elif portal == "child":
-        parent_contact = str(payload.get("parent_contact", "")).strip()
+        raw_parent_contact = str(payload.get("parent_contact", "")).strip()
+        parent_contact = raw_parent_contact if "@" in raw_parent_contact else normalize_phone(raw_parent_contact)
         child_username = str(payload.get("child_username", "")).strip()
         user = (
             User.query.join(Family)
             .filter(
                 User.role == "child",
                 User.username == child_username,
-                Family.parent_contact == parent_contact,
+                or_(Family.parent_contact == raw_parent_contact, Family.parent_contact == parent_contact),
             )
             .first()
         )
@@ -417,28 +473,11 @@ def login():
     if not user or not user.check_password(password):
         return _error("Invalid login details.", 401)
     if portal == "parent" and not user.can_log_in:
-        if should_bypass_email_verification_when_delivery_fails():
-            user.email_verified = True
-            user.email_verified_at = datetime.utcnow()
-            db.session.add(user)
-            log_event(
-                user.family_id,
-                user.id,
-                "verification_email_bypassed",
-                f"Email verification bypassed for {user.email or user.phone} during API login.",
-            )
-            db.session.commit()
-        else:
-            return _error(
-                "Verify the parent email address before signing in. Request a new verification email if needed.",
-                403,
-            )
-
-    if portal == "parent" and not user.can_log_in:
-        return _error(
-            "Verify the parent email address before signing in. Request a new verification email if needed.",
-            403,
-        )
+        return _error(_verification_error_for(user), 403)
+    if portal == "child":
+        parent_user = _family_parent_for(user)
+        if parent_user is None or not parent_user.can_log_in:
+            return _error(_verification_error_for(parent_user), 403)
 
     login_user(user)
     log_event(
@@ -502,23 +541,6 @@ def resend_verification():
 
     ok, message = send_verification_email(user)
     if not ok:
-        if should_bypass_email_verification_when_delivery_fails():
-            user.email_verified = True
-            user.email_verified_at = datetime.utcnow()
-            db.session.add(user)
-            log_event(
-                user.family_id,
-                user.id,
-                "verification_email_bypassed",
-                f"Email verification bypassed for {user.email} via API.",
-            )
-            db.session.commit()
-            return jsonify(
-                {
-                    "ok": True,
-                    "message": "Email delivery is unavailable, so the parent account has been enabled.",
-                }
-            )
         db.session.rollback()
         return _error(message, 500)
 
@@ -530,6 +552,67 @@ def resend_verification():
     )
     db.session.commit()
     return jsonify({"ok": True, "message": message})
+
+
+@api_bp.post("/auth/resend-phone-verification")
+def resend_phone_verification():
+    payload = request.get_json(silent=True) or {}
+    identifier = str(payload.get("identifier", "")).strip()
+    if not identifier:
+        return _error("Parent phone number is required.")
+
+    user = User.query.filter(
+        User.role == "parent",
+        or_(User.phone == identifier, User.phone == normalize_phone(identifier)),
+    ).first()
+    if user is None or not user.phone:
+        return _error("Parent phone account was not found.", 404)
+    if user.phone_verified:
+        return _error("That phone number is already verified.", 409)
+
+    ok, message = send_phone_verification_code(user)
+    if not ok:
+        db.session.rollback()
+        return _error(message, 500)
+
+    log_event(
+        user.family_id,
+        user.id,
+        "phone_verification_resent",
+        f"Phone verification code resent to {user.phone} via API",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": message})
+
+
+@api_bp.post("/auth/verify-phone")
+def verify_phone():
+    payload = request.get_json(silent=True) or {}
+    identifier = str(payload.get("identifier", "")).strip()
+    code = str(payload.get("code", "")).strip()
+    if not identifier or not code:
+        return _error("Parent phone number and verification code are required.")
+
+    user = User.query.filter(
+        User.role == "parent",
+        or_(User.phone == identifier, User.phone == normalize_phone(identifier)),
+    ).first()
+    if user is None or not user.phone:
+        return _error("Parent phone account was not found.", 404)
+
+    ok, message = verify_phone_code(user, code)
+    if not ok:
+        db.session.rollback()
+        return _error(message, 400)
+
+    log_event(
+        user.family_id,
+        user.id,
+        "phone_verified",
+        f"Parent phone {user.phone} verified via API",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": message, "user": _user_payload(user)})
 
 
 @api_bp.post("/auth/verify-email")

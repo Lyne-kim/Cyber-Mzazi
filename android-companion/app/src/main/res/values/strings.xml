@@ -24,6 +24,13 @@
     <string name="parent_identifier_hint">Parent email or phone</string>
     <string name="parent_password_hint">Parent password</string>
     <string name="parent_sign_in">Sign in for native alerts</string>
+    <string name="parent_phone_code_hint">Phone verification code</string>
+    <string name="verify_phone">Verify phone</string>
+    <string name="resend_phone_code">Resend code</string>
+    <string name="phone_verification_required">Enter parent phone and SMS code.</string>
+    <string name="parent_phone_required">Enter the parent phone number first.</string>
+    <string name="phone_verification_running">Verifying phone number...</string>
+    <string name="phone_verification_sending">Sending phone verification code...</string>
     <string name="refresh_parent_alerts">Refresh native alert summary</string>
     <string name="parent_alerts_not_loaded">Sign in to load parent alert summaries on this phone.</string>
     <string name="parent_login_required">Enter parent contact and password.</string>
