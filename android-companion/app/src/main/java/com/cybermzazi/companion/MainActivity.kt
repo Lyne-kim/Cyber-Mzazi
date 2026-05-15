@@ -249,6 +249,13 @@ class MainActivity : AppCompatActivity() {
         populateFields()
         updateRoleUi()
         showSection(SECTION_HOME)
+        handlePairingIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handlePairingIntent(intent)
     }
 
     override fun onResume() {
@@ -540,7 +547,7 @@ class MainActivity : AppCompatActivity() {
     private fun createChildDeviceLink() {
         val deviceName = parentChildDeviceNameInput.text.toString().trim()
         parentAlertSummaryText.text = getString(R.string.creating_child_device_link)
-        ParentApiClient.createChildDeviceLink(this, deviceName) { ok, message ->
+        ParentApiClient.createChildDeviceLink(this, deviceName) { _, message ->
             runOnUiThread {
                 parentAlertSummaryText.text = message
                 Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
@@ -652,6 +659,14 @@ class MainActivity : AppCompatActivity() {
         saveSettings()
         updateRoleUi()
         Toast.makeText(this, R.string.qr_pairing_applied, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handlePairingIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "cybermzazi" && uri.host == "pair") {
+            applyPairingPayload(uri.toString())
+            intent.data = null
+        }
     }
 
     companion object {
