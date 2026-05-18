@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <form class="auth-card auth-card-cyber" method="post">
+    <div class="auth-card auth-card-cyber parent-auth-panel">
       <h2>Parent/Guardian Login</h2>
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -25,68 +25,78 @@
           </div>
         {% endif %}
       {% endwith %}
-      <label class="auth-field">
-        <span class="auth-field-label">Parent/Guardian email or phone</span>
-        <div class="auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">✉</span>
-          <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or request.form.get('identifier', '') }}" required>
-        </div>
-      </label>
-      <label class="auth-field">
-        <span class="auth-field-label">Password</span>
-        <div class="password-field auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">🔒</span>
-          <input id="parent-password" type="password" name="password" required>
-          <button class="password-toggle" type="button" data-target="parent-password" aria-label="Show password">Show</button>
-        </div>
-      </label>
-      <button class="button auth-submit auth-submit-cyber" type="submit">Login</button>
+
+      <form class="parent-auth-section" method="post">
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian email or phone</span>
+          <div class="auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">@</span>
+            <input type="text" name="identifier" placeholder="parent@example.com or 0712345678" value="{{ pending_identifier or request.form.get('identifier', '') }}" required>
+          </div>
+        </label>
+        <label class="auth-field">
+          <span class="auth-field-label">Password</span>
+          <div class="password-field auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">#</span>
+            <input id="parent-password" type="password" name="password" required>
+            <button class="password-toggle" type="button" data-target="parent-password" aria-label="Show password">Show</button>
+          </div>
+        </label>
+        <button class="button auth-submit auth-submit-cyber" type="submit">Login</button>
+      </form>
+
       <a class="button auth-secondary auth-secondary-cyber" href="{{ url_for('auth.register') }}">Register Family Account</a>
       <p class="auth-footnote auth-footnote-cyber">Child device? <a class="auth-inline-link-button" href="{{ url_for('auth.child_login') }}">Open child login</a></p>
-    </form>
 
-    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.resend_verification') }}">
-      <h3>Resend Verification Email</h3>
-      <label class="auth-field">
-        <span class="auth-field-label">Parent/Guardian email</span>
-        <div class="auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">✉</span>
-          <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
-        </div>
-      </label>
-      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Verification Email Again</button>
-    </form>
+      <div class="parent-auth-tools" aria-label="Verification help">
+        <button class="parent-auth-toggle is-active" type="button" data-auth-tool="email-resend">Resend email</button>
+        <button class="parent-auth-toggle" type="button" data-auth-tool="phone-verify">Verify phone</button>
+        <button class="parent-auth-toggle" type="button" data-auth-tool="phone-resend">Resend code</button>
+      </div>
 
-    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.verify_phone') }}">
-      <h3>Verify Phone Number</h3>
-      <label class="auth-field">
-        <span class="auth-field-label">Parent/Guardian phone</span>
-        <div class="auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">#</span>
-          <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
-        </div>
-      </label>
-      <label class="auth-field">
-        <span class="auth-field-label">Verification code</span>
-        <div class="auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">#</span>
-          <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="123456" required>
-        </div>
-      </label>
-      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Verify Phone</button>
-    </form>
+      <form class="parent-auth-helper is-active" data-auth-tool-panel="email-resend" method="post" action="{{ url_for('auth.resend_verification') }}">
+        <h3>Resend Verification Email</h3>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian email</span>
+          <div class="auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">@</span>
+            <input type="email" name="identifier" placeholder="parent@example.com" value="{{ pending_identifier or '' }}" required>
+          </div>
+        </label>
+        <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Verification Email Again</button>
+      </form>
 
-    <form class="auth-card auth-card-cyber auth-card-secondary" method="post" action="{{ url_for('auth.resend_phone_verification') }}">
-      <h3>Resend Phone Code</h3>
-      <label class="auth-field">
-        <span class="auth-field-label">Parent/Guardian phone</span>
-        <div class="auth-input-shell">
-          <span class="auth-input-icon" aria-hidden="true">#</span>
-          <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
-        </div>
-      </label>
-      <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Phone Code Again</button>
-    </form>
+      <form class="parent-auth-helper" data-auth-tool-panel="phone-verify" method="post" action="{{ url_for('auth.verify_phone') }}">
+        <h3>Verify Phone Number</h3>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian phone</span>
+          <div class="auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">#</span>
+            <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
+          </div>
+        </label>
+        <label class="auth-field">
+          <span class="auth-field-label">Verification code</span>
+          <div class="auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">#</span>
+            <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="123456" required>
+          </div>
+        </label>
+        <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Verify Phone</button>
+      </form>
+
+      <form class="parent-auth-helper" data-auth-tool-panel="phone-resend" method="post" action="{{ url_for('auth.resend_phone_verification') }}">
+        <h3>Resend Phone Code</h3>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian phone</span>
+          <div class="auth-input-shell">
+            <span class="auth-input-icon" aria-hidden="true">#</span>
+            <input type="tel" name="identifier" placeholder="0712345678" value="{{ pending_identifier or '' }}" required>
+          </div>
+        </label>
+        <button class="button ghost auth-secondary-action auth-secondary-action-cyber" type="submit">Send Phone Code Again</button>
+      </form>
+    </div>
   </div>
 </section>
 {% endblock %}
@@ -100,6 +110,20 @@
       input.type = nextType;
       button.textContent = nextType === "password" ? "Show" : "Hide";
       button.setAttribute("aria-label", nextType === "password" ? "Show password" : "Hide password");
+    });
+  });
+
+  const authToolButtons = document.querySelectorAll("[data-auth-tool]");
+  const authToolPanels = document.querySelectorAll("[data-auth-tool-panel]");
+  authToolButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.authTool;
+      authToolButtons.forEach((item) => {
+        item.classList.toggle("is-active", item === button);
+      });
+      authToolPanels.forEach((panel) => {
+        panel.classList.toggle("is-active", panel.dataset.authToolPanel === target);
+      });
     });
   });
 </script>
