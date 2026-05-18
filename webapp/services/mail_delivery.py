@@ -73,11 +73,67 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     use_tls = current_app.config["MAIL_USE_TLS"]
     use_ssl = current_app.config["MAIL_USE_SSL"]
     force_ipv4 = current_app.config.get("MAIL_FORCE_IPV4", True)
+    timeout = int(current_app.config.get("MAIL_TIMEOUT", 45))
+    enable_ssl_fallback = current_app.config.get("MAIL_ENABLE_SSL_FALLBACK", True)
+    fallback_ssl_port = int(current_app.config.get("MAIL_FALLBACK_SSL_PORT", 465))
 
-    smtp_class = IPv4SMTP_SSL if use_ssl and force_ipv4 else smtplib.SMTP_SSL if use_ssl else IPv4SMTP if force_ipv4 else smtplib.SMTP
+    ok, error = _send_email_with_settings(
+        message=message,
+        server=server,
+        port=port,
+        username=username,
+        password=password,
+        use_tls=use_tls,
+        use_ssl=use_ssl,
+        force_ipv4=force_ipv4,
+        timeout=timeout,
+    )
+    if ok:
+        return True, "Email sent."
+
+    if enable_ssl_fallback and not use_ssl and port != fallback_ssl_port:
+        fallback_ok, fallback_error = _send_email_with_settings(
+            message=message,
+            server=server,
+            port=fallback_ssl_port,
+            username=username,
+            password=password,
+            use_tls=False,
+            use_ssl=True,
+            force_ipv4=force_ipv4,
+            timeout=timeout,
+        )
+        if fallback_ok:
+            return True, "Email sent."
+        return False, f"{error} Fallback SSL:{fallback_ssl_port} also failed: {fallback_error}"
+
+    return False, error
+
+
+def _send_email_with_settings(
+    *,
+    message: EmailMessage,
+    server: str,
+    port: int,
+    username: str,
+    password: str,
+    use_tls: bool,
+    use_ssl: bool,
+    force_ipv4: bool,
+    timeout: int,
+) -> tuple[bool, str]:
+    smtp_class = (
+        IPv4SMTP_SSL
+        if use_ssl and force_ipv4
+        else smtplib.SMTP_SSL
+        if use_ssl
+        else IPv4SMTP
+        if force_ipv4
+        else smtplib.SMTP
+    )
 
     try:
-        smtp = smtp_class(server, port, timeout=20)
+        smtp = smtp_class(server, port, timeout=timeout)
         with smtp:
             if use_tls and not use_ssl:
                 smtp.starttls()
@@ -87,9 +143,9 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     except socket.gaierror:
         return False, "Email server address could not be resolved. Check MAIL_SERVER."
     except TimeoutError:
-        return False, "Email server connection timed out. Check MAIL_SERVER and MAIL_PORT."
+        return False, f"Email server connection timed out on {server}:{port}."
     except OSError as exc:
-        return False, f"Email server connection failed: {exc}"
+        return False, f"Email server connection failed on {server}:{port}: {exc}"
     except smtplib.SMTPAuthenticationError:
         return False, "Email login failed. Check MAIL_USERNAME and MAIL_PASSWORD."
     except smtplib.SMTPException as exc:

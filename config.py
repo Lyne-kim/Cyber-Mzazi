@@ -111,6 +111,11 @@ class Config:
     MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "").strip()
     MAIL_FORCE_IPV4 = os.getenv("MAIL_FORCE_IPV4", "true").lower() == "true"
+    MAIL_TIMEOUT = int(os.getenv("MAIL_TIMEOUT", "45"))
+    MAIL_ENABLE_SSL_FALLBACK = (
+        os.getenv("MAIL_ENABLE_SSL_FALLBACK", "true").lower() == "true"
+    )
+    MAIL_FALLBACK_SSL_PORT = int(os.getenv("MAIL_FALLBACK_SSL_PORT", "465"))
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
