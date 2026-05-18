@@ -14,6 +14,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,12 +22,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import com.google.zxing.BarcodeFormat
+import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
+    private lateinit var backButton: TextView
     private lateinit var menuToggle: TextView
     private lateinit var roleBadge: TextView
     private lateinit var roleSummaryText: TextView
@@ -43,6 +47,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parentAlertSummaryText: TextView
     private lateinit var parentCaptureStatusText: TextView
     private lateinit var childSetupStatusText: TextView
+    private lateinit var parentGreetingText: TextView
+    private lateinit var parentFamilyNameText: TextView
+    private lateinit var parentChildStatusText: TextView
+    private lateinit var parentAlertsWeekText: TextView
+    private lateinit var parentRecentMessagesText: TextView
+    private lateinit var parentDeviceStatusText: TextView
+    private lateinit var childGreetingText: TextView
     private lateinit var registerFamilyNameInput: EditText
     private lateinit var registerParentNameInput: EditText
     private lateinit var registerParentContactInput: EditText
@@ -59,6 +70,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var blockedPackagesInput: EditText
     private lateinit var statusText: TextView
     private lateinit var recentLogText: TextView
+    private lateinit var pairingQrImage: ImageView
+    private lateinit var pairingLinkText: TextView
 
     private lateinit var menuHome: TextView
     private lateinit var menuAuth: TextView
@@ -131,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         drawerLayout = findViewById(R.id.drawerLayout)
+        backButton = findViewById(R.id.backButton)
         menuToggle = findViewById(R.id.menuToggle)
         roleBadge = findViewById(R.id.roleBadge)
         roleSummaryText = findViewById(R.id.roleSummaryText)
@@ -147,6 +161,13 @@ class MainActivity : AppCompatActivity() {
         parentAlertSummaryText = findViewById(R.id.parentAlertSummaryText)
         parentCaptureStatusText = findViewById(R.id.parentCaptureStatusText)
         childSetupStatusText = findViewById(R.id.childSetupStatusText)
+        parentGreetingText = findViewById(R.id.parentGreetingText)
+        parentFamilyNameText = findViewById(R.id.parentFamilyNameText)
+        parentChildStatusText = findViewById(R.id.parentChildStatusText)
+        parentAlertsWeekText = findViewById(R.id.parentAlertsWeekText)
+        parentRecentMessagesText = findViewById(R.id.parentRecentMessagesText)
+        parentDeviceStatusText = findViewById(R.id.parentDeviceStatusText)
+        childGreetingText = findViewById(R.id.childGreetingText)
         registerFamilyNameInput = findViewById(R.id.registerFamilyNameInput)
         registerParentNameInput = findViewById(R.id.registerParentNameInput)
         registerParentContactInput = findViewById(R.id.registerParentContactInput)
@@ -163,6 +184,8 @@ class MainActivity : AppCompatActivity() {
         blockedPackagesInput = findViewById(R.id.blockedPackagesInput)
         statusText = findViewById(R.id.statusText)
         recentLogText = findViewById(R.id.recentLogText)
+        pairingQrImage = findViewById(R.id.pairingQrImage)
+        pairingLinkText = findViewById(R.id.pairingLinkText)
 
         menuHome = findViewById(R.id.menuHome)
         menuAuth = findViewById(R.id.menuAuth)
@@ -211,6 +234,7 @@ class MainActivity : AppCompatActivity() {
         saveButton = findViewById(R.id.saveButton)
         scanQrButton = findViewById(R.id.scanQrButton)
 
+        backButton.setOnClickListener { navigateBack() }
         menuToggle.setOnClickListener {
             if (!isSignedIn()) return@setOnClickListener
             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
@@ -241,6 +265,10 @@ class MainActivity : AppCompatActivity() {
         }
         openRegisterFamilyButton.setOnClickListener { showSection(SECTION_REGISTER) }
         openChildLoginButton.setOnClickListener { showSection(SECTION_CHILD_AUTH) }
+        findViewById<Button>(R.id.registerBackToLoginButton).setOnClickListener {
+            setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
+            showSection(SECTION_AUTH)
+        }
         parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_PARENT) }
         childRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
 
@@ -278,7 +306,7 @@ class MainActivity : AppCompatActivity() {
         sharePairingLinkButton.setOnClickListener { shareLatestPairingLink() }
         goPairChildButton.setOnClickListener { showSection(SECTION_QR) }
         goCaptureChildButton.setOnClickListener { showSection(SECTION_CAPTURE) }
-        goFiltersChildButton.setOnClickListener { showSection(SECTION_FILTERS) }
+        goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
 
         saveButton.setOnClickListener { saveSettings() }
         scanQrButton.setOnClickListener { startQrPairing() }
@@ -303,6 +331,13 @@ class MainActivity : AppCompatActivity() {
                 retryQueue()
             }
         }
+        findViewById<Button>(R.id.editProfileButton).setOnClickListener {
+            Toast.makeText(this, R.string.profile_edit_coming, Toast.LENGTH_SHORT).show()
+        }
+        findViewById<Button>(R.id.changePasswordButton).setOnClickListener {
+            Toast.makeText(this, R.string.change_password_coming, Toast.LENGTH_SHORT).show()
+        }
+        findViewById<Button>(R.id.signOutButton).setOnClickListener { signOut() }
 
         registerSettingsDirtyWatchers()
         populateFields()
@@ -416,6 +451,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateTopNavigation() {
+        val onHomeLikeScreen = currentSection == SECTION_HOME ||
+            currentSection == SECTION_PARENT_DASHBOARD ||
+            currentSection == SECTION_CHILD_ACCOUNT
+        backButton.visibility = if (!onHomeLikeScreen) View.VISIBLE else View.INVISIBLE
+        menuToggle.visibility = if (isSignedIn() && onHomeLikeScreen) View.VISIBLE else View.INVISIBLE
+    }
+
+    private fun navigateBack() {
+        when {
+            parentSignedIn -> showSection(SECTION_PARENT_DASHBOARD)
+            childSignedIn -> showSection(SECTION_CHILD_ACCOUNT)
+            currentSection == SECTION_REGISTER || currentSection == SECTION_CHILD_AUTH -> showSection(SECTION_HOME)
+            else -> showSection(SECTION_HOME)
+        }
+    }
+
+    private fun signOut() {
+        parentSignedIn = false
+        childSignedIn = false
+        Prefs.clearParentSession(this)
+        updateMenuAccess()
+        showSection(SECTION_HOME)
+        Toast.makeText(this, R.string.signed_out, Toast.LENGTH_SHORT).show()
+    }
+
     private fun setRoleButtonState(button: Button, active: Boolean) {
         button.alpha = if (active) 1f else 0.72f
         button.isAllCaps = false
@@ -431,6 +492,10 @@ class MainActivity : AppCompatActivity() {
     private fun showSection(position: Int) {
         val isChildRole = Prefs.isChildRole(this)
         val resolvedPosition = when {
+            position == SECTION_PARENT_DASHBOARD && !parentSignedIn -> SECTION_HOME
+            position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
+            position == SECTION_QR && childSignedIn -> SECTION_QR
+            position == SECTION_QR && !parentSignedIn && !childSignedIn -> SECTION_HOME
             !isChildRole && (position == SECTION_CAPTURE || position == SECTION_FILTERS) -> SECTION_HOME
             isChildRole && position == SECTION_AUTH -> SECTION_CHILD_AUTH
             else -> position
@@ -452,7 +517,9 @@ class MainActivity : AppCompatActivity() {
         filtersSection.visibility = if (resolvedPosition == SECTION_FILTERS && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
         statusSection.visibility = if (resolvedPosition == SECTION_STATUS) View.VISIBLE else View.GONE
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
+        if (resolvedPosition == SECTION_QR) renderLatestPairingQr()
         syncDrawerState(resolvedPosition)
+        updateTopNavigation()
         drawerLayout.closeDrawer(GravityCompat.START)
     }
 
@@ -478,7 +545,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveSettings() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         Prefs.setDeviceToken(this, tokenInput.text.toString().trim())
         Prefs.setDeviceName(this, deviceNameInput.text.toString().trim())
         Prefs.setAllowedPackages(this, allowedPackagesInput.text.toString().trim())
@@ -496,7 +562,6 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) = Unit
         }
         listOf(
-            baseUrlInput,
             tokenInput,
             deviceNameInput,
             allowedPackagesInput,
@@ -509,8 +574,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasUnsavedSettings(): Boolean =
-        baseUrlInput.text.toString().trim() != Prefs.getBaseUrl(this) ||
-            tokenInput.text.toString().trim() != Prefs.getDeviceToken(this) ||
+        tokenInput.text.toString().trim() != Prefs.getDeviceToken(this) ||
             deviceNameInput.text.toString().trim() != Prefs.getDeviceName(this) ||
             allowedPackagesInput.text.toString().trim() != Prefs.getAllowedPackages(this) ||
             blockedPackagesInput.text.toString().trim() != Prefs.getBlockedPackages(this)
@@ -554,10 +618,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openWebPath(path: String) {
-        val typedBaseUrl = baseUrlInput.text.toString().trim()
-        if (typedBaseUrl.isNotBlank()) {
-            Prefs.setBaseUrl(this, typedBaseUrl)
-        }
         val baseUrl = Prefs.getBaseUrl(this).trim().trimEnd('/')
         if (baseUrl.isBlank()) {
             Toast.makeText(this, R.string.base_url_required, Toast.LENGTH_SHORT).show()
@@ -567,7 +627,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signInParent() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         val identifier = parentIdentifierInput.text.toString().trim()
         val password = parentPasswordInput.text.toString()
         if (identifier.isBlank() || password.isBlank()) {
@@ -587,6 +646,12 @@ class MainActivity : AppCompatActivity() {
                 if (ok) {
                     parentSignedIn = true
                     childSignedIn = false
+                    parentGreetingText.text = getString(R.string.parent_greeting_live)
+                    parentFamilyNameText.text = getString(R.string.parent_family_live)
+                    parentChildStatusText.text = getString(R.string.parent_child_live)
+                    parentAlertsWeekText.text = getString(R.string.parent_alerts_loading)
+                    parentRecentMessagesText.text = getString(R.string.parent_alerts_loading)
+                    parentDeviceStatusText.text = getString(R.string.parent_device_pairing_empty)
                     updateMenuAccess()
                     refreshParentAlerts()
                     showSection(SECTION_PARENT_DASHBOARD)
@@ -596,7 +661,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun registerFamilyAccount() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         val familyName = registerFamilyNameInput.text.toString().trim()
         val parentName = registerParentNameInput.text.toString().trim()
         val parentContact = registerParentContactInput.text.toString().trim()
@@ -644,7 +708,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signInChild() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         val parentContact = childParentContactInput.text.toString().trim()
         val childUsername = childUsernameInput.text.toString().trim()
         val password = childPasswordInput.text.toString()
@@ -665,6 +728,7 @@ class MainActivity : AppCompatActivity() {
                 if (ok) {
                     childSignedIn = true
                     parentSignedIn = false
+                    childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
                     setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
                     updateMenuAccess()
                     showSection(SECTION_CHILD_ACCOUNT)
@@ -674,7 +738,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun verifyParentPhone() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         val identifier = parentIdentifierInput.text.toString().trim()
         val code = parentPhoneCodeInput.text.toString().trim()
         if (identifier.isBlank() || code.isBlank()) {
@@ -692,7 +755,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resendParentPhoneCode() {
-        Prefs.setBaseUrl(this, baseUrlInput.text.toString().trim())
         val identifier = parentIdentifierInput.text.toString().trim()
         if (identifier.isBlank()) {
             Toast.makeText(this, R.string.parent_phone_required, Toast.LENGTH_SHORT).show()
@@ -712,6 +774,13 @@ class MainActivity : AppCompatActivity() {
         ParentApiClient.fetchAlerts(this) { ok, message ->
             runOnUiThread {
                 parentAlertSummaryText.text = message
+                if (ok) {
+                    parentAlertsWeekText.text = message.lines().firstOrNull().orEmpty().ifBlank {
+                        getString(R.string.parent_no_alerts)
+                    }
+                    parentRecentMessagesText.text = message
+                    parentDeviceStatusText.text = getString(R.string.parent_device_pairing_empty)
+                }
                 if (!ok) {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 }
@@ -736,6 +805,7 @@ class MainActivity : AppCompatActivity() {
         ParentApiClient.createChildDeviceLink(this, deviceName) { _, message ->
             runOnUiThread {
                 parentAlertSummaryText.text = message
+                renderLatestPairingQr()
                 Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
             }
         }
@@ -832,7 +902,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.invalid_pairing_qr, Toast.LENGTH_SHORT).show()
             return
         }
-        baseUrlInput.setText(uri.getQueryParameter("base_url").orEmpty())
+        baseUrlInput.setText(Prefs.getBaseUrl(this))
         tokenInput.setText(uri.getQueryParameter("token").orEmpty())
         val qrDeviceName = uri.getQueryParameter("device_name").orEmpty()
         if (deviceNameInput.text.isNullOrBlank()) {
@@ -845,6 +915,19 @@ class MainActivity : AppCompatActivity() {
         saveSettings()
         updateRoleUi()
         Toast.makeText(this, R.string.qr_pairing_applied, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun renderLatestPairingQr() {
+        val pairingUri = ParentApiClient.getLatestPairingUri()
+        if (pairingUri.isBlank()) {
+            pairingQrImage.setImageResource(R.drawable.cyber_mzazi_logo)
+            pairingLinkText.visibility = View.GONE
+            return
+        }
+        val bitmap = BarcodeEncoder().encodeBitmap(pairingUri, BarcodeFormat.QR_CODE, 720, 720)
+        pairingQrImage.setImageBitmap(bitmap)
+        pairingLinkText.text = pairingUri
+        pairingLinkText.visibility = View.VISIBLE
     }
 
     private fun handlePairingIntent(intent: Intent?) {

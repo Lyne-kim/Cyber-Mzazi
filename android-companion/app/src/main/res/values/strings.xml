@@ -32,7 +32,7 @@
     <string name="role_child_copy">Child mode enables notification capture, safety filters, and child-device monitoring setup.</string>
     <string name="parent_home_title">Parent phone home</string>
     <string name="parent_home_copy">Use this phone for review and child-device setup. Third-party notification capture remains disabled here.</string>
-    <string name="parent_capture_status_disabled">[OK] Parent notification capture is off on this phone.</string>
+    <string name="parent_capture_status_disabled">Parent notification capture is off.</string>
     <string name="parent_capture_status_enabled">[!] Notification access is enabled on this parent phone. Open Android settings and turn off Cyber Mzazi notification access here.</string>
     <string name="open_parent_notification_settings">Open notification access settings</string>
     <string name="child_home_title">Child phone home</string>
@@ -57,6 +57,7 @@
     <string name="sign_in_short">Sign In</string>
     <string name="need_to_verify">Need to verify?</string>
     <string name="no_account_create">Do not have an account? Create Family Account</string>
+    <string name="already_have_account_login">Already have an account? Login</string>
     <string name="create_your_family">Create your family</string>
     <string name="family_section">Family</string>
     <string name="parent_guardian_section">Parent / Guardian</string>
@@ -88,6 +89,12 @@
     <string name="alerts_this_week">3\nAlerts this week (sample)</string>
     <string name="recent_risky_messages_sample">Recent risky messages (sample)\n\nWhatsApp        2h ago\nCan you send the answers?\n\nInstagram        5h ago\nDM request from unknown user\n\nTikTok        1d ago\nInappropriate comment detected</string>
     <string name="device_paired_status">Device pairing status (sample)\n\nDevice paired\nAmani</string>
+    <string name="parent_greeting_live">Hello</string>
+    <string name="parent_family_live">Your family</string>
+    <string name="parent_child_live">Child account</string>
+    <string name="parent_no_alerts">No risky messages yet.</string>
+    <string name="parent_device_pairing_empty">Device pairing status\n\nNo child device paired yet.</string>
+    <string name="child_greeting_live">Hi %1$s!</string>
     <string name="qr_symbol">QR</string>
     <string name="pair_device">Pair Device</string>
     <string name="parent_phone_code_hint">Phone verification code</string>
@@ -131,6 +138,7 @@
     <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
     <string name="role_saved">Device role updated.</string>
     <string name="menu_button_symbol">&#9776;</string>
+    <string name="back_button_symbol">&#8592;</string>
     <string name="hero_preview_title">Cyber Mzazi</string>
     <string name="hero_preview_icon">&#128241;</string>
     <string name="service_label">Cyber Mzazi</string>
@@ -153,6 +161,17 @@
     <string name="allowed_apps_label">Allowed app packages</string>
     <string name="blocked_apps_label">Blocked app packages</string>
     <string name="save_settings">Save settings</string>
+    <string name="preferences_section">Preferences</string>
+    <string name="dark_mode_toggle">Dark mode</string>
+    <string name="language_toggle">Use Swahili</string>
+    <string name="in_app_sounds_toggle">In-app sounds</string>
+    <string name="account_section">Account</string>
+    <string name="edit_profile">Edit profile</string>
+    <string name="change_password">Change password</string>
+    <string name="sign_out">Sign out</string>
+    <string name="signed_out">Signed out.</string>
+    <string name="profile_edit_coming">Profile editing will be connected to the account API next.</string>
+    <string name="change_password_coming">Password change will be connected to the account API next.</string>
     <string name="scan_pairing_qr">Scan pairing QR</string>
     <string name="open_notification_access">Open notification access</string>
     <string name="send_test_payload">Send test payload</string>

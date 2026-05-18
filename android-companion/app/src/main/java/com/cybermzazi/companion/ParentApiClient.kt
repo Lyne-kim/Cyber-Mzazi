@@ -89,6 +89,29 @@ object ParentApiClient {
                 .put("child_password", childPassword),
             successMessage = "Family account created. Verify the parent contact before signing in.",
             onComplete = onComplete,
+            onSuccessMessage = { response ->
+                val details = mutableListOf("Family account created.")
+                if (response.optBoolean("requires_email_verification")) {
+                    details += if (response.optBoolean("email_verification_sent")) {
+                        "Verification email sent."
+                    } else {
+                        response.optString("email_delivery_message").ifBlank {
+                            "Verification email was not sent. Use resend email on the login page."
+                        }
+                    }
+                }
+                if (response.optBoolean("requires_phone_verification")) {
+                    details += if (response.optBoolean("phone_verification_sent")) {
+                        "Phone verification code sent."
+                    } else {
+                        response.optString("phone_delivery_message").ifBlank {
+                            "Phone verification code was not sent. Use resend code on the login page."
+                        }
+                    }
+                }
+                details += "Verify before signing in."
+                details.joinToString("\n")
+            },
         )
     }
 
@@ -330,6 +353,7 @@ object ParentApiClient {
         body: JSONObject,
         successMessage: String,
         onComplete: (Boolean, String) -> Unit,
+        onSuccessMessage: ((JSONObject) -> String)? = null,
     ) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         if (baseUrl.isBlank()) {
@@ -353,7 +377,8 @@ object ParentApiClient {
                 if (connection.responseCode !in 200..299) {
                     return@runCatching ParentApiResult(false, parseError(response, "Verification action failed."))
                 }
-                ParentApiResult(true, successMessage)
+                val responseJson = JSONObject(response.ifBlank { "{}" })
+                ParentApiResult(true, onSuccessMessage?.invoke(responseJson) ?: successMessage)
             }.getOrElse { throwable ->
                 ParentApiResult(
                     false,
