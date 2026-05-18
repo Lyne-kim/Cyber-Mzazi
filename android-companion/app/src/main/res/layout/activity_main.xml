@@ -24,7 +24,8 @@
                 android:gravity="center"
                 android:text="@string/menu_button_symbol"
                 android:textColor="@color/cyber_mzazi_text"
-                android:textSize="24sp" />
+                android:textSize="24sp"
+                android:visibility="invisible" />
 
             <TextView
                 android:layout_width="0dp"
@@ -42,10 +43,11 @@
                 android:layout_height="42dp"
                 android:background="@drawable/bg_soft_panel"
                 android:gravity="center"
-                android:text="@string/role_child"
+                android:text=""
                 android:textColor="@color/cyber_mzazi_seed"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="invisible" />
         </LinearLayout>
 
         <ScrollView

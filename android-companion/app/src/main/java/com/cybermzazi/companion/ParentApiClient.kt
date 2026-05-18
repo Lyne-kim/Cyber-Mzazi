@@ -8,6 +8,9 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 object ParentApiClient {
+    private const val CONNECT_TIMEOUT_MS = 30000
+    private const val READ_TIMEOUT_MS = 90000
+
     private val executor = Executors.newSingleThreadExecutor()
     private var latestFlaggedMessageId: Int? = null
     private var pendingLogoutRequestId: Int? = null
@@ -28,8 +31,8 @@ object ParentApiClient {
             val result = runCatching {
                 val connection = (URL("$baseUrl/api/auth/login").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 15000
-                    readTimeout = 15000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                 }
@@ -105,8 +108,8 @@ object ParentApiClient {
             val result = runCatching {
                 val connection = (URL("$baseUrl/api/auth/login").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 15000
-                    readTimeout = 15000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                     setRequestProperty("Accept", "application/json")
@@ -178,8 +181,8 @@ object ParentApiClient {
             val result = runCatching {
                 val connection = (URL("$baseUrl/api/parent/alerts").openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
-                    connectTimeout = 15000
-                    readTimeout = 15000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     setRequestProperty("Cookie", cookie)
                     setRequestProperty("Accept", "application/json")
                 }
@@ -294,8 +297,8 @@ object ParentApiClient {
             val result = runCatching {
                 val connection = (URL("$baseUrl$path").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 15000
-                    readTimeout = 15000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     doOutput = true
                     setRequestProperty("Cookie", cookie)
                     setRequestProperty("Content-Type", "application/json")
@@ -337,8 +340,8 @@ object ParentApiClient {
             val result = runCatching {
                 val connection = (URL("$baseUrl$path").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 15000
-                    readTimeout = 15000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                     setRequestProperty("Accept", "application/json")
@@ -352,7 +355,10 @@ object ParentApiClient {
                 }
                 ParentApiResult(true, successMessage)
             }.getOrElse { throwable ->
-                ParentApiResult(false, "Verification error: ${throwable.message ?: "Unknown error"}")
+                ParentApiResult(
+                    false,
+                    "Verification error: ${throwable.message ?: "Unknown error"}. Check your internet connection and try again.",
+                )
             }
             onComplete(result.ok, result.message)
         }

@@ -109,6 +109,8 @@ class MainActivity : AppCompatActivity() {
 
     private var currentSection = 0
     private var isPopulatingFields = false
+    private var parentSignedIn = false
+    private var childSignedIn = false
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -210,6 +212,7 @@ class MainActivity : AppCompatActivity() {
         scanQrButton = findViewById(R.id.scanQrButton)
 
         menuToggle.setOnClickListener {
+            if (!isSignedIn()) return@setOnClickListener
             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 drawerLayout.closeDrawer(GravityCompat.START)
             } else {
@@ -217,7 +220,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        menuHome.setOnClickListener { showSection(SECTION_HOME) }
+        menuHome.setOnClickListener {
+            when {
+                parentSignedIn -> showSection(SECTION_PARENT_DASHBOARD)
+                childSignedIn -> showSection(SECTION_CHILD_ACCOUNT)
+                else -> showSection(SECTION_HOME)
+            }
+        }
         menuAuth.setOnClickListener { showSection(SECTION_AUTH) }
         menuQr.setOnClickListener { showSection(SECTION_QR) }
         menuSettings.setOnClickListener { showSection(SECTION_SETTINGS) }
@@ -342,22 +351,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateRoleUi() {
         val isChildRole = Prefs.isChildRole(this)
-        roleBadge.text = getString(if (isChildRole) R.string.role_child else R.string.role_parent)
+        roleBadge.text = ""
+        roleBadge.visibility = View.INVISIBLE
         roleSummaryText.text = getString(if (isChildRole) R.string.role_child_copy else R.string.role_parent_copy)
         captureRoleHint.text = getString(if (isChildRole) R.string.actions_section_copy else R.string.parent_mode_capture_disabled)
 
         setRoleButtonState(parentRoleButton, !isChildRole)
         setRoleButtonState(childRoleButton, isChildRole)
 
-        menuAuth.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        menuCapture.visibility = if (isChildRole) View.VISIBLE else View.GONE
-        menuFilters.visibility = if (isChildRole) View.VISIBLE else View.GONE
         parentChildDeviceNameInput.visibility = if (isChildRole) View.GONE else View.VISIBLE
         createChildDeviceLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
         copyPairingLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
         sharePairingLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
         openChildDevicesButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
         scanQrButton.visibility = if (isChildRole) View.VISIBLE else View.GONE
+        updateMenuAccess()
 
         if (!isChildRole && (currentSection == SECTION_CAPTURE || currentSection == SECTION_FILTERS)) {
             currentSection = SECTION_HOME
@@ -367,6 +375,45 @@ class MainActivity : AppCompatActivity() {
         }
         syncDrawerState(currentSection)
         showSection(currentSection)
+    }
+
+    private fun isSignedIn(): Boolean = parentSignedIn || childSignedIn
+
+    private fun updateMenuAccess() {
+        val signedIn = isSignedIn()
+        menuToggle.visibility = if (signedIn) View.VISIBLE else View.INVISIBLE
+        menuToggle.isEnabled = signedIn
+        drawerLayout.setDrawerLockMode(
+            if (signedIn) DrawerLayout.LOCK_MODE_UNLOCKED else DrawerLayout.LOCK_MODE_LOCKED_CLOSED,
+        )
+        if (!signedIn) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        }
+
+        val menuItems = listOf(menuHome, menuAuth, menuQr, menuSettings, menuCapture, menuFilters, menuStatus, menuLog)
+        menuItems.forEach { it.visibility = View.GONE }
+        val parentOnlyAfterLogin = if (parentSignedIn) View.VISIBLE else View.GONE
+        openParentDashboardButton.visibility = parentOnlyAfterLogin
+        openParentAlertsButton.visibility = parentOnlyAfterLogin
+        refreshParentAlertsButton.visibility = parentOnlyAfterLogin
+        reviewLatestSafeButton.visibility = parentOnlyAfterLogin
+        approveLogoutButton.visibility = parentOnlyAfterLogin
+        denyLogoutButton.visibility = parentOnlyAfterLogin
+        if (!signedIn) return
+
+        menuHome.visibility = View.VISIBLE
+        menuSettings.visibility = View.VISIBLE
+        menuStatus.visibility = View.VISIBLE
+        menuLog.visibility = View.VISIBLE
+
+        if (parentSignedIn) {
+            menuQr.visibility = View.VISIBLE
+        }
+        if (childSignedIn) {
+            menuQr.visibility = View.VISIBLE
+            menuCapture.visibility = View.VISIBLE
+            menuFilters.visibility = View.VISIBLE
+        }
     }
 
     private fun setRoleButtonState(button: Button, active: Boolean) {
@@ -410,7 +457,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun syncDrawerState(position: Int) {
-        updateDrawerItem(menuHome, position == SECTION_HOME)
+        updateDrawerItem(menuHome, position == SECTION_HOME || position == SECTION_PARENT_DASHBOARD || position == SECTION_CHILD_ACCOUNT)
         updateDrawerItem(menuAuth, position == SECTION_AUTH)
         updateDrawerItem(menuQr, position == SECTION_QR)
         updateDrawerItem(menuSettings, position == SECTION_SETTINGS)
@@ -538,6 +585,9 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT,
                 ).show()
                 if (ok) {
+                    parentSignedIn = true
+                    childSignedIn = false
+                    updateMenuAccess()
                     refreshParentAlerts()
                     showSection(SECTION_PARENT_DASHBOARD)
                 }
@@ -584,6 +634,8 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, if (ok) R.string.family_created_verify else R.string.parent_sign_in_failed, Toast.LENGTH_SHORT).show()
                 if (ok) {
                     parentIdentifierInput.setText(parentContact)
+                    parentSignedIn = false
+                    childSignedIn = false
                     setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
                     showSection(SECTION_AUTH)
                 }
@@ -611,7 +663,10 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT,
                 ).show()
                 if (ok) {
+                    childSignedIn = true
+                    parentSignedIn = false
                     setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
+                    updateMenuAccess()
                     showSection(SECTION_CHILD_ACCOUNT)
                 }
             }
