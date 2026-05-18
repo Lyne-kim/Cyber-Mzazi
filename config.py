@@ -122,12 +122,16 @@ class Config:
     PHONE_VERIFICATION_CODE_MAX_AGE = int(
         os.getenv("PHONE_VERIFICATION_CODE_MAX_AGE", "900")
     )
-    SMS_PROVIDER = os.getenv("SMS_PROVIDER", "africastalking").strip().lower()
-    AFRICASTALKING_USERNAME = os.getenv("AFRICASTALKING_USERNAME", "").strip()
-    AFRICASTALKING_API_KEY = os.getenv("AFRICASTALKING_API_KEY", "")
-    AFRICASTALKING_SENDER_ID = os.getenv("AFRICASTALKING_SENDER_ID", "").strip()
-    AFRICASTALKING_ENV = os.getenv("AFRICASTALKING_ENV", "live").strip().lower()
-    AFRICASTALKING_TIMEOUT = int(os.getenv("AFRICASTALKING_TIMEOUT", "20"))
+    SMS_PROVIDER = os.getenv("SMS_PROVIDER", "textsms").strip().lower()
+    TEXTSMS_PARTNER_ID = os.getenv("TEXTSMS_PARTNER_ID", "").strip()
+    TEXTSMS_API_KEY = os.getenv("TEXTSMS_API_KEY", "")
+    TEXTSMS_SHORTCODE = os.getenv("TEXTSMS_SHORTCODE", "").strip()
+    TEXTSMS_PASS_TYPE = os.getenv("TEXTSMS_PASS_TYPE", "plain").strip()
+    TEXTSMS_ENDPOINT = os.getenv(
+        "TEXTSMS_ENDPOINT",
+        "https://sms.textsms.co.ke/api/services/sendbulk/",
+    ).strip()
+    TEXTSMS_TIMEOUT = int(os.getenv("TEXTSMS_TIMEOUT", "20"))
     ALERT_EMAIL_ENABLED = os.getenv("ALERT_EMAIL_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import secrets
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 import requests
 from flask import current_app
@@ -12,12 +13,13 @@ from ..models import User
 
 
 def is_sms_configured() -> bool:
-    provider = current_app.config.get("SMS_PROVIDER", "africastalking")
-    if provider != "africastalking":
+    provider = current_app.config.get("SMS_PROVIDER", "textsms")
+    if provider != "textsms":
         return False
     return bool(
-        current_app.config.get("AFRICASTALKING_USERNAME")
-        and current_app.config.get("AFRICASTALKING_API_KEY")
+        current_app.config.get("TEXTSMS_PARTNER_ID")
+        and current_app.config.get("TEXTSMS_API_KEY")
+        and current_app.config.get("TEXTSMS_SHORTCODE")
     )
 
 
@@ -46,7 +48,7 @@ def send_phone_verification_code(user: User) -> tuple[bool, str]:
     max_age_minutes = max(1, max_age // 60)
     body = f"Your Cyber Mzazi verification code is {code}. It expires in {max_age_minutes} minutes."
 
-    ok, message = _send_africastalking_sms(to_phone, body)
+    ok, message = _send_textsms(to_phone, body)
     if not ok:
         return False, message
 
@@ -56,35 +58,43 @@ def send_phone_verification_code(user: User) -> tuple[bool, str]:
     return True, "Phone verification code sent."
 
 
-def _send_africastalking_sms(to_phone: str, body: str) -> tuple[bool, str]:
-    username = current_app.config.get("AFRICASTALKING_USERNAME", "").strip()
-    api_key = current_app.config.get("AFRICASTALKING_API_KEY", "")
-    sender_id = current_app.config.get("AFRICASTALKING_SENDER_ID", "").strip()
-    environment = current_app.config.get("AFRICASTALKING_ENV", "live").strip().lower()
-    timeout = int(current_app.config.get("AFRICASTALKING_TIMEOUT", 20))
-    if not username or not api_key:
-        return False, "Africa's Talking SMS is not configured yet."
+def _send_textsms(to_phone: str, body: str) -> tuple[bool, str]:
+    partner_id = current_app.config.get("TEXTSMS_PARTNER_ID", "").strip()
+    api_key = current_app.config.get("TEXTSMS_API_KEY", "")
+    shortcode = current_app.config.get("TEXTSMS_SHORTCODE", "").strip()
+    pass_type = current_app.config.get("TEXTSMS_PASS_TYPE", "plain").strip() or "plain"
+    endpoint = current_app.config.get(
+        "TEXTSMS_ENDPOINT",
+        "https://sms.textsms.co.ke/api/services/sendbulk/",
+    ).strip()
+    timeout = int(current_app.config.get("TEXTSMS_TIMEOUT", 20))
+    if not partner_id or not api_key or not shortcode:
+        return False, "TextSMS phone verification is not configured yet."
 
-    api_base = (
-        "https://api.sandbox.africastalking.com"
-        if environment == "sandbox"
-        else "https://api.africastalking.com"
-    )
+    client_sms_id = uuid4().hex[:12]
+    sms_phone = to_phone[1:] if to_phone.startswith("+") else to_phone
     payload = {
-        "username": username,
-        "to": to_phone,
-        "message": body,
+        "count": 1,
+        "smslist": [
+            {
+                "partnerID": partner_id,
+                "apikey": api_key,
+                "pass_type": pass_type,
+                "clientsmsid": client_sms_id,
+                "mobile": sms_phone,
+                "message": body,
+                "shortcode": shortcode,
+            }
+        ],
     }
-    if sender_id:
-        payload["from"] = sender_id
 
     try:
         response = requests.post(
-            f"{api_base}/version1/messaging",
-            data=payload,
+            endpoint,
+            json=payload,
             headers={
                 "Accept": "application/json",
-                "apiKey": api_key,
+                "Content-Type": "application/json",
             },
             timeout=timeout,
         )
@@ -95,19 +105,19 @@ def _send_africastalking_sms(to_phone: str, body: str) -> tuple[bool, str]:
     except ValueError:
         return False, "Phone verification SMS response was not valid JSON."
 
-    recipients = (
-        result.get("SMSMessageData", {})
-        .get("Recipients", [])
+    responses = result.get("responses", [])
+    if not responses:
+        return False, "Phone verification SMS response did not include a delivery result."
+
+    first_response = responses[0]
+    response_code = str(
+        first_response.get("response-code")
+        or first_response.get("respose-code")
+        or ""
     )
-    failed = [
-        item for item in recipients
-        if str(item.get("status", "")).lower() not in {"success", "sent"}
-    ]
-    if failed:
-        first_failure = failed[0]
-        status = first_failure.get("status", "failed")
-        error_message = first_failure.get("statusCode", "")
-        return False, f"Phone verification SMS failed: {status} {error_message}".strip()
+    if response_code != "200":
+        description = first_response.get("response-description", "failed")
+        return False, f"Phone verification SMS failed: {description} {response_code}".strip()
 
     return True, "Phone verification code sent."
 
