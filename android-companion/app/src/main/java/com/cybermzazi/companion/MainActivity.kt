@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusSection: View
     private lateinit var logSection: View
     private lateinit var parentHomeSection: View
+    private lateinit var parentDashboardSection: View
     private lateinit var childHomeSection: View
     private lateinit var registerFamilySection: View
     private lateinit var childLoginSection: View
@@ -178,6 +179,7 @@ class MainActivity : AppCompatActivity() {
         statusSection = findViewById(R.id.statusSection)
         logSection = findViewById(R.id.logSection)
         parentHomeSection = findViewById(R.id.parentHomeSection)
+        parentDashboardSection = findViewById(R.id.parentDashboardSection)
         childHomeSection = findViewById(R.id.childHomeSection)
         registerFamilySection = findViewById(R.id.registerFamilySection)
         childLoginSection = findViewById(R.id.childLoginSection)
@@ -233,7 +235,9 @@ class MainActivity : AppCompatActivity() {
         parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_PARENT) }
         childRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
 
-        openParentDashboardButton.setOnClickListener { openWebPath("/parent/dashboard") }
+        openParentDashboardButton.setOnClickListener { showSection(SECTION_PARENT_DASHBOARD) }
+        findViewById<Button>(R.id.parentDashboardPairButton).setOnClickListener { showSection(SECTION_QR) }
+        findViewById<Button>(R.id.parentDashboardSettingsButton).setOnClickListener { showSection(SECTION_SETTINGS) }
         openParentAlertsButton.setOnClickListener { openWebPath("/parent/alerts") }
         openChildDevicesButton.setOnClickListener { openWebPath("/parent/child-profile") }
         parentLoginButton.setOnClickListener { signInParent() }
@@ -389,6 +393,8 @@ class MainActivity : AppCompatActivity() {
         roleSection.visibility = if (resolvedPosition == SECTION_HOME) View.VISIBLE else View.GONE
         parentHomeSection.visibility =
             if (resolvedPosition == SECTION_AUTH && Prefs.isParentRole(this)) View.VISIBLE else View.GONE
+        parentDashboardSection.visibility =
+            if (resolvedPosition == SECTION_PARENT_DASHBOARD && Prefs.isParentRole(this)) View.VISIBLE else View.GONE
         childHomeSection.visibility =
             if (resolvedPosition == SECTION_CHILD_ACCOUNT && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
         registerFamilySection.visibility = if (resolvedPosition == SECTION_REGISTER) View.VISIBLE else View.GONE
@@ -531,7 +537,10 @@ class MainActivity : AppCompatActivity() {
                     if (ok) R.string.parent_sign_in_ok else R.string.parent_sign_in_failed,
                     Toast.LENGTH_SHORT,
                 ).show()
-                if (ok) refreshParentAlerts()
+                if (ok) {
+                    refreshParentAlerts()
+                    showSection(SECTION_PARENT_DASHBOARD)
+                }
             }
         }
     }
@@ -803,5 +812,6 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_REGISTER = 8
         private const val SECTION_CHILD_AUTH = 9
         private const val SECTION_CHILD_ACCOUNT = 10
+        private const val SECTION_PARENT_DASHBOARD = 11
     }
 }
