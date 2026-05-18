@@ -845,8 +845,8 @@
       </span>
     </a>
     <div class="landing-nav-actions">
-      <a class="landing-link-auth" href="{{ url_for('auth.parent_login') }}">Sign In</a>
-      <a class="landing-button" href="{{ url_for('auth.register') }}">Get Started</a>
+      <a class="landing-link-auth" href="{{ url_for('auth.child_login') }}">Child Sign In</a>
+      <a class="landing-button" href="{{ url_for('auth.parent_login') }}">Parent/Guardian Sign In</a>
     </div>
   </nav>
 
@@ -869,11 +869,6 @@
       </p>
       <div class="landing-button-row">
         <a class="landing-button" href="{{ url_for('auth.register') }}">Create Family Account &rarr;</a>
-        <a class="landing-button-secondary" href="{{ url_for('auth.parent_login') }}">Sign In &rarr;</a>
-      </div>
-      <div class="landing-role-row">
-        <a class="landing-role-chip" href="{{ url_for('auth.parent_login') }}">Parent/Guardian</a>
-        <a class="landing-role-chip" href="{{ url_for('auth.child_login') }}">Child</a>
       </div>
       <div class="landing-microcopy">Consent-led &bull; Multi-device &bull; Real-time family safety workflows</div>
     </div>
