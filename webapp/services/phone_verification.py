@@ -12,10 +12,12 @@ from ..models import User
 
 
 def is_sms_configured() -> bool:
+    provider = current_app.config.get("SMS_PROVIDER", "africastalking")
+    if provider != "africastalking":
+        return False
     return bool(
-        current_app.config.get("TWILIO_ACCOUNT_SID")
-        and current_app.config.get("TWILIO_AUTH_TOKEN")
-        and current_app.config.get("TWILIO_FROM_PHONE")
+        current_app.config.get("AFRICASTALKING_USERNAME")
+        and current_app.config.get("AFRICASTALKING_API_KEY")
     )
 
 
@@ -39,28 +41,74 @@ def send_phone_verification_code(user: User) -> tuple[bool, str]:
         return False, "Phone verification SMS is not configured yet."
 
     code = _generate_code()
-    account_sid = current_app.config["TWILIO_ACCOUNT_SID"]
-    auth_token = current_app.config["TWILIO_AUTH_TOKEN"]
-    from_phone = current_app.config["TWILIO_FROM_PHONE"]
     to_phone = normalize_phone(user.phone)
     max_age = int(current_app.config.get("PHONE_VERIFICATION_CODE_MAX_AGE", 900))
     max_age_minutes = max(1, max_age // 60)
     body = f"Your Cyber Mzazi verification code is {code}. It expires in {max_age_minutes} minutes."
 
-    try:
-        response = requests.post(
-            f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
-            data={"From": from_phone, "To": to_phone, "Body": body},
-            auth=(account_sid, auth_token),
-            timeout=20,
-        )
-        response.raise_for_status()
-    except requests.RequestException as exc:  # pragma: no cover - network dependent
-        return False, f"Phone verification SMS could not be sent: {exc}"
+    ok, message = _send_africastalking_sms(to_phone, body)
+    if not ok:
+        return False, message
 
     user.phone_verification_code_hash = generate_password_hash(code)
     user.phone_verification_sent_at = datetime.utcnow()
     db.session.add(user)
+    return True, "Phone verification code sent."
+
+
+def _send_africastalking_sms(to_phone: str, body: str) -> tuple[bool, str]:
+    username = current_app.config.get("AFRICASTALKING_USERNAME", "").strip()
+    api_key = current_app.config.get("AFRICASTALKING_API_KEY", "")
+    sender_id = current_app.config.get("AFRICASTALKING_SENDER_ID", "").strip()
+    environment = current_app.config.get("AFRICASTALKING_ENV", "live").strip().lower()
+    timeout = int(current_app.config.get("AFRICASTALKING_TIMEOUT", 20))
+    if not username or not api_key:
+        return False, "Africa's Talking SMS is not configured yet."
+
+    api_base = (
+        "https://api.sandbox.africastalking.com"
+        if environment == "sandbox"
+        else "https://api.africastalking.com"
+    )
+    payload = {
+        "username": username,
+        "to": to_phone,
+        "message": body,
+    }
+    if sender_id:
+        payload["from"] = sender_id
+
+    try:
+        response = requests.post(
+            f"{api_base}/version1/messaging",
+            data=payload,
+            headers={
+                "Accept": "application/json",
+                "apiKey": api_key,
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except requests.RequestException as exc:  # pragma: no cover - network dependent
+        return False, f"Phone verification SMS could not be sent: {exc}"
+    except ValueError:
+        return False, "Phone verification SMS response was not valid JSON."
+
+    recipients = (
+        result.get("SMSMessageData", {})
+        .get("Recipients", [])
+    )
+    failed = [
+        item for item in recipients
+        if str(item.get("status", "")).lower() not in {"success", "sent"}
+    ]
+    if failed:
+        first_failure = failed[0]
+        status = first_failure.get("status", "failed")
+        error_message = first_failure.get("statusCode", "")
+        return False, f"Phone verification SMS failed: {status} {error_message}".strip()
+
     return True, "Phone verification code sent."
 
 

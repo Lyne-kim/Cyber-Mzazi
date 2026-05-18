@@ -122,9 +122,12 @@ class Config:
     PHONE_VERIFICATION_CODE_MAX_AGE = int(
         os.getenv("PHONE_VERIFICATION_CODE_MAX_AGE", "900")
     )
-    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
-    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-    TWILIO_FROM_PHONE = os.getenv("TWILIO_FROM_PHONE", "").strip()
+    SMS_PROVIDER = os.getenv("SMS_PROVIDER", "africastalking").strip().lower()
+    AFRICASTALKING_USERNAME = os.getenv("AFRICASTALKING_USERNAME", "").strip()
+    AFRICASTALKING_API_KEY = os.getenv("AFRICASTALKING_API_KEY", "")
+    AFRICASTALKING_SENDER_ID = os.getenv("AFRICASTALKING_SENDER_ID", "").strip()
+    AFRICASTALKING_ENV = os.getenv("AFRICASTALKING_ENV", "live").strip().lower()
+    AFRICASTALKING_TIMEOUT = int(os.getenv("AFRICASTALKING_TIMEOUT", "20"))
     ALERT_EMAIL_ENABLED = os.getenv("ALERT_EMAIL_ENABLED", "true").lower() == "true"
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl": {"ca": MYSQL_SSL_CA_PATH}}}
