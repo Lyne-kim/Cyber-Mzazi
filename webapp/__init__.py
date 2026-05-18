@@ -32,6 +32,10 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(parent_bp)
     app.register_blueprint(child_bp)
 
+    @app.get("/healthz")
+    def healthz() -> tuple[dict[str, str], int]:
+        return {"status": "ok"}, 200
+
     @app.context_processor
     def inject_ui_helpers() -> dict:
         return {
