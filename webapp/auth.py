@@ -76,6 +76,16 @@ def _family_parent_for(user: User) -> User | None:
     return User.query.filter_by(family_id=user.family_id, role="parent").first()
 
 
+def _parent_contact_exists(parent_contact: str) -> bool:
+    return bool(
+        Family.query.filter_by(parent_contact=parent_contact).first()
+        or User.query.filter(
+            User.role == "parent",
+            or_(User.email == parent_contact, User.phone == parent_contact),
+        ).first()
+    )
+
+
 def _verification_message_for(parent_user: User | None) -> str:
     if parent_user is None:
         return "Parent/guardian verification is required before continuing."
@@ -112,11 +122,8 @@ def register():
             flash("Fill in every registration field.", "warning")
             return render_template("register.html")
 
-        if Family.query.filter_by(parent_contact=parent_contact).first():
+        if _parent_contact_exists(parent_contact):
             flash("That parent contact is already in use.", "danger")
-            return render_template("register.html")
-        if User.query.filter_by(username=child_username).first():
-            flash("That child username is already in use.", "danger")
             return render_template("register.html")
 
         family = Family(

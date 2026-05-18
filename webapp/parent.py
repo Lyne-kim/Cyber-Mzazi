@@ -448,8 +448,12 @@ def add_child():
         return redirect(url_for("parent.family_hub"))
     if preferred_language not in SUPPORTED_LANGUAGES:
         preferred_language = "en"
-    if User.query.filter_by(username=child_username).first():
-        flash("That child username is already in use.", "danger")
+    if User.query.filter_by(
+        family_id=current_user.family_id,
+        role="child",
+        username=child_username,
+    ).first():
+        flash("That child username is already in use in this family.", "danger")
         return redirect(url_for("parent.family_hub"))
 
     child_user = User(

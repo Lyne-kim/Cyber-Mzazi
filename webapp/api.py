@@ -107,6 +107,16 @@ def _family_parent_for(user: User) -> User | None:
     return User.query.filter_by(family_id=user.family_id, role="parent").first()
 
 
+def _parent_contact_exists(parent_contact: str) -> bool:
+    return bool(
+        Family.query.filter_by(parent_contact=parent_contact).first()
+        or User.query.filter(
+            User.role == "parent",
+            or_(User.email == parent_contact, User.phone == parent_contact),
+        ).first()
+    )
+
+
 def _verification_error_for(parent_user: User | None) -> str:
     if parent_user is None:
         return "Parent/guardian verification is required before continuing."
@@ -351,10 +361,8 @@ def register_family():
     parent_contact = str(payload["parent_contact"]).strip()
     parent_contact = parent_contact if "@" in parent_contact else normalize_phone(parent_contact)
     child_username = str(payload["child_username"]).strip()
-    if Family.query.filter_by(parent_contact=parent_contact).first():
+    if _parent_contact_exists(parent_contact):
         return _error("Parent contact already exists.", 409)
-    if User.query.filter_by(username=child_username).first():
-        return _error("Child username already exists.", 409)
 
     family = Family(
         family_name=str(payload["family_name"]).strip(),
@@ -896,8 +904,12 @@ def parent_add_child():
         return _error("child_name, child_username, and child_password are required.")
     if preferred_language not in SUPPORTED_LANGUAGES:
         preferred_language = "en"
-    if User.query.filter_by(username=child_username).first():
-        return _error("Child username already exists.", 409)
+    if User.query.filter_by(
+        family_id=current_user.family_id,
+        role="child",
+        username=child_username,
+    ).first():
+        return _error("Child username already exists in this family.", 409)
 
     child_user = User(
         family_id=current_user.family_id,
