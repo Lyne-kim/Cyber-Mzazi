@@ -357,9 +357,8 @@ p {
 
 .auth-input-shell {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 0.7rem;
   padding: 0 0.9rem;
   border-radius: 12px;
   border: 1px solid rgba(94, 204, 255, 0.28);
@@ -368,6 +367,7 @@ p {
 }
 
 .auth-input-icon {
+  display: none;
   color: #eaf9ff;
   font-size: 1.15rem;
   line-height: 1;
