@@ -8,137 +8,145 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_screen"
+        android:background="@drawable/bg_white_screen"
         android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/bg_hero"
+            android:layout_height="64dp"
             android:gravity="center_vertical"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="20dp">
 
             <TextView
                 android:id="@+id/menuToggle"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:gravity="center"
                 android:text="@string/menu_button_symbol"
-                android:textColor="@color/cyber_mzazi_white"
-                android:textSize="22sp" />
+                android:textColor="@color/cyber_mzazi_text"
+                android:textSize="24sp" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/app_name"
-                android:textColor="@color/cyber_mzazi_white"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <Space
                 android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/app_name"
+                android:textColor="@color/cyber_mzazi_seed"
+                android:textSize="22sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/roleBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_menu_button"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="6dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_soft_panel"
+                android:gravity="center"
                 android:text="@string/role_child"
-                android:textColor="@color/cyber_mzazi_white"
-                android:textSize="12sp"
+                android:textColor="@color/cyber_mzazi_seed"
+                android:textSize="11sp"
                 android:textStyle="bold" />
-
-            <ImageView
-                android:id="@+id/headerLogo"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:adjustViewBounds="true"
-                android:contentDescription="@string/app_name"
-                android:src="@drawable/cyber_mzazi_logo" />
         </LinearLayout>
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <LinearLayout
                     android:id="@+id/roleSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
+                    android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingTop="34dp">
+
+                    <ImageView
+                        android:layout_width="260dp"
+                        android:layout_height="220dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/cyber_mzazi_logo" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/homepage_title"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center"
+                        android:text="@string/app_name"
+                        android:textColor="#062655"
+                        android:textSize="42sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
-                        android:text="@string/homepage_copy"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="@string/family_safety_companion"
+                        android:textColor="#567080"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="34dp"
+                        android:gravity="center"
+                        android:text="@string/protecting_families_digital"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="17sp" />
 
                     <Button
                         android:id="@+id/openParentLoginButton"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/parent_sign_in" />
-
-                    <Button
-                        android:id="@+id/openRegisterFamilyButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/register_family_account" />
+                        android:layout_marginTop="42dp"
+                        android:text="@string/parent_guardian_sign_in" />
 
                     <Button
                         android:id="@+id/openChildLoginButton"
+                        style="@style/CyberOutlineButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/child_sign_in" />
+                        android:layout_marginTop="14dp"
+                        android:text="@string/child_sign_in_title" />
+
+                    <Button
+                        android:id="@+id/openRegisterFamilyButton"
+                        style="@style/CyberButtonBase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:background="#00FFFFFF"
+                        android:text="@string/register_family_account_title"
+                        android:textColor="@color/cyber_mzazi_seed" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="1dp"
                         android:orientation="horizontal">
 
                         <Button
                             android:id="@+id/parentRoleButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
+                            android:layout_width="1dp"
+                            android:layout_height="1dp"
+                            android:visibility="invisible"
                             android:text="@string/role_parent" />
 
                         <Button
                             android:id="@+id/childRoleButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_width="1dp"
+                            android:layout_height="1dp"
+                            android:visibility="invisible"
                             android:text="@string/role_child" />
                     </LinearLayout>
 
@@ -146,119 +154,182 @@
                         android:id="@+id/roleSummaryText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
-                        android:text="@string/role_child_copy"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:visibility="gone"
+                        android:text="@string/homepage_copy" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/parentHomeSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/auth_nav"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <EditText
-                        android:id="@+id/parentIdentifierInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/parent_identifier_hint"
-                        android:inputType="textEmailAddress" />
-
-                    <EditText
-                        android:id="@+id/parentPasswordInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/parent_password_hint"
-                        android:inputType="textPassword" />
-
-                    <Button
-                        android:id="@+id/parentLoginButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/parent_sign_in" />
-
-                    <EditText
-                        android:id="@+id/parentPhoneCodeInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/parent_phone_code_hint"
-                        android:inputType="number" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:gravity="center"
                         android:orientation="horizontal">
 
-                        <Button
-                            android:id="@+id/parentVerifyPhoneButton"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:text="@string/verify_phone" />
+                        <ImageView
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:contentDescription="@string/app_name"
+                            android:src="@drawable/cyber_mzazi_logo" />
 
-                        <Button
-                            android:id="@+id/parentResendPhoneCodeButton"
-                            android:layout_width="0dp"
+                        <LinearLayout
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/resend_phone_code" />
+                            android:layout_marginStart="12dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/app_name"
+                                android:textColor="@color/cyber_mzazi_seed"
+                                android:textSize="27sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/digital_safety_home"
+                                android:textColor="@color/cyber_mzazi_seed"
+                                android:textSize="13sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/refreshParentAlertsButton"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/refresh_parent_alerts" />
+                        android:layout_marginTop="20dp"
+                        android:text="@string/welcome_back"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="34sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/parent_signin_subtitle"
+                        android:textColor="#68737D"
+                        android:textSize="18sp" />
+
+                    <EditText
+                        android:id="@+id/parentIdentifierInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="28dp"
+                        android:hint="@string/enter_email_or_phone"
+                        android:inputType="textEmailAddress" />
+
+                    <EditText
+                        android:id="@+id/parentPasswordInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="14dp"
+                        android:hint="@string/enter_password"
+                        android:inputType="textPassword" />
+
+                    <Button
+                        android:id="@+id/parentLoginButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="28dp"
+                        android:text="@string/sign_in_short" />
 
                     <TextView
                         android:id="@+id/parentAlertSummaryText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_alert_warning"
                         android:text="@string/parent_alerts_not_loaded"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:textColor="#60420C"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center"
+                        android:text="@string/need_to_verify"
+                        android:textColor="#727B84"
+                        android:textSize="16sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/parentResendPhoneCodeButton"
+                            style="@style/CyberOutlineButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/resend_phone_code" />
+
+                        <Button
+                            android:id="@+id/parentVerifyPhoneButton"
+                            style="@style/CyberOutlineButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/verify_phone" />
+                    </LinearLayout>
+
+                    <EditText
+                        android:id="@+id/parentPhoneCodeInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="14dp"
+                        android:hint="@string/parent_phone_code_hint"
+                        android:inputType="number" />
+
+                    <Button
+                        android:id="@+id/openParentDashboardButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/open_parent_dashboard" />
+
+                    <Button
+                        android:id="@+id/openParentAlertsButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/open_parent_alerts" />
+
+                    <Button
+                        android:id="@+id/refreshParentAlertsButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/refresh_parent_alerts" />
 
                     <Button
                         android:id="@+id/reviewLatestSafeButton"
+                        style="@style/CyberOutlineButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="10dp"
                         android:text="@string/review_latest_safe" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal">
 
                         <Button
                             android:id="@+id/approveLogoutButton"
+                            style="@style/CyberOutlineButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
@@ -267,280 +338,388 @@
 
                         <Button
                             android:id="@+id/denyLogoutButton"
+                            style="@style/CyberOutlineButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/deny_logout" />
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/openParentDashboardButton"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/open_parent_dashboard" />
-
-                    <Button
-                        android:id="@+id/openParentAlertsButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/open_parent_alerts" />
+                        android:layout_marginTop="22dp"
+                        android:gravity="center"
+                        android:text="@string/no_account_create"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="16sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/registerFamilySection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_gravity="center_horizontal"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/cyber_mzazi_logo" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/register_family_account"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:gravity="center"
+                        android:text="@string/create_your_family"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="28sp"
                         android:textStyle="bold" />
 
-                    <EditText
-                        android:id="@+id/registerFamilyNameInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/register_family_name_hint"
-                        android:inputType="textCapWords" />
-
-                    <EditText
-                        android:id="@+id/registerParentNameInput"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        android:gravity="center"
+                        android:text="@string/setup_parent_child_accounts"
+                        android:textColor="#5F6973"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        style="@style/CyberSectionTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/family_section" />
+
+                    <EditText
+                        android:id="@+id/registerFamilyNameInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
+                        android:hint="@string/register_family_name_hint"
+                        android:inputType="textCapWords" />
+
+                    <TextView
+                        style="@style/CyberSectionTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/parent_guardian_section" />
+
+                    <EditText
+                        android:id="@+id/registerParentNameInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/register_parent_name_hint"
                         android:inputType="textCapWords" />
 
                     <EditText
                         android:id="@+id/registerParentContactInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/parent_identifier_hint"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
+                        android:hint="@string/email_or_phone_short"
                         android:inputType="textEmailAddress" />
 
                     <EditText
                         android:id="@+id/registerParentPasswordInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/parent_password_hint"
                         android:inputType="textPassword" />
 
-                    <EditText
-                        android:id="@+id/registerChildNameInput"
+                    <TextView
+                        style="@style/CyberSectionTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/child_section" />
+
+                    <EditText
+                        android:id="@+id/registerChildNameInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/register_child_name_hint"
                         android:inputType="textCapWords" />
 
                     <EditText
                         android:id="@+id/registerChildUsernameInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/register_child_username_hint"
                         android:inputType="text" />
 
-                    <EditText
-                        android:id="@+id/registerChildPasswordInput"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/username_reuse_hint"
+                        android:textColor="#5F6973"
+                        android:textSize="12sp" />
+
+                    <EditText
+                        android:id="@+id/registerChildPasswordInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="10dp"
                         android:hint="@string/register_child_password_hint"
                         android:inputType="textPassword" />
 
                     <Button
                         android:id="@+id/registerFamilyButton"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="22dp"
                         android:text="@string/create_family_account" />
 
                     <TextView
                         android:id="@+id/registerFamilyStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center"
                         android:text="@string/register_family_status"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:textColor="#505A64"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/childLoginSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_gravity="center_horizontal"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/cyber_mzazi_logo" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/child_sign_in"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:layout_marginTop="24dp"
+                        android:text="@string/child_sign_in_title"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="32sp"
                         android:textStyle="bold" />
 
                     <EditText
                         android:id="@+id/childParentContactInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="26dp"
                         android:hint="@string/parent_identifier_hint"
                         android:inputType="textEmailAddress" />
 
                     <EditText
                         android:id="@+id/childUsernameInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="12dp"
                         android:hint="@string/register_child_username_hint"
                         android:inputType="text" />
 
                     <EditText
                         android:id="@+id/childPasswordInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="12dp"
                         android:hint="@string/register_child_password_hint"
                         android:inputType="textPassword" />
 
                     <Button
                         android:id="@+id/childLoginButton"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/child_sign_in" />
+                        android:layout_marginTop="22dp"
+                        android:text="@string/child_sign_in_title" />
 
                     <TextView
                         android:id="@+id/childLoginStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_alert_warning"
                         android:text="@string/child_login_status"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:textColor="#60420C" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/childHomeSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:contentDescription="@string/app_name"
+                            android:src="@drawable/cyber_mzazi_logo" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="18dp"
+                            android:layout_weight="1"
+                            android:text="@string/child_dashboard_header"
+                            android:textColor="@color/cyber_mzazi_seed"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/child_home_title"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:layout_marginTop="28dp"
+                        android:text="@string/hi_child"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="34sp"
                         android:textStyle="bold" />
 
-                    <Button
-                        android:id="@+id/goPairChildButton"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/qr_nav" />
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="22dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/you_are_protected"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="25sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/childSetupStatusText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="@string/child_setup_status_placeholder"
+                            android:textColor="#4A5660" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_alert_warning"
+                        android:text="@string/safety_tip_day"
+                        android:textColor="#5B4213"
+                        android:textSize="18sp" />
 
                     <Button
                         android:id="@+id/goCaptureChildButton"
+                        style="@style/CyberDangerButton"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/capture_nav" />
+                        android:layout_height="64dp"
+                        android:layout_marginTop="18dp"
+                        android:text="@string/report_message" />
 
-                    <Button
-                        android:id="@+id/goFiltersChildButton"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/filters_nav" />
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/childSetupStatusText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
-                        android:text="@string/child_setup_status_placeholder"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        <Button
+                            android:id="@+id/goFiltersChildButton"
+                            style="@style/CyberOutlineButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/settings_nav" />
+
+                        <Button
+                            android:id="@+id/goPairChildButton"
+                            style="@style/CyberOutlineButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/request_logout" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/qrSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/qr_nav"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:gravity="center"
+                        android:text="@string/pair_this_device"
+                        android:textColor="#0A2F63"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="28dp"
+                        android:gravity="center"
+                        android:text="@string/scan_code_parent"
+                        android:textColor="#486070"
+                        android:textSize="17sp" />
+
+                    <ImageView
+                        android:layout_width="260dp"
+                        android:layout_height="260dp"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="34dp"
+                        android:contentDescription="@string/qr_nav"
+                        android:src="@drawable/cyber_mzazi_logo" />
 
                     <EditText
                         android:id="@+id/parentChildDeviceNameInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_input"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center"
                         android:hint="@string/parent_child_device_name_hint"
                         android:inputType="textCapWords" />
 
                     <Button
                         android:id="@+id/createChildDeviceLinkButton"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="14dp"
                         android:text="@string/create_child_device_link" />
+
+                    <Button
+                        android:id="@+id/scanQrButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/scan_pairing_qr" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:orientation="horizontal">
 
                         <Button
                             android:id="@+id/copyPairingLinkButton"
+                            style="@style/CyberOutlineButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
@@ -549,6 +728,7 @@
 
                         <Button
                             android:id="@+id/sharePairingLinkButton"
+                            style="@style/CyberOutlineButton"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -556,17 +736,11 @@
                     </LinearLayout>
 
                     <Button
-                        android:id="@+id/scanQrButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/scan_pairing_qr" />
-
-                    <Button
                         android:id="@+id/openChildDevicesButton"
+                        style="@style/CyberOutlineButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:text="@string/open_child_devices" />
                 </LinearLayout>
 
@@ -574,49 +748,106 @@
                     android:id="@+id/settingsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_nav"
-                        android:textColor="@color/cyber_mzazi_white"
-                        android:textSize="18sp"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
 
-                    <EditText
-                        android:id="@+id/baseUrlInput"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/base_url_hint" />
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                    <EditText
-                        android:id="@+id/tokenInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/token_hint" />
+                        <TextView
+                            style="@style/CyberSectionTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/backend_section" />
 
-                    <EditText
-                        android:id="@+id/deviceNameInput"
+                        <EditText
+                            android:id="@+id/baseUrlInput"
+                            style="@style/CyberInput"
+                            android:layout_marginTop="10dp"
+                            android:hint="@string/base_url_hint" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/test_connection_connected"
+                            android:textColor="@color/cyber_mzazi_success"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/device_name_hint" />
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            style="@style/CyberSectionTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/device_section" />
+
+                        <EditText
+                            android:id="@+id/deviceNameInput"
+                            style="@style/CyberInput"
+                            android:layout_marginTop="10dp"
+                            android:hint="@string/device_name_hint" />
+
+                        <EditText
+                            android:id="@+id/tokenInput"
+                            style="@style/CyberInput"
+                            android:layout_marginTop="10dp"
+                            android:hint="@string/token_hint" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            style="@style/CyberSectionTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/filters_nav" />
+
+                        <EditText
+                            android:id="@+id/allowedPackagesInput"
+                            style="@style/CyberInput"
+                            android:layout_marginTop="10dp"
+                            android:hint="@string/allow_packages_hint" />
+
+                        <EditText
+                            android:id="@+id/blockedPackagesInput"
+                            style="@style/CyberInput"
+                            android:layout_marginTop="10dp"
+                            android:hint="@string/block_packages_hint" />
+                    </LinearLayout>
 
                     <Button
                         android:id="@+id/saveButton"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/save_settings"
                         android:visibility="gone" />
                 </LinearLayout>
@@ -625,23 +856,57 @@
                     android:id="@+id/actionsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/enable_notification_access"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="25sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/captureRoleHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
-                        android:text="@string/actions_section_copy"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:layout_marginTop="36dp"
+                        android:text="@string/notification_access_copy"
+                        android:textColor="#56616B"
+                        android:textSize="19sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/notification_access_steps"
+                        android:textColor="#394650"
+                        android:textSize="18sp" />
+
+                    <Button
+                        android:id="@+id/notificationAccessButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/open_notification_access" />
+
+                    <TextView
+                        android:id="@+id/statusText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_alert_warning"
+                        android:text="@string/no_status_yet"
+                        android:textColor="#60420C" />
 
                     <Button
                         android:id="@+id/sendTestButton"
+                        style="@style/CyberOutlineButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
@@ -649,99 +914,74 @@
 
                     <Button
                         android:id="@+id/retryQueueButton"
+                        style="@style/CyberOutlineButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:text="@string/retry_queue" />
-
-                    <Button
-                        android:id="@+id/notificationAccessButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/open_notification_access" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/filtersSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
 
-                    <EditText
-                        android:id="@+id/allowedPackagesInput"
+                    <TextView
+                        style="@style/CyberSectionTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/allow_packages_hint" />
+                        android:text="@string/filters_nav" />
 
-                    <EditText
-                        android:id="@+id/blockedPackagesInput"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_input"
-                        android:hint="@string/block_packages_hint" />
+                        android:layout_marginTop="10dp"
+                        android:text="@string/filters_section_copy"
+                        android:textColor="#56616B" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/statusSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
 
                     <TextView
                         android:id="@+id/parentCaptureStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
                         android:text="@string/parent_capture_status_disabled"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:textColor="@color/cyber_mzazi_text" />
 
                     <Button
                         android:id="@+id/openParentNotificationSettingsButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/open_parent_notification_settings" />
-
-                    <TextView
-                        android:id="@+id/statusText"
+                        style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
-                        android:text="@string/no_status_yet"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:text="@string/open_parent_notification_settings" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/logSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp"
                     android:visibility="gone">
 
                     <TextView
                         android:id="@+id/recentLogText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_status"
-                        android:padding="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
                         android:text="@string/no_recent_logs"
-                        android:textColor="@color/cyber_mzazi_white" />
+                        android:textColor="@color/cyber_mzazi_text" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -752,81 +992,25 @@
         android:layout_width="260dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="#0A1F44"
+        android:background="@color/cyber_mzazi_seed"
         android:orientation="vertical"
         android:padding="16dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/menu_title"
-            android:textColor="@android:color/white"
-            android:textStyle="bold" />
 
         <ImageView
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="18dp"
-            android:adjustViewBounds="true"
             android:contentDescription="@string/app_name"
             android:src="@drawable/cyber_mzazi_logo" />
 
-        <TextView
-            android:id="@+id/menuHome"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/home_nav" />
-
-        <TextView
-            android:id="@+id/menuAuth"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/auth_nav" />
-
-        <TextView
-            android:id="@+id/menuQr"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/qr_nav" />
-
-        <TextView
-            android:id="@+id/menuSettings"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_nav" />
-
-        <TextView
-            android:id="@+id/menuCapture"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/capture_nav" />
-
-        <TextView
-            android:id="@+id/menuFilters"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/filters_nav" />
-
-        <TextView
-            android:id="@+id/menuStatus"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/status_nav" />
-
-        <TextView
-            android:id="@+id/menuLog"
-            style="@style/SidebarItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/log_nav" />
+        <TextView android:id="@+id/menuHome" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/home_nav" />
+        <TextView android:id="@+id/menuAuth" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/auth_nav" />
+        <TextView android:id="@+id/menuQr" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/qr_nav" />
+        <TextView android:id="@+id/menuSettings" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_nav" />
+        <TextView android:id="@+id/menuCapture" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/capture_nav" />
+        <TextView android:id="@+id/menuFilters" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/filters_nav" />
+        <TextView android:id="@+id/menuStatus" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/status_nav" />
+        <TextView android:id="@+id/menuLog" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/log_nav" />
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

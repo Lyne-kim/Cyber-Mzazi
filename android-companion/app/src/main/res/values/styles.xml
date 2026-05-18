@@ -7,4 +7,43 @@
         <item name="android:textSize">14sp</item>
     </style>
 
+    <style name="CyberButtonBase" parent="@android:style/Widget.Material.Button">
+        <item name="android:minHeight">54dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="CyberPrimaryButton" parent="CyberButtonBase">
+        <item name="android:background">@drawable/bg_teal_button</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="CyberOutlineButton" parent="CyberButtonBase">
+        <item name="android:background">@drawable/bg_outline_button</item>
+        <item name="android:textColor">@color/cyber_mzazi_seed</item>
+    </style>
+
+    <style name="CyberDangerButton" parent="CyberButtonBase">
+        <item name="android:background">@drawable/bg_danger_button</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="CyberInput">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">54dp</item>
+        <item name="android:background">@drawable/bg_input</item>
+        <item name="android:paddingHorizontal">14dp</item>
+        <item name="android:textColor">@color/cyber_mzazi_text</item>
+        <item name="android:textColorHint">#65707A</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="CyberSectionTitle">
+        <item name="android:textColor">@color/cyber_mzazi_seed</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
 </resources>
