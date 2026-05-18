@@ -169,6 +169,33 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
+    .landing-back-top {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: var(--landing-green);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 800;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .landing-back-top:hover {
+      transform: translateY(-2px);
+      background: var(--landing-green-dark);
+    }
+
     .landing-hero {
       position: relative;
       min-height: 100vh;
@@ -802,6 +829,15 @@
         opacity: 0.75;
       }
 
+      .landing-back-top {
+        right: 14px;
+        bottom: 14px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 12px;
+        font-size: 0.78rem;
+      }
+
       .landing-stats {
         margin-top: -1px;
         padding-top: 28px;
@@ -836,7 +872,7 @@
   </style>
 {% endblock %}
 {% block content %}
-  <nav class="landing-nav">
+  <nav class="landing-nav" id="top">
     <a class="landing-brand" href="{{ url_for('auth.index') }}">
       <img src="{{ url_for('static', filename='cyber_mzazi_logo.png') }}" alt="Cyber Mzazi logo">
       <span class="landing-brand-name">
@@ -934,53 +970,6 @@
     </div>
   </section>
 
-  <section class="landing-section landing-section-dark">
-    <div class="landing-section-shell">
-      <span class="landing-tag">Core Features</span>
-      <h2>Built around visibility, consent, and guided intervention</h2>
-      <p class="landing-section-intro">
-        Cyber Mzazi combines dashboards, alerts, review labels, authentication, and mobile support into one coordinated safety system.
-      </p>
-      <div class="landing-feature-grid">
-        <article class="landing-feature-card landing-feature-card-wide">
-          <div class="landing-feature-icon">AI</div>
-          <h3>Expanded DistilBERT safety classification</h3>
-          <p>
-            Messages are evaluated across broader labels like phishing, grooming, sextortion, financial fraud,
-            cyberbullying, misinformation, hate speech, violence, and more.
-          </p>
-        </article>
-        <article class="landing-feature-card">
-          <div class="landing-feature-icon">AL</div>
-          <h3>Parent notification feed</h3>
-          <p>Popup alerts, browser notifications, sound cues, and email notifications help parents react quickly.</p>
-        </article>
-        <article class="landing-feature-card">
-          <div class="landing-feature-icon">VR</div>
-          <h3>Email verification</h3>
-          <p>Parent accounts can verify real email addresses before sign-in, supporting safer multi-device access.</p>
-        </article>
-        <article class="landing-feature-card">
-          <div class="landing-feature-icon">QR</div>
-          <h3>QR-based Android onboarding</h3>
-          <p>Pair and install the Android companion more smoothly from the parent dashboard and download page.</p>
-        </article>
-        <article class="landing-feature-card">
-          <div class="landing-feature-icon">LG</div>
-          <h3>Audit-ready activity logs</h3>
-          <p>Cyber Mzazi keeps traceable family events, approvals, alerts, and review outcomes for accountability.</p>
-        </article>
-        <article class="landing-feature-card landing-feature-card-wide">
-          <div class="landing-feature-icon">UI</div>
-          <h3>Role-specific login and dashboard flows</h3>
-          <p>
-            Parent/guardian and child users each see focused entry points, messaging, and dashboards that fit their responsibilities in the project.
-          </p>
-        </article>
-      </div>
-    </div>
-  </section>
-
   <section class="landing-section">
     <div class="landing-section-shell">
       <span class="landing-tag">How It Works</span>
@@ -1039,4 +1028,5 @@
       <a href="{{ url_for('auth.register') }}">Register</a>
     </div>
   </footer>
+  <a class="landing-back-top" href="#top" aria-label="Back to top">Top</a>
 {% endblock %}
