@@ -16,6 +16,9 @@ object Prefs {
     private const val KEY_DEVICE_ROLE = "device_role"
     private const val KEY_PARENT_IDENTIFIER = "parent_identifier"
     private const val KEY_PARENT_SESSION_COOKIE = "parent_session_cookie"
+    private const val KEY_DARK_MODE = "dark_mode"
+    private const val KEY_LANGUAGE = "language"
+    private const val KEY_IN_APP_SOUNDS = "in_app_sounds"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -93,5 +96,26 @@ object Prefs {
 
     fun clearParentSession(context: Context) {
         prefs(context).edit().remove(KEY_PARENT_SESSION_COOKIE).apply()
+    }
+
+    fun isDarkMode(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_DARK_MODE, false)
+
+    fun setDarkMode(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean(KEY_DARK_MODE, value).apply()
+    }
+
+    fun getLanguage(context: Context): String =
+        prefs(context).getString(KEY_LANGUAGE, "en").orEmpty().ifBlank { "en" }
+
+    fun setLanguage(context: Context, value: String) {
+        prefs(context).edit().putString(KEY_LANGUAGE, if (value == "sw") "sw" else "en").apply()
+    }
+
+    fun inAppSoundsEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_IN_APP_SOUNDS, true)
+
+    fun setInAppSoundsEnabled(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean(KEY_IN_APP_SOUNDS, value).apply()
     }
 }

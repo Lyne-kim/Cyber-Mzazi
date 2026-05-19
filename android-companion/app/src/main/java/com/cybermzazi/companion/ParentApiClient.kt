@@ -150,6 +150,14 @@ object ParentApiClient {
                 if (connection.responseCode !in 200..299) {
                     return@runCatching ParentApiResult(false, parseError(response, "Child sign-in failed."))
                 }
+                val cookie = connection.headerFields["Set-Cookie"]
+                    ?.firstOrNull()
+                    ?.substringBefore(";")
+                    .orEmpty()
+                if (cookie.isBlank()) {
+                    return@runCatching ParentApiResult(false, "Child sign-in did not return a session.")
+                }
+                Prefs.setParentSessionCookie(context, cookie)
                 ParentApiResult(true, "Child sign-in ready.")
             }.getOrElse { throwable ->
                 ParentApiResult(false, "Child sign-in error: ${throwable.message ?: "Unknown error"}")
@@ -297,6 +305,16 @@ object ParentApiClient {
     }
 
     fun getLatestPairingUri(): String = latestPairingUri
+
+    fun logout(context: Context, onComplete: (Boolean, String) -> Unit) {
+        postJson(
+            context = context,
+            path = "/api/auth/logout",
+            body = JSONObject(),
+            successMessage = "Signed out.",
+            onComplete = onComplete,
+        )
+    }
 
     private fun postJson(
         context: Context,

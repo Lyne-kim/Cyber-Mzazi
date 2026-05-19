@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 
 from .extensions import db, login_manager
 from .models import Family, LogoutRequest, User
@@ -155,7 +156,12 @@ def register():
         child_user.set_password(child_password)
 
         db.session.add_all([family, parent_user, child_user])
-        db.session.flush()
+        try:
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            flash("That parent contact is already in use.", "danger")
+            return render_template("register.html")
         log_event(
             family.id,
             parent_user.id,
@@ -166,7 +172,10 @@ def register():
         verification_message = None
         verification_warning = None
         if parent_user.requires_email_verification:
-            ok, message = send_verification_email(parent_user)
+            try:
+                ok, message = send_verification_email(parent_user)
+            except Exception as exc:  # pragma: no cover - external mail provider dependent
+                ok, message = False, f"Verification email could not be sent: {exc}"
             if ok:
                 verification_message = message
                 log_event(
@@ -178,7 +187,10 @@ def register():
             else:
                 verification_warning = message
         if parent_user.requires_phone_verification:
-            ok, message = send_phone_verification_code(parent_user)
+            try:
+                ok, message = send_phone_verification_code(parent_user)
+            except Exception as exc:  # pragma: no cover - external SMS provider dependent
+                ok, message = False, f"Phone verification code could not be sent: {exc}"
             if ok:
                 verification_message = message
                 log_event(
@@ -189,7 +201,12 @@ def register():
                 )
             else:
                 verification_warning = message
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("That parent contact is already in use.", "danger")
+            return render_template("register.html")
 
         if parent_user.requires_email_verification:
             flash(

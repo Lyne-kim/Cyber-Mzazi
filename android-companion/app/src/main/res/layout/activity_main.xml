@@ -15,7 +15,8 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:gravity="center_vertical"
-            android:paddingHorizontal="20dp">
+            android:paddingStart="4dp"
+            android:paddingEnd="12dp">
 
             <TextView
                 android:id="@+id/backButton"
@@ -1161,6 +1162,103 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/profileSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/edit_profile"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/profileNameInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="18dp"
+                        android:hint="@string/profile_name_hint" />
+
+                    <EditText
+                        android:id="@+id/profileContactInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="12dp"
+                        android:hint="@string/profile_contact_hint" />
+
+                    <Button
+                        android:id="@+id/profileSaveButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/save_profile" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/passwordSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/change_password"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_alert_warning"
+                        android:text="@string/password_verification_required"
+                        android:textColor="#60420C" />
+
+                    <EditText
+                        android:id="@+id/passwordVerificationCodeInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="14dp"
+                        android:hint="@string/parent_phone_code_hint"
+                        android:inputType="number" />
+
+                    <Button
+                        android:id="@+id/passwordVerifyButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/verify_phone" />
+
+                    <EditText
+                        android:id="@+id/newPasswordInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="18dp"
+                        android:hint="@string/new_password_hint"
+                        android:inputType="textPassword" />
+
+                    <EditText
+                        android:id="@+id/confirmNewPasswordInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="12dp"
+                        android:hint="@string/confirm_password_hint"
+                        android:inputType="textPassword" />
+
+                    <Button
+                        android:id="@+id/passwordSaveButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/change_password" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/actionsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1316,9 +1414,12 @@
         <TextView android:id="@+id/menuAuth" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/auth_nav" />
         <TextView android:id="@+id/menuQr" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/qr_nav" />
         <TextView android:id="@+id/menuSettings" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_nav" />
+        <TextView android:id="@+id/menuProfile" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/edit_profile" />
+        <TextView android:id="@+id/menuPassword" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/change_password" />
         <TextView android:id="@+id/menuCapture" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/capture_nav" />
         <TextView android:id="@+id/menuFilters" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/filters_nav" />
         <TextView android:id="@+id/menuStatus" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/status_nav" />
         <TextView android:id="@+id/menuLog" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/log_nav" />
+        <TextView android:id="@+id/menuLogout" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sign_out" />
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

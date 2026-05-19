@@ -6,7 +6,7 @@ from urllib.parse import quote
 from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title, label_tone
 
@@ -393,7 +393,11 @@ def register_family():
     child_user.set_password(str(payload["child_password"]))
 
     db.session.add_all([family, parent_user, child_user])
-    db.session.flush()
+    try:
+        db.session.flush()
+    except IntegrityError:
+        db.session.rollback()
+        return _error("Parent email or phone is already in use.", 409)
     log_event(
         family.id,
         parent_user.id,
@@ -406,7 +410,11 @@ def register_family():
     phone_verification_sent = False
     phone_verification_message = None
     if parent_user.requires_email_verification:
-        verification_sent, verification_message = send_verification_email(parent_user)
+        try:
+            verification_sent, verification_message = send_verification_email(parent_user)
+        except Exception as exc:  # pragma: no cover - external mail provider dependent
+            verification_sent = False
+            verification_message = f"Verification email could not be sent: {exc}"
         if verification_sent:
             log_event(
                 family.id,
@@ -415,7 +423,11 @@ def register_family():
                 f"Verification email sent to {parent_user.email} via API",
             )
     if parent_user.requires_phone_verification:
-        phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)
+        try:
+            phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)
+        except Exception as exc:  # pragma: no cover - external SMS provider dependent
+            phone_verification_sent = False
+            phone_verification_message = f"Phone verification code could not be sent: {exc}"
         if phone_verification_sent:
             log_event(
                 family.id,
@@ -423,7 +435,11 @@ def register_family():
                 "phone_verification_sent",
                 f"Phone verification code sent to {parent_user.phone} via API",
             )
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _error("Parent email or phone is already in use.", 409)
 
     return (
         jsonify(

@@ -15,10 +15,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -72,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recentLogText: TextView
     private lateinit var pairingQrImage: ImageView
     private lateinit var pairingLinkText: TextView
+    private lateinit var darkModeSwitch: Switch
+    private lateinit var languageSwitch: Switch
+    private lateinit var inAppSoundsSwitch: Switch
 
     private lateinit var menuHome: TextView
     private lateinit var menuAuth: TextView
@@ -81,6 +86,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuFilters: TextView
     private lateinit var menuStatus: TextView
     private lateinit var menuLog: TextView
+    private lateinit var menuProfile: TextView
+    private lateinit var menuPassword: TextView
+    private lateinit var menuLogout: TextView
 
     private lateinit var roleSection: View
     private lateinit var qrSection: View
@@ -94,6 +102,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childHomeSection: View
     private lateinit var registerFamilySection: View
     private lateinit var childLoginSection: View
+    private lateinit var profileSection: View
+    private lateinit var passwordSection: View
 
     private lateinit var openParentLoginButton: Button
     private lateinit var openRegisterFamilyButton: Button
@@ -186,6 +196,9 @@ class MainActivity : AppCompatActivity() {
         recentLogText = findViewById(R.id.recentLogText)
         pairingQrImage = findViewById(R.id.pairingQrImage)
         pairingLinkText = findViewById(R.id.pairingLinkText)
+        darkModeSwitch = findViewById(R.id.darkModeSwitch)
+        languageSwitch = findViewById(R.id.languageSwitch)
+        inAppSoundsSwitch = findViewById(R.id.inAppSoundsSwitch)
 
         menuHome = findViewById(R.id.menuHome)
         menuAuth = findViewById(R.id.menuAuth)
@@ -195,6 +208,9 @@ class MainActivity : AppCompatActivity() {
         menuFilters = findViewById(R.id.menuFilters)
         menuStatus = findViewById(R.id.menuStatus)
         menuLog = findViewById(R.id.menuLog)
+        menuProfile = findViewById(R.id.menuProfile)
+        menuPassword = findViewById(R.id.menuPassword)
+        menuLogout = findViewById(R.id.menuLogout)
 
         roleSection = findViewById(R.id.roleSection)
         qrSection = findViewById(R.id.qrSection)
@@ -208,6 +224,8 @@ class MainActivity : AppCompatActivity() {
         childHomeSection = findViewById(R.id.childHomeSection)
         registerFamilySection = findViewById(R.id.registerFamilySection)
         childLoginSection = findViewById(R.id.childLoginSection)
+        profileSection = findViewById(R.id.profileSection)
+        passwordSection = findViewById(R.id.passwordSection)
 
         openParentLoginButton = findViewById(R.id.openParentLoginButton)
         openRegisterFamilyButton = findViewById(R.id.openRegisterFamilyButton)
@@ -258,6 +276,9 @@ class MainActivity : AppCompatActivity() {
         menuFilters.setOnClickListener { showSection(SECTION_FILTERS) }
         menuStatus.setOnClickListener { showSection(SECTION_STATUS) }
         menuLog.setOnClickListener { showSection(SECTION_LOGS) }
+        menuProfile.setOnClickListener { showSection(SECTION_PROFILE) }
+        menuPassword.setOnClickListener { showSection(SECTION_PASSWORD) }
+        menuLogout.setOnClickListener { signOut() }
 
         openParentLoginButton.setOnClickListener {
             setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
@@ -304,7 +325,7 @@ class MainActivity : AppCompatActivity() {
         createChildDeviceLinkButton.setOnClickListener { createChildDeviceLink() }
         copyPairingLinkButton.setOnClickListener { copyLatestPairingLink() }
         sharePairingLinkButton.setOnClickListener { shareLatestPairingLink() }
-        goPairChildButton.setOnClickListener { showSection(SECTION_QR) }
+        goPairChildButton.setOnClickListener { signOut() }
         goCaptureChildButton.setOnClickListener { showSection(SECTION_CAPTURE) }
         goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
 
@@ -332,12 +353,35 @@ class MainActivity : AppCompatActivity() {
             }
         }
         findViewById<Button>(R.id.editProfileButton).setOnClickListener {
-            Toast.makeText(this, R.string.profile_edit_coming, Toast.LENGTH_SHORT).show()
+            showSection(SECTION_PROFILE)
         }
         findViewById<Button>(R.id.changePasswordButton).setOnClickListener {
-            Toast.makeText(this, R.string.change_password_coming, Toast.LENGTH_SHORT).show()
+            showSection(SECTION_PASSWORD)
         }
         findViewById<Button>(R.id.signOutButton).setOnClickListener { signOut() }
+        findViewById<Button>(R.id.profileSaveButton).setOnClickListener {
+            Toast.makeText(this, R.string.profile_saved, Toast.LENGTH_SHORT).show()
+        }
+        findViewById<Button>(R.id.passwordVerifyButton).setOnClickListener { verifyParentPhone() }
+        findViewById<Button>(R.id.passwordSaveButton).setOnClickListener {
+            Toast.makeText(this, R.string.password_verify_first, Toast.LENGTH_SHORT).show()
+        }
+
+        darkModeSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (Prefs.isDarkMode(this) == enabled) return@setOnCheckedChangeListener
+            Prefs.setDarkMode(this, enabled)
+            AppCompatDelegate.setDefaultNightMode(
+                if (enabled) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO,
+            )
+        }
+        languageSwitch.setOnCheckedChangeListener { _, enabled ->
+            Prefs.setLanguage(this, if (enabled) "sw" else "en")
+            Toast.makeText(this, if (enabled) R.string.language_sw_saved else R.string.language_en_saved, Toast.LENGTH_SHORT).show()
+        }
+        inAppSoundsSwitch.setOnCheckedChangeListener { _, enabled ->
+            Prefs.setInAppSoundsEnabled(this, enabled)
+            Toast.makeText(this, if (enabled) R.string.sounds_on else R.string.sounds_off, Toast.LENGTH_SHORT).show()
+        }
 
         registerSettingsDirtyWatchers()
         populateFields()
@@ -380,6 +424,9 @@ class MainActivity : AppCompatActivity() {
         recentLogText.text = RecentNotificationLog.render(this)
         childSetupStatusText.text = buildChildSetupStatus()
         parentCaptureStatusText.text = buildParentCaptureStatus()
+        darkModeSwitch.isChecked = Prefs.isDarkMode(this)
+        languageSwitch.isChecked = Prefs.getLanguage(this) == "sw"
+        inAppSoundsSwitch.isChecked = Prefs.inAppSoundsEnabled(this)
         isPopulatingFields = false
         updateSaveButtonVisibility()
     }
@@ -425,7 +472,19 @@ class MainActivity : AppCompatActivity() {
             drawerLayout.closeDrawer(GravityCompat.START)
         }
 
-        val menuItems = listOf(menuHome, menuAuth, menuQr, menuSettings, menuCapture, menuFilters, menuStatus, menuLog)
+        val menuItems = listOf(
+            menuHome,
+            menuAuth,
+            menuQr,
+            menuSettings,
+            menuCapture,
+            menuFilters,
+            menuStatus,
+            menuLog,
+            menuProfile,
+            menuPassword,
+            menuLogout,
+        )
         menuItems.forEach { it.visibility = View.GONE }
         val parentOnlyAfterLogin = if (parentSignedIn) View.VISIBLE else View.GONE
         openParentDashboardButton.visibility = parentOnlyAfterLogin
@@ -438,11 +497,14 @@ class MainActivity : AppCompatActivity() {
 
         menuHome.visibility = View.VISIBLE
         menuSettings.visibility = View.VISIBLE
+        menuProfile.visibility = View.VISIBLE
+        menuPassword.visibility = View.VISIBLE
+        menuLogout.visibility = View.VISIBLE
         menuStatus.visibility = View.VISIBLE
-        menuLog.visibility = View.VISIBLE
 
         if (parentSignedIn) {
             menuQr.visibility = View.VISIBLE
+            menuLog.visibility = View.VISIBLE
         }
         if (childSignedIn) {
             menuQr.visibility = View.VISIBLE
@@ -455,7 +517,7 @@ class MainActivity : AppCompatActivity() {
         val onHomeLikeScreen = currentSection == SECTION_HOME ||
             currentSection == SECTION_PARENT_DASHBOARD ||
             currentSection == SECTION_CHILD_ACCOUNT
-        backButton.visibility = if (!onHomeLikeScreen) View.VISIBLE else View.INVISIBLE
+        backButton.visibility = if (!onHomeLikeScreen) View.VISIBLE else View.GONE
         menuToggle.visibility = if (isSignedIn() && onHomeLikeScreen) View.VISIBLE else View.INVISIBLE
     }
 
@@ -469,12 +531,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signOut() {
-        parentSignedIn = false
-        childSignedIn = false
-        Prefs.clearParentSession(this)
-        updateMenuAccess()
-        showSection(SECTION_HOME)
-        Toast.makeText(this, R.string.signed_out, Toast.LENGTH_SHORT).show()
+        ParentApiClient.logout(this) { ok, message ->
+            runOnUiThread {
+                if (ok) {
+                    parentSignedIn = false
+                    childSignedIn = false
+                    Prefs.clearParentSession(this)
+                    updateMenuAccess()
+                    showSection(SECTION_HOME)
+                }
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun setRoleButtonState(button: Button, active: Boolean) {
@@ -494,6 +562,8 @@ class MainActivity : AppCompatActivity() {
         val resolvedPosition = when {
             position == SECTION_PARENT_DASHBOARD && !parentSignedIn -> SECTION_HOME
             position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
+            position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
+            position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
             position == SECTION_QR && childSignedIn -> SECTION_QR
             position == SECTION_QR && !parentSignedIn && !childSignedIn -> SECTION_HOME
             !isChildRole && (position == SECTION_CAPTURE || position == SECTION_FILTERS) -> SECTION_HOME
@@ -517,6 +587,8 @@ class MainActivity : AppCompatActivity() {
         filtersSection.visibility = if (resolvedPosition == SECTION_FILTERS && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
         statusSection.visibility = if (resolvedPosition == SECTION_STATUS) View.VISIBLE else View.GONE
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
+        profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
+        passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
         if (resolvedPosition == SECTION_QR) renderLatestPairingQr()
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
@@ -532,6 +604,9 @@ class MainActivity : AppCompatActivity() {
         updateDrawerItem(menuFilters, position == SECTION_FILTERS)
         updateDrawerItem(menuStatus, position == SECTION_STATUS)
         updateDrawerItem(menuLog, position == SECTION_LOGS)
+        updateDrawerItem(menuProfile, position == SECTION_PROFILE)
+        updateDrawerItem(menuPassword, position == SECTION_PASSWORD)
+        updateDrawerItem(menuLogout, false)
     }
 
     private fun updateDrawerItem(view: TextView, active: Boolean) {
@@ -951,5 +1026,7 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_CHILD_AUTH = 9
         private const val SECTION_CHILD_ACCOUNT = 10
         private const val SECTION_PARENT_DASHBOARD = 11
+        private const val SECTION_PROFILE = 12
+        private const val SECTION_PASSWORD = 13
     }
 }
