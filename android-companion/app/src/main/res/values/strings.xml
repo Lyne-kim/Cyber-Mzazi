@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Cyber Mzazi</string>
-    <string name="app_subtitle">Grant notification access, save the one-time token from the parent dashboard, and forward supported notifications to Cyber Mzazi.</string>
+    <string name="app_subtitle">Grant notification access, pair the child device, and forward supported notifications to Cyber Mzazi.</string>
     <string name="app_tagline">A calm, lightweight safety bridge for real Android notifications.</string>
     <string name="hero_headline">Cyber Mzazi</string>
     <string name="hero_copy">Protect the child device with safe pairing, app filters, and quick notification review.</string>
@@ -66,13 +66,11 @@
     <string name="username_reuse_hint">Unique within your family</string>
     <string name="child_dashboard_header">Cyber Mzazi\nChild Dashboard</string>
     <string name="hi_child">Hi!</string>
-    <string name="you_are_protected">You are protected</string>
-    <string name="safety_tip_day">Safety Tip of the Day\nNever share your password with friends</string>
     <string name="report_message">Report a message</string>
     <string name="request_logout">Request logout</string>
     <string name="pair_this_device">Pair this device</string>
     <string name="scan_code_parent">Scan this code on your parent dashboard</string>
-    <string name="backend_section">Backend</string>
+    <string name="backend_section">Connection</string>
     <string name="device_section">Device</string>
     <string name="test_connection_connected">Test connection   Connected</string>
     <string name="enable_notification_access">Enable Notification Access</string>
@@ -94,7 +92,7 @@
     <string name="parent_family_live">Your family</string>
     <string name="parent_child_live">Child account</string>
     <string name="parent_no_alerts">No risky messages yet.</string>
-    <string name="parent_device_pairing_empty">Device pairing status\n\nNo child device paired yet.</string>
+    <string name="parent_device_pairing_empty">No child device paired yet.</string>
     <string name="child_greeting_live">Hi %1$s!</string>
     <string name="qr_symbol">QR</string>
     <string name="pair_device">Pair Device</string>
@@ -130,12 +128,12 @@
     <string name="child_setup_status_placeholder">Child setup status</string>
     <string name="child_setup_status_title">Child setup readiness</string>
     <string name="child_setup_role_ready">Child role selected</string>
-    <string name="child_setup_pairing_ready">Backend URL, token, and device name saved</string>
+    <string name="child_setup_pairing_ready">Child device paired</string>
     <string name="child_setup_notification_ready">Notification access enabled</string>
     <string name="child_setup_filters_ready">Filters configured: %1$d allowed, %2$d blocked</string>
     <string name="child_setup_queue_ready">Queued uploads waiting: %1$d</string>
     <string name="child_setup_latest_status">Latest status: %1$s</string>
-    <string name="base_url_required">Save the backend URL first.</string>
+    <string name="base_url_required">Pair this device first.</string>
     <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
     <string name="role_saved">Device role updated.</string>
     <string name="menu_button_symbol">&#9776;</string>
@@ -143,7 +141,7 @@
     <string name="hero_preview_title">Cyber Mzazi</string>
     <string name="hero_preview_icon">&#128241;</string>
     <string name="service_label">Cyber Mzazi</string>
-    <string name="base_url_hint">Backend URL, for example https://cyber-mzazi.onrender.com</string>
+    <string name="base_url_hint">Connection URL</string>
     <string name="token_hint">One-time device token from the parent dashboard</string>
     <string name="device_name_hint">This Android device name</string>
     <string name="pairing_section_title">1. Pair this device</string>
@@ -156,7 +154,7 @@
     <string name="filters_section_copy">Use allow and block rules to limit which apps can be screened automatically.</string>
     <string name="status_section_copy">See the most recent upload result before moving to the next step.</string>
     <string name="log_section_copy">Recent captured notifications and upload outcomes appear here.</string>
-    <string name="backend_url_label">Backend URL</string>
+    <string name="backend_url_label">Connection URL</string>
     <string name="token_label">Device token</string>
     <string name="device_name_label">Device name</string>
     <string name="allowed_apps_label">Allowed app packages</string>
@@ -179,7 +177,11 @@
     <string name="profile_contact_hint">Email or phone</string>
     <string name="save_profile">Save profile</string>
     <string name="profile_saved">Profile saved on this device.</string>
-    <string name="password_verification_required">Verify your parent email or phone before changing password.</string>
+    <string name="password_verification_required">Request a fresh code, confirm it, then enter your current and new password.</string>
+    <string name="send_password_code">Send password code</string>
+    <string name="password_code_hint">Password verification code</string>
+    <string name="confirm_password_code">Confirm code</string>
+    <string name="password_code_required">Enter the password verification code.</string>
     <string name="current_password_hint">Current password</string>
     <string name="new_password_hint">New password</string>
     <string name="confirm_password_hint">Confirm new password</string>
@@ -187,6 +189,9 @@
     <string name="profile_name_required">Enter your name.</string>
     <string name="password_fields_required">Enter current password, new password, and confirmation.</string>
     <string name="passwords_do_not_match">New passwords do not match.</string>
+    <string name="alert_count_format">%1$d alerts this week</string>
+    <string name="status_ready">Ready:</string>
+    <string name="status_pending">Pending:</string>
     <string name="scan_pairing_qr">Scan pairing QR</string>
     <string name="open_notification_access">Open notification access</string>
     <string name="send_test_payload">Send test payload</string>

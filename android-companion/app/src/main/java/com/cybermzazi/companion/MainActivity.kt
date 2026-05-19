@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var inAppSoundsSwitch: Switch
     private lateinit var profileNameInput: EditText
     private lateinit var profileContactInput: EditText
+    private lateinit var passwordVerificationCodeInput: EditText
     private lateinit var currentPasswordInput: EditText
     private lateinit var newPasswordInput: EditText
     private lateinit var confirmNewPasswordInput: EditText
@@ -135,6 +136,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var goFiltersChildButton: Button
     private lateinit var saveButton: Button
     private lateinit var scanQrButton: Button
+    private lateinit var passwordConfirmCodeButton: Button
 
     private var currentSection = 0
     private var isPopulatingFields = false
@@ -211,6 +213,7 @@ class MainActivity : AppCompatActivity() {
         inAppSoundsSwitch = findViewById(R.id.inAppSoundsSwitch)
         profileNameInput = findViewById(R.id.profileNameInput)
         profileContactInput = findViewById(R.id.profileContactInput)
+        passwordVerificationCodeInput = findViewById(R.id.passwordVerificationCodeInput)
         currentPasswordInput = findViewById(R.id.currentPasswordInput)
         newPasswordInput = findViewById(R.id.newPasswordInput)
         confirmNewPasswordInput = findViewById(R.id.confirmNewPasswordInput)
@@ -266,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         goFiltersChildButton = findViewById(R.id.goFiltersChildButton)
         saveButton = findViewById(R.id.saveButton)
         scanQrButton = findViewById(R.id.scanQrButton)
+        passwordConfirmCodeButton = findViewById(R.id.passwordConfirmCodeButton)
 
         backButton.setOnClickListener { navigateBack() }
         menuToggle.setOnClickListener {
@@ -377,7 +381,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.profileSaveButton).setOnClickListener {
             saveProfile()
         }
-        findViewById<Button>(R.id.passwordVerifyButton).setOnClickListener { verifyParentPhone() }
+        findViewById<Button>(R.id.passwordVerifyButton).setOnClickListener { sendPasswordVerificationCode() }
+        passwordConfirmCodeButton.setOnClickListener { confirmPasswordVerificationCode() }
         findViewById<Button>(R.id.passwordSaveButton).setOnClickListener {
             changePassword()
         }
@@ -595,6 +600,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun sendPasswordVerificationCode() {
+        val channel = if (profileContactInput.text.toString().contains("@")) "email" else "phone"
+        ParentApiClient.sendPasswordVerification(this, channel) { ok, message ->
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                if (ok) passwordVerificationCodeInput.requestFocus()
+            }
+        }
+    }
+
+    private fun confirmPasswordVerificationCode() {
+        val code = passwordVerificationCodeInput.text.toString().trim()
+        if (code.isBlank()) {
+            Toast.makeText(this, R.string.password_code_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        ParentApiClient.confirmPasswordVerification(this, code) { ok, message ->
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                if (ok) {
+                    passwordVerificationCodeInput.text?.clear()
+                    currentPasswordInput.requestFocus()
+                }
+            }
+        }
+    }
+
     private fun changePassword() {
         val currentPassword = currentPasswordInput.text.toString()
         val newPassword = newPasswordInput.text.toString()
@@ -738,7 +770,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun buildChildSetupStatus(): String {
-        val baseUrlReady = Prefs.getBaseUrl(this).isNotBlank()
         val tokenReady = Prefs.getDeviceToken(this).isNotBlank()
         val deviceNameReady = Prefs.getDeviceName(this).isNotBlank()
         val notificationAccessReady = isNotificationListenerEnabled()
@@ -748,7 +779,7 @@ class MainActivity : AppCompatActivity() {
         val lines = mutableListOf(
             getString(R.string.child_setup_status_title),
             statusLine(Prefs.isChildRole(this), getString(R.string.child_setup_role_ready)),
-            statusLine(baseUrlReady && tokenReady && deviceNameReady, getString(R.string.child_setup_pairing_ready)),
+            statusLine(tokenReady && deviceNameReady, getString(R.string.child_setup_pairing_ready)),
             statusLine(notificationAccessReady, getString(R.string.child_setup_notification_ready)),
             statusLine(allowedCount > 0 || blockedCount > 0, getString(R.string.child_setup_filters_ready, allowedCount, blockedCount)),
             statusLine(queueCount == 0, getString(R.string.child_setup_queue_ready, queueCount)),
@@ -759,7 +790,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun statusLine(done: Boolean, label: String): String =
-        "${if (done) "[OK]" else "[ ]"} $label"
+        "${if (done) getString(R.string.status_ready) else getString(R.string.status_pending)} $label"
 
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
@@ -934,15 +965,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshParentAlerts() {
         parentAlertSummaryText.text = getString(R.string.parent_alerts_loading)
-        ParentApiClient.fetchAlerts(this) { ok, message ->
+        ParentApiClient.fetchDashboard(this) { ok, dashboard, message ->
             runOnUiThread {
                 parentAlertSummaryText.text = message
-                if (ok) {
-                    parentAlertsWeekText.text = message.lines().firstOrNull().orEmpty().ifBlank {
-                        getString(R.string.parent_no_alerts)
-                    }
-                    parentRecentMessagesText.text = message
-                    parentDeviceStatusText.text = getString(R.string.parent_device_pairing_empty)
+                if (ok && dashboard != null) {
+                    parentFamilyNameText.text = dashboard.familyName
+                    parentChildStatusText.text = "${dashboard.childName} - Online"
+                    parentAlertsWeekText.text = getString(R.string.alert_count_format, dashboard.alertCount)
+                    parentRecentMessagesText.text = dashboard.recentMessages
+                    parentDeviceStatusText.text = dashboard.deviceStatus
                 }
                 if (!ok) {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

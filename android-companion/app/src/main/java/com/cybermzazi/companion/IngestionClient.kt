@@ -18,7 +18,7 @@ object IngestionClient {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val token = Prefs.getDeviceToken(context).trim()
         if (baseUrl.isBlank() || token.isBlank()) {
-            val message = "Save the backend URL and device token first."
+            val message = "Pair this device first."
             Prefs.setLastStatus(context, message)
             NotificationQueueStore.enqueue(context, payload)
             RecentNotificationLog.append(context, payload.appName, payload.notificationTitle, payload.notificationText, "Queued: missing settings")
@@ -48,7 +48,7 @@ object IngestionClient {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val token = Prefs.getDeviceToken(context).trim()
         if (baseUrl.isBlank() || token.isBlank()) {
-            onComplete?.invoke(false, "Save the backend URL and device token first.")
+            onComplete?.invoke(false, "Pair this device first.")
             return
         }
         executor.execute {

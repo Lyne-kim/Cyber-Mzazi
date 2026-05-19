@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title, label_tone
 
@@ -25,6 +27,7 @@ from .services.email_verification import (
     send_verification_email,
     verify_email_token,
 )
+from .services.mail_delivery import send_email
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import (
     issue_ingestion_token,
@@ -125,6 +128,23 @@ def _verification_error_for(parent_user: User | None) -> str:
     if parent_user.requires_phone_verification and not parent_user.phone_verified:
         return "Verify the parent phone number before signing in. Request a phone code if needed."
     return "Verify the parent account before signing in."
+
+
+def _generate_short_code() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def _password_change_verified() -> bool:
+    verified_at = session.get("password_change_verified_at")
+    verified_user_id = session.get("password_change_user_id")
+    if not verified_at or verified_user_id != current_user.id:
+        return False
+    try:
+        timestamp = datetime.fromisoformat(verified_at)
+    except ValueError:
+        return False
+    max_age = int(current_app.config.get("PASSWORD_CHANGE_CODE_MAX_AGE", 900))
+    return datetime.utcnow() <= timestamp + timedelta(seconds=max_age)
 
 
 def _message_payload(message: MessageRecord) -> dict:
@@ -282,6 +302,12 @@ def _parent_page_payload() -> dict:
     )
     latest_sync = activity_logs[0].created_at.isoformat() if activity_logs else None
     return {
+        "family": {
+            "id": current_user.family.id,
+            "family_name": current_user.family.family_name,
+            "parent_contact": current_user.family.parent_contact,
+            "child_display_name": current_user.family.child_display_name,
+        },
         "children": [_user_payload(child) for child in children],
         "selected_child": None if selected_child is None else _user_payload(selected_child),
         "messages": [_message_payload(message) for message in messages],
@@ -719,6 +745,109 @@ def update_profile():
     return jsonify({"ok": True, "user": _user_payload(current_user)})
 
 
+@api_bp.post("/account/password-verification/send")
+@login_required
+def send_password_change_verification():
+    payload = request.get_json(silent=True) or {}
+    channel = str(payload.get("channel", "")).strip().lower()
+    if not current_user.can_log_in:
+        return _error("Verify email or phone before changing password.", 403)
+    verification_user = _family_parent_for(current_user) if current_user.role == "child" else current_user
+    if verification_user is None or not verification_user.can_log_in:
+        return _error("Parent verification is required before changing password.", 403)
+    if channel not in {"email", "phone"}:
+        channel = "email" if verification_user.email else "phone"
+
+    code = _generate_short_code()
+    max_age = int(current_app.config.get("PASSWORD_CHANGE_CODE_MAX_AGE", 900))
+    max_age_minutes = max(1, max_age // 60)
+    if channel == "email":
+        if not verification_user.email:
+            return _error("This account does not have an email address.")
+        ok, message = send_email(
+            verification_user.email,
+            "Cyber Mzazi password change code",
+            (
+                f"Hello {current_user.name},\n\n"
+                f"Your Cyber Mzazi password change code is {code}.\n"
+                f"It expires in {max_age_minutes} minutes.\n\n"
+                "If you did not request this, keep your current password and ignore this email."
+            ),
+        )
+        if not ok:
+            return _error(f"Password verification email could not be sent. {message}", 500)
+        session["password_change_code_hash"] = generate_password_hash(code)
+        session["password_change_code_channel"] = "email"
+        session["password_change_code_sent_at"] = datetime.utcnow().isoformat()
+        session["password_change_user_id"] = current_user.id
+        return jsonify({"ok": True, "message": "Password verification code sent to email."})
+
+    if not verification_user.phone:
+        return _error("This account does not have a phone number.")
+    ok, message = send_phone_verification_code(verification_user)
+    if not ok:
+        db.session.rollback()
+        return _error(message, 500)
+    session["password_change_code_channel"] = "phone"
+    session["password_change_code_sent_at"] = datetime.utcnow().isoformat()
+    session["password_change_user_id"] = current_user.id
+    db.session.commit()
+    return jsonify({"ok": True, "message": message})
+
+
+@api_bp.post("/account/password-verification/confirm")
+@login_required
+def confirm_password_change_verification():
+    payload = request.get_json(silent=True) or {}
+    code = str(payload.get("code", "")).strip()
+    channel = str(session.get("password_change_code_channel", "")).strip()
+    if not code:
+        return _error("Enter the password verification code.")
+    if session.get("password_change_user_id") != current_user.id:
+        return _error("Request a new password verification code.", 403)
+
+    max_age = int(current_app.config.get("PASSWORD_CHANGE_CODE_MAX_AGE", 900))
+    try:
+        sent_at = datetime.fromisoformat(str(session.get("password_change_code_sent_at", "")))
+    except ValueError:
+        return _error("Request a new password verification code.", 403)
+    if datetime.utcnow() > sent_at + timedelta(seconds=max_age):
+        return _error("Password verification code expired. Request a new code.", 403)
+
+    if channel == "email":
+        code_hash = session.get("password_change_code_hash")
+        if not code_hash or not check_password_hash(code_hash, code):
+            return _error("Invalid password verification code.", 403)
+    elif channel == "phone":
+        verification_user = _family_parent_for(current_user) if current_user.role == "child" else current_user
+        if verification_user is None:
+            return _error("Request a new password verification code.", 403)
+        if not verification_user.phone_verification_code_hash or not check_password_hash(
+            verification_user.phone_verification_code_hash,
+            code,
+        ):
+            return _error("Invalid password verification code.", 403)
+        verification_user.phone_verification_code_hash = None
+        db.session.add(verification_user)
+    else:
+        return _error("Request a new password verification code.", 403)
+
+    session.pop("password_change_code_hash", None)
+    session.pop("password_change_code_channel", None)
+    session.pop("password_change_code_sent_at", None)
+    session["password_change_verified_at"] = datetime.utcnow().isoformat()
+    session["password_change_user_id"] = current_user.id
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "password_change_verified",
+        f"{current_user.role.title()} confirmed password change verification via {channel}",
+        subject_user_id=current_user.id if current_user.role == "child" else None,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Password change verified."})
+
+
 @api_bp.post("/account/change-password")
 @login_required
 def change_password():
@@ -733,8 +862,12 @@ def change_password():
         return _error("Current password is incorrect.", 403)
     if not current_user.can_log_in:
         return _error("Verify email or phone before changing password.", 403)
+    if not _password_change_verified():
+        return _error("Confirm the password verification code before changing password.", 403)
 
     current_user.set_password(new_password)
+    session.pop("password_change_verified_at", None)
+    session.pop("password_change_user_id", None)
     log_event(
         current_user.family_id,
         current_user.id,

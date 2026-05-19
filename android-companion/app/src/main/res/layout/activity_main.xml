@@ -1226,7 +1226,22 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:text="@string/verify_phone" />
+                        android:text="@string/send_password_code" />
+
+                    <EditText
+                        android:id="@+id/passwordVerificationCodeInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="12dp"
+                        android:hint="@string/password_code_hint"
+                        android:inputType="number" />
+
+                    <Button
+                        android:id="@+id/passwordConfirmCodeButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/confirm_password_code" />
 
                     <EditText
                         android:id="@+id/currentPasswordInput"

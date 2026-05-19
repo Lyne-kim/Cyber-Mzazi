@@ -24,7 +24,7 @@ object ParentApiClient {
     ) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         if (baseUrl.isBlank()) {
-            onComplete(false, "Save the backend URL first.")
+            onComplete(false, "Pair this device first.")
             return
         }
         executor.execute {
@@ -124,7 +124,7 @@ object ParentApiClient {
     ) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         if (baseUrl.isBlank()) {
-            onComplete(false, "Save the backend URL first.")
+            onComplete(false, "Pair this device first.")
             return
         }
         executor.execute {
@@ -198,19 +198,25 @@ object ParentApiClient {
     }
 
     fun fetchAlerts(context: Context, onComplete: (Boolean, String) -> Unit) {
+        fetchDashboard(context) { ok, dashboard, message ->
+            onComplete(ok, dashboard?.summaryText ?: message)
+        }
+    }
+
+    fun fetchDashboard(context: Context, onComplete: (Boolean, ParentDashboardData?, String) -> Unit) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val cookie = Prefs.getParentSessionCookie(context)
         if (baseUrl.isBlank()) {
-            onComplete(false, "Save the backend URL first.")
+            onComplete(false, null, "App connection is not ready. Pair the device again.")
             return
         }
         if (cookie.isBlank()) {
-            onComplete(false, "Sign in as parent to load native alerts.")
+            onComplete(false, null, "Sign in as parent to load dashboard.")
             return
         }
         executor.execute {
             val result = runCatching {
-                val connection = (URL("$baseUrl/api/parent/alerts").openConnection() as HttpURLConnection).apply {
+                val connection = (URL("$baseUrl/api/parent/dashboard").openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
                     connectTimeout = CONNECT_TIMEOUT_MS
                     readTimeout = READ_TIMEOUT_MS
@@ -220,16 +226,17 @@ object ParentApiClient {
                 val response = readResponse(connection)
                 if (connection.responseCode == 401 || connection.responseCode == 403) {
                     Prefs.clearParentSession(context)
-                    return@runCatching ParentApiResult(false, "Parent session expired. Sign in again.")
+                    return@runCatching ParentDashboardResult(false, null, "Parent session expired. Sign in again.")
                 }
                 if (connection.responseCode !in 200..299) {
-                    return@runCatching ParentApiResult(false, parseError(response, "Could not load parent alerts."))
+                    return@runCatching ParentDashboardResult(false, null, parseError(response, "Could not load parent dashboard."))
                 }
-                ParentApiResult(true, formatAlerts(JSONObject(response)))
+                val dashboard = parseDashboard(JSONObject(response))
+                ParentDashboardResult(true, dashboard, dashboard.summaryText)
             }.getOrElse { throwable ->
-                ParentApiResult(false, "Alert refresh error: ${throwable.message ?: "Unknown error"}")
+                ParentDashboardResult(false, null, "Dashboard refresh error: ${throwable.message ?: "Unknown error"}")
             }
-            onComplete(result.ok, result.message)
+            onComplete(result.ok, result.dashboard, result.message)
         }
     }
 
@@ -350,6 +357,34 @@ object ParentApiClient {
         )
     }
 
+    fun sendPasswordVerification(
+        context: Context,
+        channel: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postJson(
+            context = context,
+            path = "/api/account/password-verification/send",
+            body = JSONObject().put("channel", channel),
+            successMessage = "Password verification code sent.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun confirmPasswordVerification(
+        context: Context,
+        code: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postJson(
+            context = context,
+            path = "/api/account/password-verification/confirm",
+            body = JSONObject().put("code", code),
+            successMessage = "Password change verified.",
+            onComplete = onComplete,
+        )
+    }
+
     fun requestChildLogout(context: Context, onComplete: (Boolean, String) -> Unit) {
         postJson(
             context = context,
@@ -381,7 +416,7 @@ object ParentApiClient {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val cookie = Prefs.getParentSessionCookie(context)
         if (baseUrl.isBlank()) {
-            onComplete(false, "Save the backend URL first.")
+            onComplete(false, "Pair this device first.")
             return
         }
         if (cookie.isBlank()) {
@@ -403,7 +438,7 @@ object ParentApiClient {
                     writer.write(body.toString())
                 }
                 val response = readResponse(connection)
-                if (connection.responseCode == 401 || connection.responseCode == 403) {
+                if (connection.responseCode == 401) {
                     Prefs.clearParentSession(context)
                     return@runCatching ParentApiResult(false, "Parent session expired. Sign in again.")
                 }
@@ -429,7 +464,7 @@ object ParentApiClient {
     ) {
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         if (baseUrl.isBlank()) {
-            onComplete(false, "Save the backend URL first.")
+            onComplete(false, "Pair this device first.")
             return
         }
         executor.execute {
@@ -473,9 +508,10 @@ object ParentApiClient {
     private fun parseError(response: String, fallback: String): String =
         runCatching { JSONObject(response).optString("error").ifBlank { fallback } }.getOrDefault(fallback)
 
-    private fun formatAlerts(payload: JSONObject): String {
+    private fun parseDashboard(payload: JSONObject): ParentDashboardData {
         latestFlaggedMessageId = null
         pendingLogoutRequestId = null
+        val family = payload.optJSONObject("family")
         val summary = payload.optJSONObject("summary")
         val childName = summary?.optString("child_display_name").orEmpty().ifBlank { "Selected child" }
         val alertCount = summary?.optInt("alert_count", 0) ?: 0
@@ -519,8 +555,38 @@ object ParentApiClient {
             lines += ""
             lines += "Logout request: $detail"
         }
-        return lines.joinToString("\n")
+        val latestDevice = payload.optJSONArray("linked_devices")?.optJSONObject(0)
+        val deviceStatus = if (latestDevice != null) {
+            val deviceName = latestDevice.optString("device_name").ifBlank { childName }
+            "Device paired\n$deviceName"
+        } else {
+            "No child device paired yet."
+        }
+        return ParentDashboardData(
+            parentName = payload.optJSONObject("selected_child")?.optString("parent_name").orEmpty(),
+            familyName = family?.optString("family_name").orEmpty().ifBlank { "Your family" },
+            childName = childName,
+            alertCount = alertCount,
+            recentMessages = lines.drop(3).joinToString("\n").trim().ifBlank { "No risky messages yet." },
+            deviceStatus = deviceStatus,
+            summaryText = lines.joinToString("\n"),
+        )
     }
 
     private data class ParentApiResult(val ok: Boolean, val message: String)
+    private data class ParentDashboardResult(
+        val ok: Boolean,
+        val dashboard: ParentDashboardData?,
+        val message: String,
+    )
+
+    data class ParentDashboardData(
+        val parentName: String,
+        val familyName: String,
+        val childName: String,
+        val alertCount: Int,
+        val recentMessages: String,
+        val deviceStatus: String,
+        val summaryText: String,
+    )
 }
