@@ -90,6 +90,7 @@
     <string name="recent_risky_messages_sample">No risky messages yet.</string>
     <string name="device_paired_status">Device pairing status\n\nNo child device paired yet.</string>
     <string name="parent_greeting_live">Hello</string>
+    <string name="parent_greeting_named">Hello, %1$s</string>
     <string name="parent_family_live">Your family</string>
     <string name="parent_child_live">Child account</string>
     <string name="parent_no_alerts">No risky messages yet.</string>
@@ -179,9 +180,13 @@
     <string name="save_profile">Save profile</string>
     <string name="profile_saved">Profile saved on this device.</string>
     <string name="password_verification_required">Verify your parent email or phone before changing password.</string>
+    <string name="current_password_hint">Current password</string>
     <string name="new_password_hint">New password</string>
     <string name="confirm_password_hint">Confirm new password</string>
     <string name="password_verify_first">Verify email or phone before changing password.</string>
+    <string name="profile_name_required">Enter your name.</string>
+    <string name="password_fields_required">Enter current password, new password, and confirmation.</string>
+    <string name="passwords_do_not_match">New passwords do not match.</string>
     <string name="scan_pairing_qr">Scan pairing QR</string>
     <string name="open_notification_access">Open notification access</string>
     <string name="send_test_payload">Send test payload</string>

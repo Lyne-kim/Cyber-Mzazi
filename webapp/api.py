@@ -671,6 +671,81 @@ def current_session():
     return jsonify({"ok": True, "user": _user_payload(current_user)})
 
 
+@api_bp.post("/account/profile")
+@login_required
+def update_profile():
+    payload = request.get_json(silent=True) or {}
+    name = str(payload.get("name", "")).strip()
+    contact = str(payload.get("contact", "")).strip()
+    if not name:
+        return _error("Name is required.")
+
+    current_user.name = name
+    if current_user.role == "parent" and contact:
+        normalized_contact = contact if "@" in contact else normalize_phone(contact)
+        old_email = current_user.email
+        old_phone = current_user.phone
+        existing = User.query.filter(
+            User.id != current_user.id,
+            User.role == "parent",
+            or_(User.email == normalized_contact, User.phone == normalized_contact),
+        ).first()
+        existing_family = Family.query.filter(
+            Family.id != current_user.family_id,
+            Family.parent_contact == normalized_contact,
+        ).first()
+        if existing or existing_family:
+            return _error("That parent contact is already in use.", 409)
+        current_user.email = normalized_contact if "@" in normalized_contact else None
+        current_user.phone = normalize_phone(normalized_contact) if "@" not in normalized_contact else None
+        current_user.family.parent_contact = normalized_contact
+        if current_user.email and current_user.email != old_email:
+            current_user.email_verified = False
+        if current_user.phone and current_user.phone != old_phone:
+            current_user.phone_verified = False
+    elif current_user.role == "child":
+        username = str(payload.get("username", "")).strip()
+        if username:
+            current_user.username = username
+
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "profile_updated",
+        f"{current_user.role.title()} profile updated via API",
+        subject_user_id=current_user.id if current_user.role == "child" else None,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "user": _user_payload(current_user)})
+
+
+@api_bp.post("/account/change-password")
+@login_required
+def change_password():
+    payload = request.get_json(silent=True) or {}
+    current_password = str(payload.get("current_password", ""))
+    new_password = str(payload.get("new_password", ""))
+    if not current_password or not new_password:
+        return _error("Current password and new password are required.")
+    if len(new_password) < 8:
+        return _error("New password must be at least 8 characters.")
+    if not current_user.check_password(current_password):
+        return _error("Current password is incorrect.", 403)
+    if not current_user.can_log_in:
+        return _error("Verify email or phone before changing password.", 403)
+
+    current_user.set_password(new_password)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "password_changed",
+        f"{current_user.role.title()} password changed via API",
+        subject_user_id=current_user.id if current_user.role == "child" else None,
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "message": "Password changed."})
+
+
 @api_bp.get("/parent/dashboard")
 @login_required
 def parent_dashboard():

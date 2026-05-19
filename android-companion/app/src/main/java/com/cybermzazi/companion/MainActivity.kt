@@ -21,6 +21,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -77,6 +78,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var darkModeSwitch: Switch
     private lateinit var languageSwitch: Switch
     private lateinit var inAppSoundsSwitch: Switch
+    private lateinit var profileNameInput: EditText
+    private lateinit var profileContactInput: EditText
+    private lateinit var currentPasswordInput: EditText
+    private lateinit var newPasswordInput: EditText
+    private lateinit var confirmNewPasswordInput: EditText
 
     private lateinit var menuHome: TextView
     private lateinit var menuAuth: TextView
@@ -151,6 +157,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppCompatDelegate.setDefaultNightMode(
+            if (Prefs.isDarkMode(this)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO,
+        )
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(Prefs.getLanguage(this)))
         setContentView(R.layout.activity_main)
 
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -199,6 +209,11 @@ class MainActivity : AppCompatActivity() {
         darkModeSwitch = findViewById(R.id.darkModeSwitch)
         languageSwitch = findViewById(R.id.languageSwitch)
         inAppSoundsSwitch = findViewById(R.id.inAppSoundsSwitch)
+        profileNameInput = findViewById(R.id.profileNameInput)
+        profileContactInput = findViewById(R.id.profileContactInput)
+        currentPasswordInput = findViewById(R.id.currentPasswordInput)
+        newPasswordInput = findViewById(R.id.newPasswordInput)
+        confirmNewPasswordInput = findViewById(R.id.confirmNewPasswordInput)
 
         menuHome = findViewById(R.id.menuHome)
         menuAuth = findViewById(R.id.menuAuth)
@@ -360,11 +375,11 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.signOutButton).setOnClickListener { signOut() }
         findViewById<Button>(R.id.profileSaveButton).setOnClickListener {
-            Toast.makeText(this, R.string.profile_saved, Toast.LENGTH_SHORT).show()
+            saveProfile()
         }
         findViewById<Button>(R.id.passwordVerifyButton).setOnClickListener { verifyParentPhone() }
         findViewById<Button>(R.id.passwordSaveButton).setOnClickListener {
-            Toast.makeText(this, R.string.password_verify_first, Toast.LENGTH_SHORT).show()
+            changePassword()
         }
 
         darkModeSwitch.setOnCheckedChangeListener { _, enabled ->
@@ -375,8 +390,16 @@ class MainActivity : AppCompatActivity() {
             )
         }
         languageSwitch.setOnCheckedChangeListener { _, enabled ->
-            Prefs.setLanguage(this, if (enabled) "sw" else "en")
-            Toast.makeText(this, if (enabled) R.string.language_sw_saved else R.string.language_en_saved, Toast.LENGTH_SHORT).show()
+            val language = if (enabled) "sw" else "en"
+            Prefs.setLanguage(this, language)
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+            if (isSignedIn()) {
+                ParentApiClient.setLanguage(this, language) { _, message ->
+                    runOnUiThread { Toast.makeText(this, message, Toast.LENGTH_SHORT).show() }
+                }
+            } else {
+                Toast.makeText(this, if (enabled) R.string.language_sw_saved else R.string.language_en_saved, Toast.LENGTH_SHORT).show()
+            }
         }
         inAppSoundsSwitch.setOnCheckedChangeListener { _, enabled ->
             Prefs.setInAppSoundsEnabled(this, enabled)
@@ -531,6 +554,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signOut() {
+        if (childSignedIn) {
+            ParentApiClient.requestChildLogout(this) { ok, message ->
+                runOnUiThread {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                    childSetupStatusText.text = message
+                }
+            }
+            return
+        }
         ParentApiClient.logout(this) { ok, message ->
             runOnUiThread {
                 if (ok) {
@@ -541,6 +573,49 @@ class MainActivity : AppCompatActivity() {
                     showSection(SECTION_HOME)
                 }
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun saveProfile() {
+        val name = profileNameInput.text.toString().trim()
+        val contact = profileContactInput.text.toString().trim()
+        if (name.isBlank()) {
+            Toast.makeText(this, R.string.profile_name_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        ParentApiClient.updateProfile(this, name, contact) { ok, message ->
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                if (ok) {
+                    if (parentSignedIn) parentGreetingText.text = getString(R.string.parent_greeting_named, name)
+                    if (childSignedIn) childGreetingText.text = getString(R.string.child_greeting_live, name)
+                }
+            }
+        }
+    }
+
+    private fun changePassword() {
+        val currentPassword = currentPasswordInput.text.toString()
+        val newPassword = newPasswordInput.text.toString()
+        val confirmPassword = confirmNewPasswordInput.text.toString()
+        if (currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
+            Toast.makeText(this, R.string.password_fields_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (newPassword != confirmPassword) {
+            Toast.makeText(this, R.string.passwords_do_not_match, Toast.LENGTH_SHORT).show()
+            return
+        }
+        ParentApiClient.changePassword(this, currentPassword, newPassword) { ok, message ->
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                if (ok) {
+                    currentPasswordInput.text?.clear()
+                    newPasswordInput.text?.clear()
+                    confirmNewPasswordInput.text?.clear()
+                    showSection(SECTION_SETTINGS)
+                }
             }
         }
     }
@@ -709,8 +784,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         parentAlertSummaryText.text = getString(R.string.parent_signing_in)
+        parentLoginButton.isEnabled = false
         ParentApiClient.login(this, identifier, password) { ok, message ->
             runOnUiThread {
+                parentLoginButton.isEnabled = true
                 parentPasswordInput.text?.clear()
                 parentAlertSummaryText.text = message
                 Toast.makeText(
@@ -721,6 +798,7 @@ class MainActivity : AppCompatActivity() {
                 if (ok) {
                     parentSignedIn = true
                     childSignedIn = false
+                    profileContactInput.setText(identifier)
                     parentGreetingText.text = getString(R.string.parent_greeting_live)
                     parentFamilyNameText.text = getString(R.string.parent_family_live)
                     parentChildStatusText.text = getString(R.string.parent_child_live)
@@ -756,6 +834,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         registerFamilyStatusText.text = getString(R.string.registering_family)
+        registerFamilyButton.isEnabled = false
         ParentApiClient.registerFamily(
             context = this,
             familyName = familyName,
@@ -767,10 +846,11 @@ class MainActivity : AppCompatActivity() {
             childPassword = childPassword,
         ) { ok, message ->
             runOnUiThread {
+                registerFamilyButton.isEnabled = true
                 registerParentPasswordInput.text?.clear()
                 registerChildPasswordInput.text?.clear()
-                registerFamilyStatusText.text = if (ok) getString(R.string.family_created_verify) else message
-                Toast.makeText(this, if (ok) R.string.family_created_verify else R.string.parent_sign_in_failed, Toast.LENGTH_SHORT).show()
+                registerFamilyStatusText.text = message
+                Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
                 if (ok) {
                     parentIdentifierInput.setText(parentContact)
                     parentSignedIn = false
@@ -791,8 +871,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         childLoginStatusText.text = getString(R.string.child_signing_in)
+        childLoginButton.isEnabled = false
         ParentApiClient.childLogin(this, parentContact, childUsername, password) { ok, message ->
             runOnUiThread {
+                childLoginButton.isEnabled = true
                 childPasswordInput.text?.clear()
                 childLoginStatusText.text = message
                 Toast.makeText(
@@ -803,6 +885,8 @@ class MainActivity : AppCompatActivity() {
                 if (ok) {
                     childSignedIn = true
                     parentSignedIn = false
+                    profileNameInput.setText(childUsername)
+                    profileContactInput.setText(parentContact)
                     childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
                     setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
                     updateMenuAccess()
@@ -820,8 +904,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         parentAlertSummaryText.text = getString(R.string.phone_verification_running)
+        parentVerifyPhoneButton.isEnabled = false
         ParentApiClient.verifyPhone(this, identifier, code) { ok, message ->
             runOnUiThread {
+                parentVerifyPhoneButton.isEnabled = true
                 if (ok) parentPhoneCodeInput.text?.clear()
                 parentAlertSummaryText.text = message
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -836,8 +922,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         parentAlertSummaryText.text = getString(R.string.phone_verification_sending)
+        parentResendPhoneCodeButton.isEnabled = false
         ParentApiClient.resendPhoneVerification(this, identifier) { _, message ->
             runOnUiThread {
+                parentResendPhoneCodeButton.isEnabled = true
                 parentAlertSummaryText.text = message
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             }
@@ -877,8 +965,10 @@ class MainActivity : AppCompatActivity() {
     private fun createChildDeviceLink() {
         val deviceName = parentChildDeviceNameInput.text.toString().trim()
         parentAlertSummaryText.text = getString(R.string.creating_child_device_link)
+        createChildDeviceLinkButton.isEnabled = false
         ParentApiClient.createChildDeviceLink(this, deviceName) { _, message ->
             runOnUiThread {
+                createChildDeviceLinkButton.isEnabled = true
                 parentAlertSummaryText.text = message
                 renderLatestPairingQr()
                 Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()

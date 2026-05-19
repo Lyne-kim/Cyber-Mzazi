@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Cyber Mzazi</string>
+    <string name="parent_guardian_sign_in">Ingia kama Mzazi/Mlezi</string>
+    <string name="child_sign_in_title">Ingia kama Mtoto</string>
+    <string name="register_family_account_title">Fungua Akaunti ya Familia</string>
+    <string name="welcome_back">Karibu tena</string>
+    <string name="parent_signin_subtitle">Ingia kwenye akaunti ya mzazi</string>
+    <string name="enter_email_or_phone">Weka barua pepe au simu</string>
+    <string name="enter_password">Weka nenosiri</string>
+    <string name="sign_in_short">Ingia</string>
+    <string name="settings_nav">Mipangilio</string>
+    <string name="edit_profile">Badili wasifu</string>
+    <string name="change_password">Badili nenosiri</string>
+    <string name="sign_out">Ondoka</string>
+    <string name="save_settings">Hifadhi mipangilio</string>
+    <string name="dark_mode_toggle">Hali ya giza</string>
+    <string name="language_toggle">Tumia Kiswahili</string>
+    <string name="in_app_sounds_toggle">Sauti ndani ya programu</string>
+    <string name="pair_device">Unganisha kifaa</string>
+    <string name="report_message">Ripoti ujumbe</string>
+    <string name="request_logout">Omba kutoka</string>
+    <string name="profile_saved">Wasifu umehifadhiwa.</string>
+    <string name="passwords_do_not_match">Manenosiri hayafanani.</string>
+</resources>

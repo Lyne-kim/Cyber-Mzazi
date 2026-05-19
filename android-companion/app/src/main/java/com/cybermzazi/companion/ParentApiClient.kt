@@ -316,6 +316,60 @@ object ParentApiClient {
         )
     }
 
+    fun updateProfile(
+        context: Context,
+        name: String,
+        contact: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postJson(
+            context = context,
+            path = "/api/account/profile",
+            body = JSONObject()
+                .put("name", name)
+                .put("contact", contact),
+            successMessage = "Profile saved.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun changePassword(
+        context: Context,
+        currentPassword: String,
+        newPassword: String,
+        onComplete: (Boolean, String) -> Unit,
+    ) {
+        postJson(
+            context = context,
+            path = "/api/account/change-password",
+            body = JSONObject()
+                .put("current_password", currentPassword)
+                .put("new_password", newPassword),
+            successMessage = "Password changed.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun requestChildLogout(context: Context, onComplete: (Boolean, String) -> Unit) {
+        postJson(
+            context = context,
+            path = "/api/child/logout-request",
+            body = JSONObject(),
+            successMessage = "Logout request sent to parent.",
+            onComplete = onComplete,
+        )
+    }
+
+    fun setLanguage(context: Context, language: String, onComplete: (Boolean, String) -> Unit) {
+        postJson(
+            context = context,
+            path = "/api/ui/language",
+            body = JSONObject().put("language", language),
+            successMessage = "Language saved.",
+            onComplete = onComplete,
+        )
+    }
+
     private fun postJson(
         context: Context,
         path: String,

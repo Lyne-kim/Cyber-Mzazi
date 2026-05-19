@@ -1220,13 +1220,6 @@
                         android:text="@string/password_verification_required"
                         android:textColor="#60420C" />
 
-                    <EditText
-                        android:id="@+id/passwordVerificationCodeInput"
-                        style="@style/CyberInput"
-                        android:layout_marginTop="14dp"
-                        android:hint="@string/parent_phone_code_hint"
-                        android:inputType="number" />
-
                     <Button
                         android:id="@+id/passwordVerifyButton"
                         style="@style/CyberOutlineButton"
@@ -1234,6 +1227,13 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:text="@string/verify_phone" />
+
+                    <EditText
+                        android:id="@+id/currentPasswordInput"
+                        style="@style/CyberInput"
+                        android:layout_marginTop="18dp"
+                        android:hint="@string/current_password_hint"
+                        android:inputType="textPassword" />
 
                     <EditText
                         android:id="@+id/newPasswordInput"
