@@ -162,9 +162,12 @@
                         android:orientation="horizontal">
 
                         <ImageView
-                            android:layout_width="72dp"
-                            android:layout_height="72dp"
+                            android:layout_width="84dp"
+                            android:layout_height="84dp"
+                            android:background="@drawable/bg_logo_frame"
                             android:contentDescription="@string/app_name"
+                            android:padding="8dp"
+                            android:scaleType="centerInside"
                             android:src="@drawable/cyber_mzazi_logo" />
 
                         <LinearLayout
@@ -750,6 +753,45 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/settings_nav" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/childConnectionCardText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_soft_panel"
+                            android:padding="16dp"
+                            android:text="@string/child_connection_placeholder"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/childNotificationCardText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_soft_panel"
+                            android:padding="16dp"
+                            android:text="@string/child_notification_placeholder"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/childSyncCardText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_soft_panel"
+                            android:padding="16dp"
+                            android:text="@string/child_sync_placeholder"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="15sp" />
                     </LinearLayout>
                 </LinearLayout>
 

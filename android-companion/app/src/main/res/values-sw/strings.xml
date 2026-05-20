@@ -28,6 +28,15 @@
     <string name="child_status_filters_default">Vichujio vya usalama vinatumia mipangilio ya familia.</string>
     <string name="child_status_sync_clear">Kila kitu kimesawazishwa.</string>
     <string name="child_status_sync_waiting">Vipengee %1$d vinasubiri kusawazishwa.</string>
+    <string name="child_connection_placeholder">Hali ya muunganisho</string>
+    <string name="child_notification_placeholder">Ruhusa ya arifa</string>
+    <string name="child_sync_placeholder">Hali ya usawazishaji</string>
+    <string name="child_connection_card_paired">Kifaa: Kimeunganishwa na %1$s</string>
+    <string name="child_connection_card_not_paired">Kifaa: Bado hakijaunganishwa</string>
+    <string name="child_notification_card_on">Arifa: Zimewashwa</string>
+    <string name="child_notification_card_needed">Arifa: Ruhusa inahitajika</string>
+    <string name="child_sync_card_clear">Usawazishaji: Uko sawa</string>
+    <string name="child_sync_card_waiting">Usawazishaji: Vipengee %1$d vinasubiri</string>
     <string name="profile_saved">Wasifu umehifadhiwa.</string>
     <string name="passwords_do_not_match">Manenosiri hayafanani.</string>
 </resources>

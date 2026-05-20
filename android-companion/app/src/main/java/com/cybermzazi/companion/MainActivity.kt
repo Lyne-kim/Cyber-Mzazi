@@ -57,6 +57,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parentRecentMessagesText: TextView
     private lateinit var parentDeviceStatusText: TextView
     private lateinit var childGreetingText: TextView
+    private lateinit var childConnectionCardText: TextView
+    private lateinit var childNotificationCardText: TextView
+    private lateinit var childSyncCardText: TextView
     private lateinit var registerFamilyNameInput: EditText
     private lateinit var registerParentNameInput: EditText
     private lateinit var registerParentContactInput: EditText
@@ -187,6 +190,9 @@ class MainActivity : AppCompatActivity() {
         parentRecentMessagesText = findViewById(R.id.parentRecentMessagesText)
         parentDeviceStatusText = findViewById(R.id.parentDeviceStatusText)
         childGreetingText = findViewById(R.id.childGreetingText)
+        childConnectionCardText = findViewById(R.id.childConnectionCardText)
+        childNotificationCardText = findViewById(R.id.childNotificationCardText)
+        childSyncCardText = findViewById(R.id.childSyncCardText)
         registerFamilyNameInput = findViewById(R.id.registerFamilyNameInput)
         registerParentNameInput = findViewById(R.id.registerParentNameInput)
         registerParentContactInput = findViewById(R.id.registerParentContactInput)
@@ -434,6 +440,7 @@ class MainActivity : AppCompatActivity() {
                     statusText.text = message
                     recentLogText.text = RecentNotificationLog.render(this)
                     childSetupStatusText.text = buildChildSetupStatus()
+                    updateChildDashboardCards()
                     parentCaptureStatusText.text = buildParentCaptureStatus()
                 }
             }
@@ -451,6 +458,7 @@ class MainActivity : AppCompatActivity() {
         statusText.text = Prefs.getLastStatus(this)
         recentLogText.text = RecentNotificationLog.render(this)
         childSetupStatusText.text = buildChildSetupStatus()
+        updateChildDashboardCards()
         parentCaptureStatusText.text = buildParentCaptureStatus()
         darkModeSwitch.isChecked = Prefs.isDarkMode(this)
         languageSwitch.isChecked = Prefs.getLanguage(this) == "sw"
@@ -788,6 +796,29 @@ class MainActivity : AppCompatActivity() {
             },
         )
         return lines.joinToString("\n")
+    }
+
+    private fun updateChildDashboardCards() {
+        val tokenReady = Prefs.getDeviceToken(this).isNotBlank()
+        val deviceName = Prefs.getDeviceName(this).ifBlank { getString(R.string.this_phone) }
+        val paired = tokenReady && Prefs.getDeviceName(this).isNotBlank()
+        val notificationAccessReady = isNotificationListenerEnabled()
+        val queueCount = NotificationQueueStore.getQueue(this).size
+        childConnectionCardText.text = if (paired) {
+            getString(R.string.child_connection_card_paired, deviceName)
+        } else {
+            getString(R.string.child_connection_card_not_paired)
+        }
+        childNotificationCardText.text = if (notificationAccessReady) {
+            getString(R.string.child_notification_card_on)
+        } else {
+            getString(R.string.child_notification_card_needed)
+        }
+        childSyncCardText.text = if (queueCount == 0) {
+            getString(R.string.child_sync_card_clear)
+        } else {
+            getString(R.string.child_sync_card_waiting, queueCount)
+        }
     }
 
     private fun isNotificationListenerEnabled(): Boolean {

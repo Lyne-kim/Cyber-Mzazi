@@ -143,6 +143,15 @@
     <string name="child_status_filters_default">Safety filters are using the family default settings.</string>
     <string name="child_status_sync_clear">Everything is synced.</string>
     <string name="child_status_sync_waiting">%1$d item(s) waiting to sync.</string>
+    <string name="child_connection_placeholder">Connection status</string>
+    <string name="child_notification_placeholder">Notification access</string>
+    <string name="child_sync_placeholder">Sync status</string>
+    <string name="child_connection_card_paired">Device: Connected to %1$s</string>
+    <string name="child_connection_card_not_paired">Device: Not paired yet</string>
+    <string name="child_notification_card_on">Notifications: Enabled</string>
+    <string name="child_notification_card_needed">Notifications: Permission needed</string>
+    <string name="child_sync_card_clear">Sync: Up to date</string>
+    <string name="child_sync_card_waiting">Sync: %1$d item(s) waiting</string>
     <string name="base_url_required">Pair this device first.</string>
     <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
     <string name="role_saved">Device role updated.</string>
