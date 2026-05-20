@@ -779,14 +779,42 @@
                             android:scaleType="centerInside"
                             android:src="@drawable/cyber_mzazi_logo" />
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="18dp"
                             android:layout_weight="1"
-                            android:text="@string/child_dashboard_header"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dashboard_brand_label"
+                                android:textColor="@color/cyber_mzazi_seed"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/child_dashboard_title"
+                                android:textColor="@color/cyber_mzazi_text"
+                                android:textSize="28sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/childTopStatusBadgeText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_soft_panel"
+                            android:paddingStart="14dp"
+                            android:paddingTop="6dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/child_badge_online_synced"
                             android:textColor="@color/cyber_mzazi_seed"
-                            android:textSize="26sp"
+                            android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -800,6 +828,14 @@
                         android:textSize="34sp"
                         android:textStyle="bold" />
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/child_dashboard_intro"
+                        android:textColor="@color/cyber_mzazi_muted"
+                        android:textSize="15sp" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -808,22 +844,135 @@
                         android:orientation="vertical"
                         android:padding="22dp">
 
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/todays_setup"
+                                android:textColor="@color/cyber_mzazi_text"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/childSetupProgressText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/cyber_mzazi_text"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ProgressBar
+                            android:id="@+id/childSetupProgressBar"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="14dp"
+                            android:max="4"
+                            android:progress="0"
+                            android:progressTint="@color/cyber_mzazi_seed"
+                            android:progressBackgroundTint="@color/cyber_mzazi_line" />
+
                         <TextView
                             android:id="@+id/childSetupStatusText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/child_setup_status_placeholder"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/childPairingChecklistText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/childNotificationChecklistText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:textColor="@color/cyber_mzazi_text"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/childFiltersChecklistText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:textColor="@color/cyber_mzazi_muted"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/childAccountChecklistText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
                             android:textColor="@color/cyber_mzazi_muted"
                             android:textSize="15sp" />
                     </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="26dp"
+                        android:text="@string/status_nav"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/childConnectionCardText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="18dp"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/childNotificationCardText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="18dp"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/childSyncCardText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="18dp"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/childFiltersCardText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="18dp"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="15sp" />
 
                     <Button
                         android:id="@+id/goCaptureChildButton"
                         style="@style/CyberDangerButton"
                         android:layout_width="match_parent"
                         android:layout_height="64dp"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="22dp"
                         android:text="@string/report_message" />
 
                     <LinearLayout
@@ -850,44 +999,6 @@
                             android:text="@string/request_logout" />
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/childConnectionCardText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_soft_panel"
-                            android:padding="16dp"
-                            android:text="@string/child_connection_placeholder"
-                            android:textColor="@color/cyber_mzazi_text"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/childNotificationCardText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_soft_panel"
-                            android:padding="16dp"
-                            android:text="@string/child_notification_placeholder"
-                            android:textColor="@color/cyber_mzazi_text"
-                            android:textSize="15sp" />
-
-                        <TextView
-                            android:id="@+id/childSyncCardText"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_soft_panel"
-                            android:padding="16dp"
-                            android:text="@string/child_sync_placeholder"
-                            android:textColor="@color/cyber_mzazi_text"
-                            android:textSize="15sp" />
-                    </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout

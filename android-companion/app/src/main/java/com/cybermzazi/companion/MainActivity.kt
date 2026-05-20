@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -57,9 +58,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parentRecentMessagesText: TextView
     private lateinit var parentDeviceStatusText: TextView
     private lateinit var childGreetingText: TextView
+    private lateinit var childTopStatusBadgeText: TextView
+    private lateinit var childSetupProgressText: TextView
+    private lateinit var childSetupProgressBar: ProgressBar
+    private lateinit var childPairingChecklistText: TextView
+    private lateinit var childNotificationChecklistText: TextView
+    private lateinit var childFiltersChecklistText: TextView
+    private lateinit var childAccountChecklistText: TextView
     private lateinit var childConnectionCardText: TextView
     private lateinit var childNotificationCardText: TextView
     private lateinit var childSyncCardText: TextView
+    private lateinit var childFiltersCardText: TextView
     private lateinit var registerFamilyNameInput: EditText
     private lateinit var registerParentNameInput: EditText
     private lateinit var registerParentContactInput: EditText
@@ -142,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     private var currentSection = 0
     private var isPopulatingFields = false
     private var childSignedIn = false
+    private var latestChildLogoutStatus: String? = null
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -190,9 +200,17 @@ class MainActivity : AppCompatActivity() {
         parentRecentMessagesText = findViewById(R.id.parentRecentMessagesText)
         parentDeviceStatusText = findViewById(R.id.parentDeviceStatusText)
         childGreetingText = findViewById(R.id.childGreetingText)
+        childTopStatusBadgeText = findViewById(R.id.childTopStatusBadgeText)
+        childSetupProgressText = findViewById(R.id.childSetupProgressText)
+        childSetupProgressBar = findViewById(R.id.childSetupProgressBar)
+        childPairingChecklistText = findViewById(R.id.childPairingChecklistText)
+        childNotificationChecklistText = findViewById(R.id.childNotificationChecklistText)
+        childFiltersChecklistText = findViewById(R.id.childFiltersChecklistText)
+        childAccountChecklistText = findViewById(R.id.childAccountChecklistText)
         childConnectionCardText = findViewById(R.id.childConnectionCardText)
         childNotificationCardText = findViewById(R.id.childNotificationCardText)
         childSyncCardText = findViewById(R.id.childSyncCardText)
+        childFiltersCardText = findViewById(R.id.childFiltersCardText)
         registerFamilyNameInput = findViewById(R.id.registerFamilyNameInput)
         registerParentNameInput = findViewById(R.id.registerParentNameInput)
         registerParentContactInput = findViewById(R.id.registerParentContactInput)
@@ -570,10 +588,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun signOut() {
         if (childSignedIn) {
-            ParentApiClient.requestChildLogout(this) { _, message ->
+            ParentApiClient.requestChildLogout(this) { ok, message ->
                 runOnUiThread {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    childSetupStatusText.text = message
+                    if (ok) latestChildLogoutStatus = "pending"
                     updateChildDashboardCards()
                 }
             }
@@ -590,11 +608,17 @@ class MainActivity : AppCompatActivity() {
                 when (status) {
                     "approved" -> completeApprovedChildLogout()
                     "denied" -> {
-                        childSyncCardText.text = getString(R.string.child_logout_denied_card)
+                        latestChildLogoutStatus = "denied"
+                        updateChildDashboardCards()
                         childSetupStatusText.text = getString(R.string.child_logout_denied_status)
                     }
                     "pending" -> {
-                        childSyncCardText.text = getString(R.string.child_logout_pending_card)
+                        latestChildLogoutStatus = "pending"
+                        updateChildDashboardCards()
+                    }
+                    else -> {
+                        latestChildLogoutStatus = null
+                        updateChildDashboardCards()
                     }
                 }
             }
@@ -608,6 +632,7 @@ class MainActivity : AppCompatActivity() {
                     childSignedIn = false
                     Prefs.clearChildSession(this)
                     Prefs.clearParentSession(this)
+                    latestChildLogoutStatus = null
                     updateMenuAccess()
                     showSection(SECTION_HOME)
                     Toast.makeText(this, R.string.child_logout_approved_signed_out, Toast.LENGTH_SHORT).show()
@@ -841,22 +866,58 @@ class MainActivity : AppCompatActivity() {
         val deviceName = Prefs.getDeviceName(this).ifBlank { getString(R.string.this_phone) }
         val paired = tokenReady && Prefs.getDeviceName(this).isNotBlank()
         val notificationAccessReady = isNotificationListenerEnabled()
+        val allowedCount = FilterRules.normalizePackages(Prefs.getAllowedPackages(this)).size
+        val blockedCount = FilterRules.normalizePackages(Prefs.getBlockedPackages(this)).size
         val queueCount = NotificationQueueStore.getQueue(this).size
+        val accountLinked = childSignedIn
+        val filtersReady = true
+        val doneCount = listOf(paired, notificationAccessReady, filtersReady, accountLinked).count { it }
+
+        childTopStatusBadgeText.text = when {
+            !childSignedIn -> getString(R.string.child_badge_offline)
+            queueCount == 0 -> getString(R.string.child_badge_online_synced)
+            else -> getString(R.string.child_badge_online_sync_pending)
+        }
+        childSetupProgressText.text = getString(R.string.child_setup_done_count, doneCount, 4)
+        childSetupProgressBar.progress = doneCount
+        childPairingChecklistText.text = setupLine(
+            paired,
+            getString(R.string.child_setup_finish_pairing),
+            getString(R.string.child_setup_device_paired),
+        )
+        childNotificationChecklistText.text = setupLine(
+            notificationAccessReady,
+            getString(R.string.child_setup_turn_on_notifications),
+            getString(R.string.child_setup_notifications_enabled),
+        )
+        childFiltersChecklistText.text = setupLine(true, getString(R.string.child_setup_filters_synced))
+        childAccountChecklistText.text = setupLine(accountLinked, getString(R.string.child_setup_account_linked))
+
         childConnectionCardText.text = if (paired) {
-            getString(R.string.child_connection_card_paired, deviceName)
+            getString(R.string.child_connection_card_paired_rich, deviceName)
         } else {
-            getString(R.string.child_connection_card_not_paired)
+            getString(R.string.child_connection_card_not_paired_rich)
         }
         childNotificationCardText.text = if (notificationAccessReady) {
-            getString(R.string.child_notification_card_on)
+            getString(R.string.child_notification_card_on_rich)
         } else {
-            getString(R.string.child_notification_card_needed)
+            getString(R.string.child_notification_card_needed_rich)
         }
-        childSyncCardText.text = if (queueCount == 0) {
-            getString(R.string.child_sync_card_clear)
+        childSyncCardText.text = when (latestChildLogoutStatus) {
+            "pending" -> getString(R.string.child_logout_pending_card_rich)
+            "denied" -> getString(R.string.child_logout_denied_card_rich)
+            else -> getString(R.string.child_logout_no_request_card_rich)
+        }
+        childFiltersCardText.text = if (allowedCount > 0 || blockedCount > 0) {
+            getString(R.string.child_filters_card_custom, allowedCount, blockedCount)
         } else {
-            getString(R.string.child_sync_card_waiting, queueCount)
+            getString(R.string.child_filters_card_default)
         }
+    }
+
+    private fun setupLine(done: Boolean, label: String, doneLabel: String = label): String {
+        val marker = if (done) "[OK]" else "[!]"
+        return "$marker ${if (done) doneLabel else label}"
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
