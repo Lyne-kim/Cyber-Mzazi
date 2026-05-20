@@ -12,6 +12,9 @@ import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -95,6 +98,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuLog: TextView
     private lateinit var menuProfile: TextView
     private lateinit var menuPassword: TextView
+    private lateinit var menuAlertsFull: TextView
+    private lateinit var menuChildProfileFull: TextView
+    private lateinit var menuFamilyHubFull: TextView
+    private lateinit var menuResourcesFull: TextView
+    private lateinit var menuPrivacyFull: TextView
+    private lateinit var menuInsightsFull: TextView
+    private lateinit var menuNotificationLogFull: TextView
+    private lateinit var menuTrustedContactsFull: TextView
+    private lateinit var menuHelpFull: TextView
+    private lateinit var menuChildSafetyFull: TextView
+    private lateinit var menuChildReportFull: TextView
     private lateinit var menuLogout: TextView
 
     private lateinit var roleSection: View
@@ -111,6 +125,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childLoginSection: View
     private lateinit var profileSection: View
     private lateinit var passwordSection: View
+    private lateinit var webPortalSection: View
+    private lateinit var webPortalTitle: TextView
+    private lateinit var webPortalView: WebView
 
     private lateinit var openParentLoginButton: Button
     private lateinit var openRegisterFamilyButton: Button
@@ -228,6 +245,17 @@ class MainActivity : AppCompatActivity() {
         menuLog = findViewById(R.id.menuLog)
         menuProfile = findViewById(R.id.menuProfile)
         menuPassword = findViewById(R.id.menuPassword)
+        menuAlertsFull = findViewById(R.id.menuAlertsFull)
+        menuChildProfileFull = findViewById(R.id.menuChildProfileFull)
+        menuFamilyHubFull = findViewById(R.id.menuFamilyHubFull)
+        menuResourcesFull = findViewById(R.id.menuResourcesFull)
+        menuPrivacyFull = findViewById(R.id.menuPrivacyFull)
+        menuInsightsFull = findViewById(R.id.menuInsightsFull)
+        menuNotificationLogFull = findViewById(R.id.menuNotificationLogFull)
+        menuTrustedContactsFull = findViewById(R.id.menuTrustedContactsFull)
+        menuHelpFull = findViewById(R.id.menuHelpFull)
+        menuChildSafetyFull = findViewById(R.id.menuChildSafetyFull)
+        menuChildReportFull = findViewById(R.id.menuChildReportFull)
         menuLogout = findViewById(R.id.menuLogout)
 
         roleSection = findViewById(R.id.roleSection)
@@ -244,6 +272,12 @@ class MainActivity : AppCompatActivity() {
         childLoginSection = findViewById(R.id.childLoginSection)
         profileSection = findViewById(R.id.profileSection)
         passwordSection = findViewById(R.id.passwordSection)
+        webPortalSection = findViewById(R.id.webPortalSection)
+        webPortalTitle = findViewById(R.id.webPortalTitle)
+        webPortalView = findViewById(R.id.webPortalView)
+        webPortalView.webViewClient = WebViewClient()
+        webPortalView.settings.javaScriptEnabled = true
+        webPortalView.settings.domStorageEnabled = true
 
         openParentLoginButton = findViewById(R.id.openParentLoginButton)
         openRegisterFamilyButton = findViewById(R.id.openRegisterFamilyButton)
@@ -297,6 +331,17 @@ class MainActivity : AppCompatActivity() {
         menuLog.setOnClickListener { showSection(SECTION_LOGS) }
         menuProfile.setOnClickListener { showSection(SECTION_PROFILE) }
         menuPassword.setOnClickListener { showSection(SECTION_PASSWORD) }
+        menuAlertsFull.setOnClickListener { openWebPortal("/parent/alerts", getString(R.string.alerts_full_nav)) }
+        menuChildProfileFull.setOnClickListener { openWebPortal("/parent/child-profile", getString(R.string.child_profile_nav)) }
+        menuFamilyHubFull.setOnClickListener { openWebPortal("/parent/family-hub", getString(R.string.family_hub_nav)) }
+        menuResourcesFull.setOnClickListener { openWebPortal("/parent/safety-resources", getString(R.string.resources_nav)) }
+        menuPrivacyFull.setOnClickListener { openWebPortal("/parent/privacy-center", getString(R.string.privacy_nav)) }
+        menuInsightsFull.setOnClickListener { openWebPortal("/parent/insights", getString(R.string.insights_nav)) }
+        menuNotificationLogFull.setOnClickListener { openWebPortal("/parent/notification-log", getString(R.string.notification_log_nav)) }
+        menuTrustedContactsFull.setOnClickListener { openWebPortal("/parent/trusted-contacts", getString(R.string.trusted_contacts_nav)) }
+        menuHelpFull.setOnClickListener { openWebPortal("/parent/help-support", getString(R.string.help_support_nav)) }
+        menuChildSafetyFull.setOnClickListener { openWebPortal("/child/my-safety", getString(R.string.my_safety_nav)) }
+        menuChildReportFull.setOnClickListener { openWebPortal("/child/report", getString(R.string.report_nav)) }
         menuLogout.setOnClickListener { signOut() }
 
         openParentLoginButton.setOnClickListener {
@@ -511,6 +556,17 @@ class MainActivity : AppCompatActivity() {
             menuLog,
             menuProfile,
             menuPassword,
+            menuAlertsFull,
+            menuChildProfileFull,
+            menuFamilyHubFull,
+            menuResourcesFull,
+            menuPrivacyFull,
+            menuInsightsFull,
+            menuNotificationLogFull,
+            menuTrustedContactsFull,
+            menuHelpFull,
+            menuChildSafetyFull,
+            menuChildReportFull,
             menuLogout,
         )
         menuItems.forEach { it.visibility = View.GONE }
@@ -533,11 +589,22 @@ class MainActivity : AppCompatActivity() {
         if (parentSignedIn) {
             menuQr.visibility = View.VISIBLE
             menuLog.visibility = View.VISIBLE
+            menuAlertsFull.visibility = View.VISIBLE
+            menuChildProfileFull.visibility = View.VISIBLE
+            menuFamilyHubFull.visibility = View.VISIBLE
+            menuResourcesFull.visibility = View.VISIBLE
+            menuPrivacyFull.visibility = View.VISIBLE
+            menuInsightsFull.visibility = View.VISIBLE
+            menuNotificationLogFull.visibility = View.VISIBLE
+            menuTrustedContactsFull.visibility = View.VISIBLE
+            menuHelpFull.visibility = View.VISIBLE
         }
         if (childSignedIn) {
             menuQr.visibility = View.VISIBLE
             menuCapture.visibility = View.VISIBLE
             menuFilters.visibility = View.VISIBLE
+            menuChildSafetyFull.visibility = View.VISIBLE
+            menuChildReportFull.visibility = View.VISIBLE
         }
     }
 
@@ -671,6 +738,7 @@ class MainActivity : AppCompatActivity() {
             position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
             position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
             position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
+            position == SECTION_WEB_PORTAL && !isSignedIn() -> SECTION_HOME
             position == SECTION_QR && childSignedIn -> SECTION_QR
             position == SECTION_QR && !parentSignedIn && !childSignedIn -> SECTION_HOME
             !isChildRole && (position == SECTION_CAPTURE || position == SECTION_FILTERS) -> SECTION_HOME
@@ -696,6 +764,7 @@ class MainActivity : AppCompatActivity() {
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
         profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
         passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
+        webPortalSection.visibility = if (resolvedPosition == SECTION_WEB_PORTAL) View.VISIBLE else View.GONE
         if (resolvedPosition == SECTION_QR) renderLatestPairingQr()
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
@@ -713,6 +782,17 @@ class MainActivity : AppCompatActivity() {
         updateDrawerItem(menuLog, position == SECTION_LOGS)
         updateDrawerItem(menuProfile, position == SECTION_PROFILE)
         updateDrawerItem(menuPassword, position == SECTION_PASSWORD)
+        updateDrawerItem(menuAlertsFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuChildProfileFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuFamilyHubFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuResourcesFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuPrivacyFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuInsightsFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuNotificationLogFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuTrustedContactsFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuHelpFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuChildSafetyFull, position == SECTION_WEB_PORTAL)
+        updateDrawerItem(menuChildReportFull, position == SECTION_WEB_PORTAL)
         updateDrawerItem(menuLogout, false)
     }
 
@@ -805,6 +885,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$baseUrl$path")))
+    }
+
+    private fun openWebPortal(path: String, title: String) {
+        val baseUrl = Prefs.getBaseUrl(this).trim().trimEnd('/')
+        val cookie = Prefs.getParentSessionCookie(this)
+        if (baseUrl.isBlank() || cookie.isBlank()) {
+            Toast.makeText(this, R.string.portal_connection_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        webPortalTitle.text = title
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setCookie(baseUrl, cookie)
+        CookieManager.getInstance().flush()
+        webPortalView.loadUrl("$baseUrl$path")
+        showSection(SECTION_WEB_PORTAL)
     }
 
     private fun signInParent() {
@@ -1149,5 +1244,6 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_PARENT_DASHBOARD = 11
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
+        private const val SECTION_WEB_PORTAL = 14
     }
 }

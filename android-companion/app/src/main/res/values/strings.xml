@@ -223,6 +223,19 @@
     <string name="status_nav">Status</string>
     <string name="log_nav">Logs</string>
     <string name="menu_title">Menu</string>
+    <string name="website_portal">Website feature</string>
+    <string name="alerts_full_nav">Full alerts</string>
+    <string name="child_profile_nav">Child profile</string>
+    <string name="family_hub_nav">Family hub</string>
+    <string name="resources_nav">Safety resources</string>
+    <string name="privacy_nav">Privacy center</string>
+    <string name="insights_nav">Insights</string>
+    <string name="notification_log_nav">Notification log</string>
+    <string name="trusted_contacts_nav">Trusted contacts</string>
+    <string name="help_support_nav">Help &amp; support</string>
+    <string name="my_safety_nav">My safety</string>
+    <string name="report_nav">Report</string>
+    <string name="portal_connection_required">Sign in and pair the app before opening this feature.</string>
     <string-array name="feature_menu_options">
         <item>Pair this device</item>
         <item>Turn on capture</item>

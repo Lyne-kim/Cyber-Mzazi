@@ -1404,18 +1404,44 @@
                         android:text="@string/no_recent_logs"
                         android:textColor="@color/cyber_mzazi_text" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/webPortalSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/webPortalTitle"
+                        style="@style/CyberSectionTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/website_portal" />
+
+                    <WebView
+                        android:id="@+id/webPortalView"
+                        android:layout_width="match_parent"
+                        android:layout_height="720dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@android:color/white" />
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
-    <LinearLayout
+    <ScrollView
         android:id="@+id/sidebar"
         android:layout_width="260dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="@color/cyber_mzazi_seed"
-        android:orientation="vertical"
         android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
         <ImageView
             android:layout_width="96dp"
@@ -1431,10 +1457,22 @@
         <TextView android:id="@+id/menuSettings" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_nav" />
         <TextView android:id="@+id/menuProfile" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/edit_profile" />
         <TextView android:id="@+id/menuPassword" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/change_password" />
+        <TextView android:id="@+id/menuAlertsFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/alerts_full_nav" />
+        <TextView android:id="@+id/menuChildProfileFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/child_profile_nav" />
+        <TextView android:id="@+id/menuFamilyHubFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/family_hub_nav" />
+        <TextView android:id="@+id/menuResourcesFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/resources_nav" />
+        <TextView android:id="@+id/menuPrivacyFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/privacy_nav" />
+        <TextView android:id="@+id/menuInsightsFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/insights_nav" />
+        <TextView android:id="@+id/menuNotificationLogFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/notification_log_nav" />
+        <TextView android:id="@+id/menuTrustedContactsFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/trusted_contacts_nav" />
+        <TextView android:id="@+id/menuHelpFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/help_support_nav" />
+        <TextView android:id="@+id/menuChildSafetyFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/my_safety_nav" />
+        <TextView android:id="@+id/menuChildReportFull" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/report_nav" />
         <TextView android:id="@+id/menuCapture" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/capture_nav" />
         <TextView android:id="@+id/menuFilters" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/filters_nav" />
         <TextView android:id="@+id/menuStatus" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/status_nav" />
         <TextView android:id="@+id/menuLog" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/log_nav" />
-        <TextView android:id="@+id/menuLogout" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sign_out" />
-    </LinearLayout>
+            <TextView android:id="@+id/menuLogout" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sign_out" />
+        </LinearLayout>
+    </ScrollView>
 </androidx.drawerlayout.widget.DrawerLayout>
