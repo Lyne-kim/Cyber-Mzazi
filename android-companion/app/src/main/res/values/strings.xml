@@ -9,7 +9,8 @@
     <string name="role_child">Child</string>
     <string name="role_selection_title">Choose who uses this phone</string>
     <string name="homepage_title">Welcome to Cyber Mzazi</string>
-    <string name="homepage_copy">Sign in as a parent or child, or create a family account before setting up monitoring.</string>
+    <string name="homepage_copy">Sign in with your child account to connect this phone to Cyber Mzazi.</string>
+    <string name="child_only_app_notice">This APK is for child devices only. Parent features stay on the website.</string>
     <string name="register_family_account">Create family account</string>
     <string name="create_family_account">Create account</string>
     <string name="child_sign_in">Child sign in</string>

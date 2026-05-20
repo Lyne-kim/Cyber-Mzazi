@@ -12,9 +12,6 @@ import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.webkit.CookieManager
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -98,17 +95,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuLog: TextView
     private lateinit var menuProfile: TextView
     private lateinit var menuPassword: TextView
-    private lateinit var menuAlertsFull: TextView
-    private lateinit var menuChildProfileFull: TextView
-    private lateinit var menuFamilyHubFull: TextView
-    private lateinit var menuResourcesFull: TextView
-    private lateinit var menuPrivacyFull: TextView
-    private lateinit var menuInsightsFull: TextView
-    private lateinit var menuNotificationLogFull: TextView
-    private lateinit var menuTrustedContactsFull: TextView
-    private lateinit var menuHelpFull: TextView
-    private lateinit var menuChildSafetyFull: TextView
-    private lateinit var menuChildReportFull: TextView
     private lateinit var menuLogout: TextView
 
     private lateinit var roleSection: View
@@ -125,12 +111,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childLoginSection: View
     private lateinit var profileSection: View
     private lateinit var passwordSection: View
-    private lateinit var webPortalSection: View
-    private lateinit var webPortalTitle: TextView
-    private lateinit var webPortalView: WebView
 
-    private lateinit var openParentLoginButton: Button
-    private lateinit var openRegisterFamilyButton: Button
     private lateinit var openChildLoginButton: Button
     private lateinit var registerFamilyButton: Button
     private lateinit var childLoginButton: Button
@@ -157,7 +138,6 @@ class MainActivity : AppCompatActivity() {
 
     private var currentSection = 0
     private var isPopulatingFields = false
-    private var parentSignedIn = false
     private var childSignedIn = false
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
@@ -245,17 +225,6 @@ class MainActivity : AppCompatActivity() {
         menuLog = findViewById(R.id.menuLog)
         menuProfile = findViewById(R.id.menuProfile)
         menuPassword = findViewById(R.id.menuPassword)
-        menuAlertsFull = findViewById(R.id.menuAlertsFull)
-        menuChildProfileFull = findViewById(R.id.menuChildProfileFull)
-        menuFamilyHubFull = findViewById(R.id.menuFamilyHubFull)
-        menuResourcesFull = findViewById(R.id.menuResourcesFull)
-        menuPrivacyFull = findViewById(R.id.menuPrivacyFull)
-        menuInsightsFull = findViewById(R.id.menuInsightsFull)
-        menuNotificationLogFull = findViewById(R.id.menuNotificationLogFull)
-        menuTrustedContactsFull = findViewById(R.id.menuTrustedContactsFull)
-        menuHelpFull = findViewById(R.id.menuHelpFull)
-        menuChildSafetyFull = findViewById(R.id.menuChildSafetyFull)
-        menuChildReportFull = findViewById(R.id.menuChildReportFull)
         menuLogout = findViewById(R.id.menuLogout)
 
         roleSection = findViewById(R.id.roleSection)
@@ -272,15 +241,6 @@ class MainActivity : AppCompatActivity() {
         childLoginSection = findViewById(R.id.childLoginSection)
         profileSection = findViewById(R.id.profileSection)
         passwordSection = findViewById(R.id.passwordSection)
-        webPortalSection = findViewById(R.id.webPortalSection)
-        webPortalTitle = findViewById(R.id.webPortalTitle)
-        webPortalView = findViewById(R.id.webPortalView)
-        webPortalView.webViewClient = WebViewClient()
-        webPortalView.settings.javaScriptEnabled = true
-        webPortalView.settings.domStorageEnabled = true
-
-        openParentLoginButton = findViewById(R.id.openParentLoginButton)
-        openRegisterFamilyButton = findViewById(R.id.openRegisterFamilyButton)
         openChildLoginButton = findViewById(R.id.openChildLoginButton)
         registerFamilyButton = findViewById(R.id.registerFamilyButton)
         childLoginButton = findViewById(R.id.childLoginButton)
@@ -317,12 +277,11 @@ class MainActivity : AppCompatActivity() {
 
         menuHome.setOnClickListener {
             when {
-                parentSignedIn -> showSection(SECTION_PARENT_DASHBOARD)
                 childSignedIn -> showSection(SECTION_CHILD_ACCOUNT)
                 else -> showSection(SECTION_HOME)
             }
         }
-        menuAuth.setOnClickListener { showSection(SECTION_AUTH) }
+        menuAuth.setOnClickListener { showSection(SECTION_CHILD_AUTH) }
         menuQr.setOnClickListener { showSection(SECTION_QR) }
         menuSettings.setOnClickListener { showSection(SECTION_SETTINGS) }
         menuCapture.setOnClickListener { showSection(SECTION_CAPTURE) }
@@ -331,33 +290,15 @@ class MainActivity : AppCompatActivity() {
         menuLog.setOnClickListener { showSection(SECTION_LOGS) }
         menuProfile.setOnClickListener { showSection(SECTION_PROFILE) }
         menuPassword.setOnClickListener { showSection(SECTION_PASSWORD) }
-        menuAlertsFull.setOnClickListener { openWebPortal("/parent/alerts", getString(R.string.alerts_full_nav)) }
-        menuChildProfileFull.setOnClickListener { openWebPortal("/parent/child-profile", getString(R.string.child_profile_nav)) }
-        menuFamilyHubFull.setOnClickListener { openWebPortal("/parent/family-hub", getString(R.string.family_hub_nav)) }
-        menuResourcesFull.setOnClickListener { openWebPortal("/parent/safety-resources", getString(R.string.resources_nav)) }
-        menuPrivacyFull.setOnClickListener { openWebPortal("/parent/privacy-center", getString(R.string.privacy_nav)) }
-        menuInsightsFull.setOnClickListener { openWebPortal("/parent/insights", getString(R.string.insights_nav)) }
-        menuNotificationLogFull.setOnClickListener { openWebPortal("/parent/notification-log", getString(R.string.notification_log_nav)) }
-        menuTrustedContactsFull.setOnClickListener { openWebPortal("/parent/trusted-contacts", getString(R.string.trusted_contacts_nav)) }
-        menuHelpFull.setOnClickListener { openWebPortal("/parent/help-support", getString(R.string.help_support_nav)) }
-        menuChildSafetyFull.setOnClickListener { openWebPortal("/child/my-safety", getString(R.string.my_safety_nav)) }
-        menuChildReportFull.setOnClickListener { openWebPortal("/child/report", getString(R.string.report_nav)) }
         menuLogout.setOnClickListener { signOut() }
-
-        openParentLoginButton.setOnClickListener {
-            setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
-            showSection(SECTION_AUTH)
-        }
-        openRegisterFamilyButton.setOnClickListener { showSection(SECTION_REGISTER) }
         openChildLoginButton.setOnClickListener { showSection(SECTION_CHILD_AUTH) }
         findViewById<Button>(R.id.registerBackToLoginButton).setOnClickListener {
-            setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
-            showSection(SECTION_AUTH)
+            showSection(SECTION_CHILD_AUTH)
         }
-        parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_PARENT) }
+        parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
         childRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
 
-        openParentDashboardButton.setOnClickListener { showSection(SECTION_PARENT_DASHBOARD) }
+        openParentDashboardButton.setOnClickListener { showSection(SECTION_CHILD_ACCOUNT) }
         findViewById<Button>(R.id.parentDashboardPairButton).setOnClickListener { showSection(SECTION_QR) }
         findViewById<Button>(R.id.parentDashboardSettingsButton).setOnClickListener { showSection(SECTION_SETTINGS) }
         openParentAlertsButton.setOnClickListener { openWebPath("/parent/alerts") }
@@ -457,6 +398,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         registerSettingsDirtyWatchers()
+        Prefs.setDeviceRole(this, Prefs.ROLE_CHILD)
         populateFields()
         updateRoleUi()
         showSection(SECTION_HOME)
@@ -505,34 +447,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateRoleUi() {
-        val isChildRole = Prefs.isChildRole(this)
         roleBadge.text = ""
         roleBadge.visibility = View.INVISIBLE
-        roleSummaryText.text = getString(if (isChildRole) R.string.role_child_copy else R.string.role_parent_copy)
-        captureRoleHint.text = getString(if (isChildRole) R.string.actions_section_copy else R.string.parent_mode_capture_disabled)
+        roleSummaryText.text = getString(R.string.role_child_copy)
+        captureRoleHint.text = getString(R.string.actions_section_copy)
 
-        setRoleButtonState(parentRoleButton, !isChildRole)
-        setRoleButtonState(childRoleButton, isChildRole)
+        setRoleButtonState(parentRoleButton, false)
+        setRoleButtonState(childRoleButton, true)
 
-        parentChildDeviceNameInput.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        createChildDeviceLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        copyPairingLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        sharePairingLinkButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        openChildDevicesButton.visibility = if (isChildRole) View.GONE else View.VISIBLE
-        scanQrButton.visibility = if (isChildRole) View.VISIBLE else View.GONE
+        parentChildDeviceNameInput.visibility = View.GONE
+        createChildDeviceLinkButton.visibility = View.GONE
+        copyPairingLinkButton.visibility = View.GONE
+        sharePairingLinkButton.visibility = View.GONE
+        openChildDevicesButton.visibility = View.GONE
+        scanQrButton.visibility = View.VISIBLE
         updateMenuAccess()
 
-        if (!isChildRole && (currentSection == SECTION_CAPTURE || currentSection == SECTION_FILTERS)) {
-            currentSection = SECTION_HOME
-        }
-        if (isChildRole && currentSection == SECTION_AUTH) {
+        if (currentSection == SECTION_AUTH || currentSection == SECTION_REGISTER || currentSection == SECTION_PARENT_DASHBOARD) {
             currentSection = SECTION_HOME
         }
         syncDrawerState(currentSection)
         showSection(currentSection)
     }
 
-    private fun isSignedIn(): Boolean = parentSignedIn || childSignedIn
+    private fun isSignedIn(): Boolean = childSignedIn
 
     private fun updateMenuAccess() {
         val signedIn = isSignedIn()
@@ -556,69 +494,37 @@ class MainActivity : AppCompatActivity() {
             menuLog,
             menuProfile,
             menuPassword,
-            menuAlertsFull,
-            menuChildProfileFull,
-            menuFamilyHubFull,
-            menuResourcesFull,
-            menuPrivacyFull,
-            menuInsightsFull,
-            menuNotificationLogFull,
-            menuTrustedContactsFull,
-            menuHelpFull,
-            menuChildSafetyFull,
-            menuChildReportFull,
             menuLogout,
         )
         menuItems.forEach { it.visibility = View.GONE }
-        val parentOnlyAfterLogin = if (parentSignedIn) View.VISIBLE else View.GONE
-        openParentDashboardButton.visibility = parentOnlyAfterLogin
-        openParentAlertsButton.visibility = parentOnlyAfterLogin
-        refreshParentAlertsButton.visibility = parentOnlyAfterLogin
-        reviewLatestSafeButton.visibility = parentOnlyAfterLogin
-        approveLogoutButton.visibility = parentOnlyAfterLogin
-        denyLogoutButton.visibility = parentOnlyAfterLogin
+        openParentDashboardButton.visibility = View.GONE
+        openParentAlertsButton.visibility = View.GONE
+        refreshParentAlertsButton.visibility = View.GONE
+        reviewLatestSafeButton.visibility = View.GONE
+        approveLogoutButton.visibility = View.GONE
+        denyLogoutButton.visibility = View.GONE
         if (!signedIn) return
 
         menuHome.visibility = View.VISIBLE
+        menuQr.visibility = View.VISIBLE
         menuSettings.visibility = View.VISIBLE
+        menuCapture.visibility = View.VISIBLE
+        menuFilters.visibility = View.VISIBLE
         menuProfile.visibility = View.VISIBLE
         menuPassword.visibility = View.VISIBLE
         menuLogout.visibility = View.VISIBLE
         menuStatus.visibility = View.VISIBLE
-
-        if (parentSignedIn) {
-            menuQr.visibility = View.VISIBLE
-            menuLog.visibility = View.VISIBLE
-            menuAlertsFull.visibility = View.VISIBLE
-            menuChildProfileFull.visibility = View.VISIBLE
-            menuFamilyHubFull.visibility = View.VISIBLE
-            menuResourcesFull.visibility = View.VISIBLE
-            menuPrivacyFull.visibility = View.VISIBLE
-            menuInsightsFull.visibility = View.VISIBLE
-            menuNotificationLogFull.visibility = View.VISIBLE
-            menuTrustedContactsFull.visibility = View.VISIBLE
-            menuHelpFull.visibility = View.VISIBLE
-        }
-        if (childSignedIn) {
-            menuQr.visibility = View.VISIBLE
-            menuCapture.visibility = View.VISIBLE
-            menuFilters.visibility = View.VISIBLE
-            menuChildSafetyFull.visibility = View.VISIBLE
-            menuChildReportFull.visibility = View.VISIBLE
-        }
+        menuLog.visibility = View.VISIBLE
     }
 
     private fun updateTopNavigation() {
-        val onHomeLikeScreen = currentSection == SECTION_HOME ||
-            currentSection == SECTION_PARENT_DASHBOARD ||
-            currentSection == SECTION_CHILD_ACCOUNT
+        val onHomeLikeScreen = currentSection == SECTION_HOME || currentSection == SECTION_CHILD_ACCOUNT
         backButton.visibility = if (!onHomeLikeScreen) View.VISIBLE else View.GONE
         menuToggle.visibility = if (isSignedIn() && onHomeLikeScreen) View.VISIBLE else View.INVISIBLE
     }
 
     private fun navigateBack() {
         when {
-            parentSignedIn -> showSection(SECTION_PARENT_DASHBOARD)
             childSignedIn -> showSection(SECTION_CHILD_ACCOUNT)
             currentSection == SECTION_REGISTER || currentSection == SECTION_CHILD_AUTH -> showSection(SECTION_HOME)
             else -> showSection(SECTION_HOME)
@@ -627,7 +533,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun signOut() {
         if (childSignedIn) {
-            ParentApiClient.requestChildLogout(this) { ok, message ->
+            ParentApiClient.requestChildLogout(this) { _, message ->
                 runOnUiThread {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                     childSetupStatusText.text = message
@@ -635,18 +541,7 @@ class MainActivity : AppCompatActivity() {
             }
             return
         }
-        ParentApiClient.logout(this) { ok, message ->
-            runOnUiThread {
-                if (ok) {
-                    parentSignedIn = false
-                    childSignedIn = false
-                    Prefs.clearParentSession(this)
-                    updateMenuAccess()
-                    showSection(SECTION_HOME)
-                }
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            }
-        }
+        showSection(SECTION_HOME)
     }
 
     private fun saveProfile() {
@@ -660,7 +555,6 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 if (ok) {
-                    if (parentSignedIn) parentGreetingText.text = getString(R.string.parent_greeting_named, name)
                     if (childSignedIn) childGreetingText.text = getString(R.string.child_greeting_live, name)
                 }
             }
@@ -732,39 +626,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSection(position: Int) {
-        val isChildRole = Prefs.isChildRole(this)
         val resolvedPosition = when {
-            position == SECTION_PARENT_DASHBOARD && !parentSignedIn -> SECTION_HOME
+            position == SECTION_AUTH -> SECTION_CHILD_AUTH
+            position == SECTION_REGISTER -> SECTION_HOME
+            position == SECTION_PARENT_DASHBOARD -> SECTION_HOME
             position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
             position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
             position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
-            position == SECTION_WEB_PORTAL && !isSignedIn() -> SECTION_HOME
             position == SECTION_QR && childSignedIn -> SECTION_QR
-            position == SECTION_QR && !parentSignedIn && !childSignedIn -> SECTION_HOME
-            !isChildRole && (position == SECTION_CAPTURE || position == SECTION_FILTERS) -> SECTION_HOME
-            isChildRole && position == SECTION_AUTH -> SECTION_CHILD_AUTH
+            position == SECTION_QR && !childSignedIn -> SECTION_HOME
+            (position == SECTION_CAPTURE || position == SECTION_FILTERS) && !childSignedIn -> SECTION_HOME
+            (position == SECTION_STATUS || position == SECTION_LOGS || position == SECTION_SETTINGS) && !childSignedIn -> SECTION_HOME
             else -> position
         }
         currentSection = resolvedPosition
 
         roleSection.visibility = if (resolvedPosition == SECTION_HOME) View.VISIBLE else View.GONE
-        parentHomeSection.visibility =
-            if (resolvedPosition == SECTION_AUTH && Prefs.isParentRole(this)) View.VISIBLE else View.GONE
-        parentDashboardSection.visibility =
-            if (resolvedPosition == SECTION_PARENT_DASHBOARD && Prefs.isParentRole(this)) View.VISIBLE else View.GONE
+        parentHomeSection.visibility = View.GONE
+        parentDashboardSection.visibility = View.GONE
         childHomeSection.visibility =
-            if (resolvedPosition == SECTION_CHILD_ACCOUNT && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
-        registerFamilySection.visibility = if (resolvedPosition == SECTION_REGISTER) View.VISIBLE else View.GONE
+            if (resolvedPosition == SECTION_CHILD_ACCOUNT) View.VISIBLE else View.GONE
+        registerFamilySection.visibility = View.GONE
         childLoginSection.visibility = if (resolvedPosition == SECTION_CHILD_AUTH) View.VISIBLE else View.GONE
         qrSection.visibility = if (resolvedPosition == SECTION_QR) View.VISIBLE else View.GONE
         settingsSection.visibility = if (resolvedPosition == SECTION_SETTINGS) View.VISIBLE else View.GONE
-        actionsSection.visibility = if (resolvedPosition == SECTION_CAPTURE && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
-        filtersSection.visibility = if (resolvedPosition == SECTION_FILTERS && Prefs.isChildRole(this)) View.VISIBLE else View.GONE
+        actionsSection.visibility = if (resolvedPosition == SECTION_CAPTURE) View.VISIBLE else View.GONE
+        filtersSection.visibility = if (resolvedPosition == SECTION_FILTERS) View.VISIBLE else View.GONE
         statusSection.visibility = if (resolvedPosition == SECTION_STATUS) View.VISIBLE else View.GONE
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
         profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
         passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
-        webPortalSection.visibility = if (resolvedPosition == SECTION_WEB_PORTAL) View.VISIBLE else View.GONE
         if (resolvedPosition == SECTION_QR) renderLatestPairingQr()
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
@@ -772,8 +663,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun syncDrawerState(position: Int) {
-        updateDrawerItem(menuHome, position == SECTION_HOME || position == SECTION_PARENT_DASHBOARD || position == SECTION_CHILD_ACCOUNT)
-        updateDrawerItem(menuAuth, position == SECTION_AUTH)
+        updateDrawerItem(menuHome, position == SECTION_HOME || position == SECTION_CHILD_ACCOUNT)
+        updateDrawerItem(menuAuth, position == SECTION_CHILD_AUTH)
         updateDrawerItem(menuQr, position == SECTION_QR)
         updateDrawerItem(menuSettings, position == SECTION_SETTINGS)
         updateDrawerItem(menuCapture, position == SECTION_CAPTURE)
@@ -782,17 +673,6 @@ class MainActivity : AppCompatActivity() {
         updateDrawerItem(menuLog, position == SECTION_LOGS)
         updateDrawerItem(menuProfile, position == SECTION_PROFILE)
         updateDrawerItem(menuPassword, position == SECTION_PASSWORD)
-        updateDrawerItem(menuAlertsFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuChildProfileFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuFamilyHubFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuResourcesFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuPrivacyFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuInsightsFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuNotificationLogFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuTrustedContactsFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuHelpFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuChildSafetyFull, position == SECTION_WEB_PORTAL)
-        updateDrawerItem(menuChildReportFull, position == SECTION_WEB_PORTAL)
         updateDrawerItem(menuLogout, false)
     }
 
@@ -887,56 +767,9 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$baseUrl$path")))
     }
 
-    private fun openWebPortal(path: String, title: String) {
-        val baseUrl = Prefs.getBaseUrl(this).trim().trimEnd('/')
-        val cookie = Prefs.getParentSessionCookie(this)
-        if (baseUrl.isBlank() || cookie.isBlank()) {
-            Toast.makeText(this, R.string.portal_connection_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        webPortalTitle.text = title
-        CookieManager.getInstance().setAcceptCookie(true)
-        CookieManager.getInstance().setCookie(baseUrl, cookie)
-        CookieManager.getInstance().flush()
-        webPortalView.loadUrl("$baseUrl$path")
-        showSection(SECTION_WEB_PORTAL)
-    }
-
     private fun signInParent() {
-        val identifier = parentIdentifierInput.text.toString().trim()
-        val password = parentPasswordInput.text.toString()
-        if (identifier.isBlank() || password.isBlank()) {
-            Toast.makeText(this, R.string.parent_login_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        parentAlertSummaryText.text = getString(R.string.parent_signing_in)
-        parentLoginButton.isEnabled = false
-        ParentApiClient.login(this, identifier, password) { ok, message ->
-            runOnUiThread {
-                parentLoginButton.isEnabled = true
-                parentPasswordInput.text?.clear()
-                parentAlertSummaryText.text = message
-                Toast.makeText(
-                    this,
-                    if (ok) R.string.parent_sign_in_ok else R.string.parent_sign_in_failed,
-                    Toast.LENGTH_SHORT,
-                ).show()
-                if (ok) {
-                    parentSignedIn = true
-                    childSignedIn = false
-                    profileContactInput.setText(identifier)
-                    parentGreetingText.text = getString(R.string.parent_greeting_live)
-                    parentFamilyNameText.text = getString(R.string.parent_family_live)
-                    parentChildStatusText.text = getString(R.string.parent_child_live)
-                    parentAlertsWeekText.text = getString(R.string.parent_alerts_loading)
-                    parentRecentMessagesText.text = getString(R.string.parent_alerts_loading)
-                    parentDeviceStatusText.text = getString(R.string.parent_device_pairing_empty)
-                    updateMenuAccess()
-                    refreshParentAlerts()
-                    showSection(SECTION_PARENT_DASHBOARD)
-                }
-            }
-        }
+        Toast.makeText(this, R.string.child_only_app_notice, Toast.LENGTH_SHORT).show()
+        showSection(SECTION_CHILD_AUTH)
     }
 
     private fun registerFamilyAccount() {
@@ -978,11 +811,9 @@ class MainActivity : AppCompatActivity() {
                 registerFamilyStatusText.text = message
                 Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
                 if (ok) {
-                    parentIdentifierInput.setText(parentContact)
-                    parentSignedIn = false
                     childSignedIn = false
-                    setDeviceRole(Prefs.ROLE_PARENT, showHome = false)
-                    showSection(SECTION_AUTH)
+                    setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
+                    showSection(SECTION_CHILD_AUTH)
                 }
             }
         }
@@ -1010,7 +841,6 @@ class MainActivity : AppCompatActivity() {
                 ).show()
                 if (ok) {
                     childSignedIn = true
-                    parentSignedIn = false
                     profileNameInput.setText(childUsername)
                     profileContactInput.setText(parentContact)
                     childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
@@ -1244,6 +1074,5 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_PARENT_DASHBOARD = 11
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
-        private const val SECTION_WEB_PORTAL = 14
     }
 }
