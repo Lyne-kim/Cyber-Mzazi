@@ -49,7 +49,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parentPhoneCodeInput: EditText
     private lateinit var parentChildDeviceNameInput: EditText
     private lateinit var parentAlertSummaryText: TextView
-    private lateinit var parentCaptureStatusText: TextView
+    private lateinit var childStatusOverviewText: TextView
+    private lateinit var childStatusDeviceText: TextView
+    private lateinit var childStatusNotificationsText: TextView
+    private lateinit var childStatusLogoutText: TextView
+    private lateinit var childStatusFiltersText: TextView
+    private lateinit var childStatusSyncText: TextView
     private lateinit var childSetupStatusText: TextView
     private lateinit var parentGreetingText: TextView
     private lateinit var parentFamilyNameText: TextView
@@ -135,6 +140,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parentResendPhoneCodeButton: Button
     private lateinit var refreshParentAlertsButton: Button
     private lateinit var openParentNotificationSettingsButton: Button
+    private lateinit var statusPairDeviceButton: Button
     private lateinit var reviewLatestSafeButton: Button
     private lateinit var approveLogoutButton: Button
     private lateinit var denyLogoutButton: Button
@@ -191,7 +197,12 @@ class MainActivity : AppCompatActivity() {
         parentPhoneCodeInput = findViewById(R.id.parentPhoneCodeInput)
         parentChildDeviceNameInput = findViewById(R.id.parentChildDeviceNameInput)
         parentAlertSummaryText = findViewById(R.id.parentAlertSummaryText)
-        parentCaptureStatusText = findViewById(R.id.parentCaptureStatusText)
+        childStatusOverviewText = findViewById(R.id.childStatusOverviewText)
+        childStatusDeviceText = findViewById(R.id.childStatusDeviceText)
+        childStatusNotificationsText = findViewById(R.id.childStatusNotificationsText)
+        childStatusLogoutText = findViewById(R.id.childStatusLogoutText)
+        childStatusFiltersText = findViewById(R.id.childStatusFiltersText)
+        childStatusSyncText = findViewById(R.id.childStatusSyncText)
         childSetupStatusText = findViewById(R.id.childSetupStatusText)
         parentGreetingText = findViewById(R.id.parentGreetingText)
         parentFamilyNameText = findViewById(R.id.parentFamilyNameText)
@@ -276,6 +287,7 @@ class MainActivity : AppCompatActivity() {
         parentResendPhoneCodeButton = findViewById(R.id.parentResendPhoneCodeButton)
         refreshParentAlertsButton = findViewById(R.id.refreshParentAlertsButton)
         openParentNotificationSettingsButton = findViewById(R.id.openParentNotificationSettingsButton)
+        statusPairDeviceButton = findViewById(R.id.statusPairDeviceButton)
         reviewLatestSafeButton = findViewById(R.id.reviewLatestSafeButton)
         approveLogoutButton = findViewById(R.id.approveLogoutButton)
         denyLogoutButton = findViewById(R.id.denyLogoutButton)
@@ -336,6 +348,7 @@ class MainActivity : AppCompatActivity() {
         openParentNotificationSettingsButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
+        statusPairDeviceButton.setOnClickListener { showSection(SECTION_QR) }
         reviewLatestSafeButton.setOnClickListener {
             runParentAction { callback ->
                 ParentApiClient.reviewLatestFlaggedMessageAsSafe(this, callback)
@@ -459,7 +472,6 @@ class MainActivity : AppCompatActivity() {
                     recentLogText.text = RecentNotificationLog.render(this)
                     childSetupStatusText.text = buildChildSetupStatus()
                     updateChildDashboardCards()
-                    parentCaptureStatusText.text = buildParentCaptureStatus()
                 }
             }
         }
@@ -478,7 +490,6 @@ class MainActivity : AppCompatActivity() {
         recentLogText.text = RecentNotificationLog.render(this)
         childSetupStatusText.text = buildChildSetupStatus()
         updateChildDashboardCards()
-        parentCaptureStatusText.text = buildParentCaptureStatus()
         darkModeSwitch.isChecked = Prefs.isDarkMode(this)
         languageSwitch.isChecked = Prefs.getLanguage(this) == "sw"
         inAppSoundsSwitch.isChecked = Prefs.inAppSoundsEnabled(this)
@@ -820,14 +831,6 @@ class MainActivity : AppCompatActivity() {
             allowedPackagesInput.text.toString().trim() != Prefs.getAllowedPackages(this) ||
             blockedPackagesInput.text.toString().trim() != Prefs.getBlockedPackages(this)
 
-    private fun buildParentCaptureStatus(): String {
-        val notificationAccessEnabled = isNotificationListenerEnabled()
-        return if (notificationAccessEnabled) {
-            getString(R.string.parent_capture_status_enabled)
-        } else {
-            getString(R.string.parent_capture_status_disabled)
-        }
-    }
     private fun buildChildSetupStatus(): String {
         val tokenReady = Prefs.getDeviceToken(this).isNotBlank()
         val deviceNameReady = Prefs.getDeviceName(this).isNotBlank()
@@ -872,6 +875,16 @@ class MainActivity : AppCompatActivity() {
         val accountLinked = childSignedIn
         val filtersReady = true
         val doneCount = listOf(paired, notificationAccessReady, filtersReady, accountLinked).count { it }
+        val syncText = if (queueCount == 0) {
+            getString(R.string.child_sync_card_clear)
+        } else {
+            getString(R.string.child_sync_card_waiting, queueCount)
+        }
+        val logoutText = when (latestChildLogoutStatus) {
+            "pending" -> getString(R.string.child_logout_pending_card_rich)
+            "denied" -> getString(R.string.child_logout_denied_card_rich)
+            else -> getString(R.string.child_logout_no_request_card_rich)
+        }
 
         childTopStatusBadgeText.text = when {
             !childSignedIn -> getString(R.string.child_badge_offline)
@@ -903,16 +916,23 @@ class MainActivity : AppCompatActivity() {
         } else {
             getString(R.string.child_notification_card_needed_rich)
         }
-        childSyncCardText.text = when (latestChildLogoutStatus) {
-            "pending" -> getString(R.string.child_logout_pending_card_rich)
-            "denied" -> getString(R.string.child_logout_denied_card_rich)
-            else -> getString(R.string.child_logout_no_request_card_rich)
-        }
+        childSyncCardText.text = logoutText
         childFiltersCardText.text = if (allowedCount > 0 || blockedCount > 0) {
             getString(R.string.child_filters_card_custom, allowedCount, blockedCount)
         } else {
             getString(R.string.child_filters_card_default)
         }
+        childStatusOverviewText.text = getString(
+            R.string.child_status_overview,
+            doneCount,
+            4,
+            childTopStatusBadgeText.text,
+        )
+        childStatusDeviceText.text = childConnectionCardText.text
+        childStatusNotificationsText.text = childNotificationCardText.text
+        childStatusLogoutText.text = logoutText
+        childStatusFiltersText.text = childFiltersCardText.text
+        childStatusSyncText.text = syncText
     }
 
     private fun setupLine(done: Boolean, label: String, doneLabel: String = label): String {
@@ -1142,7 +1162,7 @@ class MainActivity : AppCompatActivity() {
                 statusText.text = message
                 recentLogText.text = RecentNotificationLog.render(this)
                 childSetupStatusText.text = buildChildSetupStatus()
-                parentCaptureStatusText.text = buildParentCaptureStatus()
+                updateChildDashboardCards()
                 Toast.makeText(
                     this,
                     if (ok) R.string.test_sent_ok else R.string.test_sent_failed,
@@ -1158,7 +1178,7 @@ class MainActivity : AppCompatActivity() {
                 statusText.text = message
                 recentLogText.text = RecentNotificationLog.render(this)
                 childSetupStatusText.text = buildChildSetupStatus()
-                parentCaptureStatusText.text = buildParentCaptureStatus()
+                updateChildDashboardCards()
                 Toast.makeText(
                     this,
                     if (ok) R.string.retry_queue_ok else R.string.retry_queue_partial,

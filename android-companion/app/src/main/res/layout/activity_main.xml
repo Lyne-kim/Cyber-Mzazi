@@ -1506,21 +1506,94 @@
                     android:visibility="gone">
 
                     <TextView
-                        android:id="@+id/parentCaptureStatusText"
+                        style="@style/CyberSectionTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:text="@string/status_section_title" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/status_section_copy"
+                        android:textColor="@color/cyber_mzazi_muted"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/childStatusOverviewText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
                         android:background="@drawable/bg_card"
                         android:padding="16dp"
-                        android:text="@string/parent_capture_status_disabled"
+                        android:text="@string/child_status_overview_placeholder"
+                        android:textColor="@color/cyber_mzazi_text" />
+
+                    <TextView
+                        android:id="@+id/childStatusDeviceText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/child_connection_card_not_paired_rich"
+                        android:textColor="@color/cyber_mzazi_text" />
+
+                    <TextView
+                        android:id="@+id/childStatusNotificationsText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/child_notification_card_needed_rich"
+                        android:textColor="@color/cyber_mzazi_text" />
+
+                    <TextView
+                        android:id="@+id/childStatusLogoutText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/child_logout_no_request_card_rich"
+                        android:textColor="@color/cyber_mzazi_text" />
+
+                    <TextView
+                        android:id="@+id/childStatusFiltersText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/child_filters_card_default"
+                        android:textColor="@color/cyber_mzazi_text" />
+
+                    <TextView
+                        android:id="@+id/childStatusSyncText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="16dp"
+                        android:text="@string/child_sync_card_clear"
                         android:textColor="@color/cyber_mzazi_text" />
 
                     <Button
                         android:id="@+id/openParentNotificationSettingsButton"
+                        style="@style/CyberOutlineButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/open_notification_access" />
+
+                    <Button
+                        android:id="@+id/statusPairDeviceButton"
                         style="@style/CyberPrimaryButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="@string/open_parent_notification_settings" />
+                        android:text="@string/go_pair_child" />
                 </LinearLayout>
 
                 <LinearLayout

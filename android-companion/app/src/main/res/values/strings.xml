@@ -198,7 +198,7 @@
     <string name="feature_selector_copy">Open one task at a time instead of scrolling through every setup card.</string>
     <string name="feature_selector_label">Feature menu</string>
     <string name="filters_section_copy">Use allow and block rules to limit which apps can be screened automatically.</string>
-    <string name="status_section_copy">See the most recent upload result before moving to the next step.</string>
+    <string name="status_section_copy">Check the child app setup, permissions, sync queue, and logout approval state.</string>
     <string name="log_section_copy">Recent captured notifications and upload outcomes appear here.</string>
     <string name="backend_url_label">Connection URL</string>
     <string name="token_label">Device token</string>
@@ -267,6 +267,9 @@
     <string name="capture_nav">Capture</string>
     <string name="filters_nav">Filters</string>
     <string name="status_nav">Status</string>
+    <string name="status_section_title">Live status</string>
+    <string name="child_status_overview_placeholder">Status will appear after sign-in.</string>
+    <string name="child_status_overview">Setup: %1$d of %2$d complete\n%3$s</string>
     <string name="log_nav">Logs</string>
     <string name="menu_title">Menu</string>
     <string name="website_portal">Website feature</string>
