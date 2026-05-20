@@ -1,0 +1,25 @@
+<resources>
+    <color name="cyber_mzazi_seed">#42D6D1</color>
+
+    <color name="cyber_mzazi_surface">#0B171A</color>
+    <color name="cyber_mzazi_surface_alt">#12292B</color>
+    <color name="cyber_mzazi_screen_start">#05090B</color>
+    <color name="cyber_mzazi_screen_center">#081417</color>
+    <color name="cyber_mzazi_screen_end">#102B2B</color>
+
+    <color name="cyber_mzazi_text">#F4FBFA</color>
+    <color name="cyber_mzazi_muted">#B8C9C7</color>
+
+    <color name="cyber_mzazi_line">#284145</color>
+    <color name="cyber_mzazi_accent">#42D6D1</color>
+    <color name="cyber_mzazi_success">#5EE0A7</color>
+    <color name="cyber_mzazi_warning">#F5C35F</color>
+    <color name="cyber_mzazi_danger">#FF6B6B</color>
+
+    <color name="cyber_mzazi_white">#101D21</color>
+    <color name="cyber_mzazi_hero_start">#0F6D72</color>
+    <color name="cyber_mzazi_hero_end">#094C51</color>
+    <color name="cyber_mzazi_soft_purple">#173336</color>
+    <color name="cyber_mzazi_icon_dark">#EAF7F5</color>
+    <color name="cyber_mzazi_nav_idle">#B8C9C7</color>
+</resources>

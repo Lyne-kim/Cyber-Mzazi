@@ -2,7 +2,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
         android:angle="270"
-        android:startColor="#FFFFFF"
-        android:centerColor="#FFFFFF"
-        android:endColor="#D5F5ED" />
+        android:startColor="@color/cyber_mzazi_screen_start"
+        android:centerColor="@color/cyber_mzazi_screen_center"
+        android:endColor="@color/cyber_mzazi_screen_end" />
 </shape>

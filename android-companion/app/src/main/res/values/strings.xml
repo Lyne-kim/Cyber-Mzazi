@@ -134,6 +134,15 @@
     <string name="child_setup_filters_ready">Filters configured: %1$d allowed, %2$d blocked</string>
     <string name="child_setup_queue_ready">Queued uploads waiting: %1$d</string>
     <string name="child_setup_latest_status">Latest status: %1$s</string>
+    <string name="this_phone">this phone</string>
+    <string name="child_status_device_connected">Device connected: %1$s</string>
+    <string name="child_status_pairing_needed">Device pairing is not complete yet.</string>
+    <string name="child_status_notifications_on">Notifications are enabled.</string>
+    <string name="child_status_notifications_needed">Notification access needs to be enabled.</string>
+    <string name="child_status_filters_active">Safety filters active: %1$d allowed, %2$d blocked.</string>
+    <string name="child_status_filters_default">Safety filters are using the family default settings.</string>
+    <string name="child_status_sync_clear">Everything is synced.</string>
+    <string name="child_status_sync_waiting">%1$d item(s) waiting to sync.</string>
     <string name="base_url_required">Pair this device first.</string>
     <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
     <string name="role_saved">Device role updated.</string>

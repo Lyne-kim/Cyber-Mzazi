@@ -16,6 +16,9 @@ object Prefs {
     private const val KEY_DEVICE_ROLE = "device_role"
     private const val KEY_PARENT_IDENTIFIER = "parent_identifier"
     private const val KEY_PARENT_SESSION_COOKIE = "parent_session_cookie"
+    private const val KEY_CHILD_SIGNED_IN = "child_signed_in"
+    private const val KEY_CHILD_USERNAME = "child_username"
+    private const val KEY_CHILD_PARENT_CONTACT = "child_parent_contact"
     private const val KEY_DARK_MODE = "dark_mode"
     private const val KEY_LANGUAGE = "language"
     private const val KEY_IN_APP_SOUNDS = "in_app_sounds"
@@ -96,6 +99,31 @@ object Prefs {
 
     fun clearParentSession(context: Context) {
         prefs(context).edit().remove(KEY_PARENT_SESSION_COOKIE).apply()
+    }
+
+    fun isChildSignedIn(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_CHILD_SIGNED_IN, false)
+
+    fun getChildUsername(context: Context): String =
+        prefs(context).getString(KEY_CHILD_USERNAME, "").orEmpty()
+
+    fun getChildParentContact(context: Context): String =
+        prefs(context).getString(KEY_CHILD_PARENT_CONTACT, "").orEmpty()
+
+    fun setChildSession(context: Context, parentContact: String, childUsername: String) {
+        prefs(context).edit()
+            .putBoolean(KEY_CHILD_SIGNED_IN, true)
+            .putString(KEY_CHILD_PARENT_CONTACT, parentContact)
+            .putString(KEY_CHILD_USERNAME, childUsername)
+            .apply()
+    }
+
+    fun clearChildSession(context: Context) {
+        prefs(context).edit()
+            .putBoolean(KEY_CHILD_SIGNED_IN, false)
+            .remove(KEY_CHILD_PARENT_CONTACT)
+            .remove(KEY_CHILD_USERNAME)
+            .apply()
     }
 
     fun isDarkMode(context: Context): Boolean =

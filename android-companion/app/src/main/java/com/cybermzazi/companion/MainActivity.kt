@@ -374,6 +374,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         darkModeSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (isPopulatingFields) return@setOnCheckedChangeListener
             if (Prefs.isDarkMode(this) == enabled) return@setOnCheckedChangeListener
             Prefs.setDarkMode(this, enabled)
             AppCompatDelegate.setDefaultNightMode(
@@ -381,7 +382,9 @@ class MainActivity : AppCompatActivity() {
             )
         }
         languageSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (isPopulatingFields) return@setOnCheckedChangeListener
             val language = if (enabled) "sw" else "en"
+            if (Prefs.getLanguage(this) == language) return@setOnCheckedChangeListener
             Prefs.setLanguage(this, language)
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
             if (isSignedIn()) {
@@ -393,16 +396,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
         inAppSoundsSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (isPopulatingFields) return@setOnCheckedChangeListener
             Prefs.setInAppSoundsEnabled(this, enabled)
             Toast.makeText(this, if (enabled) R.string.sounds_on else R.string.sounds_off, Toast.LENGTH_SHORT).show()
         }
 
         registerSettingsDirtyWatchers()
         Prefs.setDeviceRole(this, Prefs.ROLE_CHILD)
+        childSignedIn = Prefs.isChildSignedIn(this)
         populateFields()
+        restoreChildSessionUi()
         updateRoleUi()
-        showSection(SECTION_HOME)
+        val restoredSection = savedInstanceState?.getInt(STATE_CURRENT_SECTION)
+            ?: if (childSignedIn) SECTION_CHILD_ACCOUNT else SECTION_HOME
+        showSection(restoredSection)
         handlePairingIntent(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(STATE_CURRENT_SECTION, currentSection)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -444,6 +457,21 @@ class MainActivity : AppCompatActivity() {
         inAppSoundsSwitch.isChecked = Prefs.inAppSoundsEnabled(this)
         isPopulatingFields = false
         updateSaveButtonVisibility()
+    }
+
+    private fun restoreChildSessionUi() {
+        if (!childSignedIn) return
+        val childUsername = Prefs.getChildUsername(this)
+        val parentContact = Prefs.getChildParentContact(this)
+        if (childUsername.isNotBlank()) {
+            childUsernameInput.setText(childUsername)
+            profileNameInput.setText(childUsername)
+            childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
+        }
+        if (parentContact.isNotBlank()) {
+            childParentContactInput.setText(parentContact)
+            profileContactInput.setText(parentContact)
+        }
     }
 
     private fun updateRoleUi() {
@@ -736,21 +764,31 @@ class MainActivity : AppCompatActivity() {
         val allowedCount = FilterRules.normalizePackages(Prefs.getAllowedPackages(this)).size
         val blockedCount = FilterRules.normalizePackages(Prefs.getBlockedPackages(this)).size
         val queueCount = NotificationQueueStore.getQueue(this).size
-        val lines = mutableListOf(
-            getString(R.string.child_setup_status_title),
-            statusLine(Prefs.isChildRole(this), getString(R.string.child_setup_role_ready)),
-            statusLine(tokenReady && deviceNameReady, getString(R.string.child_setup_pairing_ready)),
-            statusLine(notificationAccessReady, getString(R.string.child_setup_notification_ready)),
-            statusLine(allowedCount > 0 || blockedCount > 0, getString(R.string.child_setup_filters_ready, allowedCount, blockedCount)),
-            statusLine(queueCount == 0, getString(R.string.child_setup_queue_ready, queueCount)),
-            "",
-            getString(R.string.child_setup_latest_status, Prefs.getLastStatus(this)),
+        val deviceLabel = Prefs.getDeviceName(this).ifBlank { getString(R.string.this_phone) }
+        val lines = listOf(
+            if (tokenReady && deviceNameReady) {
+                getString(R.string.child_status_device_connected, deviceLabel)
+            } else {
+                getString(R.string.child_status_pairing_needed)
+            },
+            if (notificationAccessReady) {
+                getString(R.string.child_status_notifications_on)
+            } else {
+                getString(R.string.child_status_notifications_needed)
+            },
+            if (allowedCount > 0 || blockedCount > 0) {
+                getString(R.string.child_status_filters_active, allowedCount, blockedCount)
+            } else {
+                getString(R.string.child_status_filters_default)
+            },
+            if (queueCount == 0) {
+                getString(R.string.child_status_sync_clear)
+            } else {
+                getString(R.string.child_status_sync_waiting, queueCount)
+            },
         )
         return lines.joinToString("\n")
     }
-
-    private fun statusLine(done: Boolean, label: String): String =
-        "${if (done) getString(R.string.status_ready) else getString(R.string.status_pending)} $label"
 
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
@@ -841,6 +879,7 @@ class MainActivity : AppCompatActivity() {
                 ).show()
                 if (ok) {
                     childSignedIn = true
+                    Prefs.setChildSession(this, parentContact, childUsername)
                     profileNameInput.setText(childUsername)
                     profileContactInput.setText(parentContact)
                     childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
@@ -1074,5 +1113,6 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_PARENT_DASHBOARD = 11
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
+        private const val STATE_CURRENT_SECTION = "current_section"
     }
 }

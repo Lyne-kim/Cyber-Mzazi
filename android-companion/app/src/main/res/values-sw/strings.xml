@@ -19,6 +19,15 @@
     <string name="pair_device">Unganisha kifaa</string>
     <string name="report_message">Ripoti ujumbe</string>
     <string name="request_logout">Omba kutoka</string>
+    <string name="this_phone">simu hii</string>
+    <string name="child_status_device_connected">Kifaa kimeunganishwa: %1$s</string>
+    <string name="child_status_pairing_needed">Kuunganisha kifaa bado hakujakamilika.</string>
+    <string name="child_status_notifications_on">Arifa zimewashwa.</string>
+    <string name="child_status_notifications_needed">Ruhusa ya arifa inahitaji kuwashwa.</string>
+    <string name="child_status_filters_active">Vichujio vya usalama vinafanya kazi: %1$d vimeruhusiwa, %2$d vimezuiwa.</string>
+    <string name="child_status_filters_default">Vichujio vya usalama vinatumia mipangilio ya familia.</string>
+    <string name="child_status_sync_clear">Kila kitu kimesawazishwa.</string>
+    <string name="child_status_sync_waiting">Vipengee %1$d vinasubiri kusawazishwa.</string>
     <string name="profile_saved">Wasifu umehifadhiwa.</string>
     <string name="passwords_do_not_match">Manenosiri hayafanani.</string>
 </resources>

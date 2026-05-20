@@ -5,9 +5,13 @@
     <!-- Backgrounds -->
     <color name="cyber_mzazi_surface">#F7FBFA</color>
     <color name="cyber_mzazi_surface_alt">#E7F7F2</color>
+    <color name="cyber_mzazi_screen_start">#FFFFFF</color>
+    <color name="cyber_mzazi_screen_center">#FFFFFF</color>
+    <color name="cyber_mzazi_screen_end">#D5F5ED</color>
 
     <!-- Text -->
     <color name="cyber_mzazi_text">#15212E</color>
+    <color name="cyber_mzazi_muted">#4A5660</color>
 
     <!-- Lines / borders -->
     <color name="cyber_mzazi_line">#D8E3E0</color>

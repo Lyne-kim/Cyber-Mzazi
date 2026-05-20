@@ -38,15 +38,10 @@
                 android:textSize="24sp"
                 android:visibility="invisible" />
 
-            <TextView
+            <Space
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="@string/app_name"
-                android:textColor="@color/cyber_mzazi_seed"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/roleBadge"
@@ -812,7 +807,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
                             android:text="@string/child_setup_status_placeholder"
-                            android:textColor="#4A5660" />
+                            android:textColor="@color/cyber_mzazi_muted"
+                            android:textSize="15sp" />
                     </LinearLayout>
 
                     <Button
