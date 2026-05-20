@@ -152,6 +152,10 @@
     <string name="child_notification_card_needed">Notifications: Permission needed</string>
     <string name="child_sync_card_clear">Sync: Up to date</string>
     <string name="child_sync_card_waiting">Sync: %1$d item(s) waiting</string>
+    <string name="child_logout_pending_card">Logout: Waiting for parent approval</string>
+    <string name="child_logout_denied_card">Logout: Parent denied the request</string>
+    <string name="child_logout_denied_status">Parent denied sign-out. This child session remains active.</string>
+    <string name="child_logout_approved_signed_out">Parent approved sign-out. Signed out.</string>
     <string name="base_url_required">Pair this device first.</string>
     <string name="parent_mode_capture_disabled">Notification capture is disabled on parent phones. Use a child phone for monitored third-party notifications.</string>
     <string name="role_saved">Device role updated.</string>

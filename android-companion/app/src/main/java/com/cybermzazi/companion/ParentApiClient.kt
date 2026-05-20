@@ -395,6 +395,36 @@ object ParentApiClient {
         )
     }
 
+    fun fetchChildLogoutStatus(context: Context, onComplete: (Boolean, String?, String) -> Unit) {
+        val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
+        val cookie = Prefs.getParentSessionCookie(context)
+        if (baseUrl.isBlank() || cookie.isBlank()) {
+            onComplete(false, null, "Child session is not ready.")
+            return
+        }
+        executor.execute {
+            val result = runCatching {
+                val connection = (URL("$baseUrl/api/child/home").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
+                    setRequestProperty("Cookie", cookie)
+                    setRequestProperty("Accept", "application/json")
+                }
+                val response = readResponse(connection)
+                if (connection.responseCode !in 200..299) {
+                    ChildLogoutStatusResult(false, null, parseError(response, "Could not check logout approval."))
+                } else {
+                    val pendingLogout = JSONObject(response).optJSONObject("pending_logout")
+                    ChildLogoutStatusResult(true, pendingLogout?.optString("status")?.ifBlank { null }, "Logout status checked.")
+                }
+            }.getOrElse { throwable ->
+                ChildLogoutStatusResult(false, null, "Logout status error: ${throwable.message ?: "Unknown error"}")
+            }
+            onComplete(result.ok, result.status, result.message)
+        }
+    }
+
     fun setLanguage(context: Context, language: String, onComplete: (Boolean, String) -> Unit) {
         postJson(
             context = context,
@@ -577,6 +607,12 @@ object ParentApiClient {
     private data class ParentDashboardResult(
         val ok: Boolean,
         val dashboard: ParentDashboardData?,
+        val message: String,
+    )
+
+    private data class ChildLogoutStatusResult(
+        val ok: Boolean,
+        val status: String?,
         val message: String,
     )
 

@@ -445,6 +445,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        checkChildLogoutDecision()
     }
 
     private fun populateFields() {
@@ -573,11 +574,48 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                     childSetupStatusText.text = message
+                    updateChildDashboardCards()
                 }
             }
             return
         }
         showSection(SECTION_HOME)
+    }
+
+    private fun checkChildLogoutDecision() {
+        if (!childSignedIn) return
+        ParentApiClient.fetchChildLogoutStatus(this) { ok, status, _ ->
+            if (!ok) return@fetchChildLogoutStatus
+            runOnUiThread {
+                when (status) {
+                    "approved" -> completeApprovedChildLogout()
+                    "denied" -> {
+                        childSyncCardText.text = getString(R.string.child_logout_denied_card)
+                        childSetupStatusText.text = getString(R.string.child_logout_denied_status)
+                    }
+                    "pending" -> {
+                        childSyncCardText.text = getString(R.string.child_logout_pending_card)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun completeApprovedChildLogout() {
+        ParentApiClient.logout(this) { ok, message ->
+            runOnUiThread {
+                if (ok) {
+                    childSignedIn = false
+                    Prefs.clearChildSession(this)
+                    Prefs.clearParentSession(this)
+                    updateMenuAccess()
+                    showSection(SECTION_HOME)
+                    Toast.makeText(this, R.string.child_logout_approved_signed_out, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun saveProfile() {

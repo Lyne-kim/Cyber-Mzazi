@@ -37,6 +37,10 @@
     <string name="child_notification_card_needed">Arifa: Ruhusa inahitajika</string>
     <string name="child_sync_card_clear">Usawazishaji: Uko sawa</string>
     <string name="child_sync_card_waiting">Usawazishaji: Vipengee %1$d vinasubiri</string>
+    <string name="child_logout_pending_card">Kutoka: Inasubiri ruhusa ya mzazi</string>
+    <string name="child_logout_denied_card">Kutoka: Mzazi amekataa ombi</string>
+    <string name="child_logout_denied_status">Mzazi amekataa kutoka. Kikao hiki bado kinaendelea.</string>
+    <string name="child_logout_approved_signed_out">Mzazi ameruhusu kutoka. Umetoka.</string>
     <string name="profile_saved">Wasifu umehifadhiwa.</string>
     <string name="passwords_do_not_match">Manenosiri hayafanani.</string>
 </resources>
