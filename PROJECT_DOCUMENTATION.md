@@ -45,10 +45,10 @@ Cyber Mzazi is designed to:
 ### Machine Learning
 
 - pandas
-- scikit-learn
-- joblib
-- `LinearRegression`
-- `RandomForestClassifier`
+- scikit-learn metrics
+- PyTorch
+- Hugging Face Transformers
+- multilingual DistilBERT sequence classification
 
 ### Deployment
 
@@ -70,6 +70,7 @@ Cyber Mzazi is designed to:
 app.py
 config.py
 dataset.csv
+datasets/
 PROJECT_DOCUMENTATION.md
 README.md
 FRONTEND_API.md
@@ -258,6 +259,10 @@ Fields include:
 
 Stores uploaded safety documents for parents to manage.
 
+#### SafetyResourceLink
+
+Stores curated safety-resource links that are managed by the developer or platform and shown to parents without requiring every resource to be uploaded as a local file.
+
 #### NotificationIngestionDevice
 
 Represents an Android notification device linked to a selected child.
@@ -364,6 +369,9 @@ Parents can:
 - view logs for the selected child
 - add more child profiles
 - upload and download safety documents
+- view curated safety-resource links
+- use the parent AI Safety Assistant for message interpretation and incident guidance
+- delete alerts that no longer need to remain in the active alert feed
 - create Android notification links
 - disable Android notification links
 - switch the interface language between English and Swahili
@@ -389,6 +397,7 @@ The child interface logic is primarily in:
 Children can:
 
 - report incoming third-party messages manually
+- use the child AI Safety Assistant for age-appropriate safety guidance
 - see recent safety checks
 - request sign-out for the current child session on the current device
 - change language
@@ -410,25 +419,52 @@ Runtime classifier:
 
 The training pipeline:
 
-1. loads `dataset.csv`
-2. prepares text features
-3. vectorizes text
-4. reduces feature dimensionality
-5. trains a `LinearRegression`-based scorer
-6. trains a `RandomForestClassifier`
-7. blends outputs
-8. saves the artifact and metrics
+1. loads supported CSV, Excel, and JSON datasets from the configured dataset path
+2. normalizes each source into `text`, `threat_type`, `risk_indicators`, `language`, and `source_name`
+3. filters unsupported labels and empty messages
+4. removes duplicate text-label pairs
+5. caps rows by label and source-label group to reduce imbalance
+6. tokenizes text with the multilingual DistilBERT tokenizer
+7. trains a transformer sequence classifier
+8. saves the model artifact and metrics
 
 ### Runtime prediction flow
 
 When a message is submitted:
 
-1. the classifier is loaded
-2. the text is transformed using the saved vectorizer and SVD
-3. both models score the text
-4. the system blends the result
+1. the system checks reviewed parent feedback for exact or near matches
+2. the configured Hugging Face model API is used when available
+3. otherwise, the local DistilBERT artifact is used when present
+4. heuristic fallback runs when remote/local model inference is unavailable
 5. a final label and confidence are returned
 6. risk indicators are attached
+
+### Latest training run
+
+The latest local retraining used only:
+
+```text
+C:\Users\lyne\Documents\Cyber Mzazi\datasets
+```
+
+Training summary:
+
+- base model: `distilbert-base-multilingual-cased`
+- normalized rows used: `1,298`
+- active labels: `10`
+- epochs: `4`
+- final validation accuracy: `0.673`
+- final validation macro F1: `0.720`
+- skipped non-dataset file: `phishing-dataset.py`
+
+Epoch results:
+
+| Epoch | Train loss | Validation accuracy | Validation macro F1 |
+| --- | ---: | ---: | ---: |
+| 1 | 1.8352 | 0.508 | 0.464 |
+| 2 | 1.1777 | 0.569 | 0.569 |
+| 3 | 0.8684 | 0.642 | 0.668 |
+| 4 | 0.6459 | 0.673 | 0.720 |
 
 ### Human-in-the-loop retraining
 
@@ -532,6 +568,8 @@ Related guide:
 - child creation
 - language updates
 - safety document upload
+- safety resource links
+- AI Safety Assistant chat
 - Android device link creation
 - Android link disable
 - Android notification ingestion
@@ -544,7 +582,11 @@ Related guide:
 - `POST /api/auth/logout`
 - `GET /api/parent/dashboard`
 - `GET /api/child/dashboard`
+- `GET /api/parent/alerts`
+- `DELETE /api/parent/alerts/<id>`
 - `POST /api/child/messages`
+- `POST /api/assistant/chat`
+- `GET /api/safety-resources/links`
 - `POST /api/parent/messages/<id>/review`
 - `POST /api/child/logout-request`
 - `POST /api/parent/logout-requests/<id>/approve`
@@ -589,15 +631,18 @@ Android companion files:
 
 ### Purpose
 
-The Android companion allows a real Android device to:
+The child-only Android companion allows a real Android child device to:
 
 - pair with the backend
 - receive notification listener permission
 - capture supported notification text
+- split grouped notification lines into separate uploads
 - apply per-app allow and block filters
 - queue failed uploads when offline
 - retry later
-- display a small in-app recent-capture log
+- pause uploads when the child is signed out
+- require parent approval before completing child logout
+- display child status, settings, profile-name editing, and recent capture state
 
 ### Current Android features
 
@@ -609,6 +654,8 @@ The Android companion allows a real Android device to:
 - offline queue
 - retry queued uploads
 - recent notification log
+- child-only dashboard
+- settings for language, theme, sounds, profile name, and logout request
 - command-line build and install workflow without Android Studio
 
 ### Development workflow
@@ -712,7 +759,7 @@ This keeps the system more realistic, legally safer, and closer to platform poli
 - the ML model accuracy shown during training may overstate real-world performance
 - Android automatic capture depends on notification visibility
 - iOS-style cross-app message reading is not supported
-- the Android companion currently focuses on notification ingestion rather than full device management
+- the Android companion is child-only and focuses on paired notification ingestion rather than full device management
 - QR pairing currently relies on a generated QR image URL in the parent web view
 
 ## 24. Suggested Future Improvements
@@ -738,7 +785,9 @@ Cyber Mzazi currently stands as a full-stack family safety MVP with:
 - multi-child support
 - parent-controlled child sign-out
 - safety resource management
+- curated online safety-resource links
+- AI Safety Assistant support for children and parents
 - Android notification ingestion support
-- an Android companion workflow that can be used with a real Android device
+- a child-only Android companion workflow that can be used with a real Android device
 
 It is both a deployable application and a foundation for future mobile and frontend expansion.

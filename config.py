@@ -7,6 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def _default_dataset_path() -> str:
+    project_dataset_dir = BASE_DIR / "datasets"
+    if project_dataset_dir.exists():
+        return str(project_dataset_dir)
     downloads_dataset_dir = Path.home() / "Downloads" / "datasets"
     if downloads_dataset_dir.exists():
         return str(downloads_dataset_dir)

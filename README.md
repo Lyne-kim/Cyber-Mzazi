@@ -6,9 +6,10 @@ It currently includes:
 
 - A Flask web platform with separate `Parent/Guardian` and `Child` experiences
 - Family registration, role-based login, and parent email verification
-- Parent alerts, logout approval or denial, activity logs, and safety-resource uploads
+- Parent alerts, logout approval or denial, activity logs, safety-resource uploads, and curated safety-resource web links
 - Child-side message safety checks and guided reporting flows
-- Android companion infrastructure, branding, QR/device-link flows, and signed APK release setup
+- AI Safety Assistant pages for parents and children using the Cyber Mzazi classifier
+- Child-only Android companion infrastructure, branding, QR/device-link flows, and signed APK release setup
 - Expanded safety classification labels with a lightweight production-safe heuristic mode
 - Optional Hugging Face Space integration for DistilBERT-based inference experiments
 
@@ -23,7 +24,9 @@ Implemented:
 - Family account registration
 - Parent email verification and resend flow
 - Parent dashboard, alerts, settings, logs, safety resources, and family hub
+- Parent AI Assistant for interpreting suspicious messages, slang, links, and incidents
 - Child dashboard, `My Safety`, settings, and safety-check reporting
+- Child AI Safety Assistant that can alert the parent dashboard when risk is high
 - Parent approval-based child logout workflow
 - Popup, browser, sound, and email alert support for parents
 - Mobile sidebar toggle for parent and child dashboard pages
@@ -63,18 +66,9 @@ Already in place:
 
 Current product direction:
 
-- **one Android app with role selection**
-- role choices:
-  - `Parent/Guardian`
-  - `Child`
-
-Still remaining on Android:
-
-- first-launch role selection screen
-- parent/guardian mobile flow
-- child mobile flow
-- role-based permissions and routing inside one APK
-- end-to-end testing on both devices
+- **one child-only Android APK**
+- the parent/guardian continues to use the website dashboard
+- the APK pairs to a child profile, captures allowed notification text, splits grouped notification lines into separate uploads, and pauses uploads when the child is signed out
 
 ## Important safety scope
 
@@ -207,14 +201,36 @@ The repository supports broader training workflows beyond the original CSV-only 
 
 Notes:
 
-- production currently favors heuristic mode for free-tier stability
-- DistilBERT experiments and staged artifacts are supported separately
+- production can use the configured Hugging Face DistilBERT API when available
+- local DistilBERT artifacts and heuristic fallback are still supported
 - reviewed parent labels can still be used for retraining workflows
 
-If you want to trigger training locally:
+Latest local retraining run:
+
+- dataset path: `C:\Users\lyne\Documents\Cyber Mzazi\datasets`
+- base model: `distilbert-base-multilingual-cased`
+- epochs: `4`
+- normalized rows used: `1,298`
+- final validation accuracy: `0.673`
+- final validation macro F1: `0.720`
+- artifact path: `artifacts/message_model_stage3`
+- metrics path: `artifacts/training_metrics.json`
+
+Epoch results from the latest run:
+
+| Epoch | Train loss | Validation accuracy | Validation macro F1 |
+| --- | ---: | ---: | ---: |
+| 1 | 1.8352 | 0.508 | 0.464 |
+| 2 | 1.1777 | 0.569 | 0.569 |
+| 3 | 0.8684 | 0.642 | 0.668 |
+| 4 | 0.6459 | 0.673 | 0.720 |
+
+To retrain locally from the configured dataset path:
 
 ```powershell
 $env:FLASK_APP = "app.py"
+$env:DATASET_PATH = "C:\Users\lyne\Documents\Cyber Mzazi\datasets"
+$env:TRANSFORMER_EPOCHS = "4"
 flask train-models
 ```
 
@@ -227,6 +243,8 @@ Cyber Mzazi supports Android-ready notification ingestion:
 - the Android client sends notification payloads to:
   - `POST /api/device-ingest/android-notifications`
 - the backend classifies the content and stores it as a `MessageRecord`
+- grouped multiline notification text is split by the APK before upload so each message can be classified separately
+- uploads pause when the child is signed out
 
 Typical payload fields:
 
