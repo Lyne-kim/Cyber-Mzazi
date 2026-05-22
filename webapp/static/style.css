@@ -704,6 +704,9 @@ select {
   top: 1rem;
   display: grid;
   gap: 1.25rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1.3rem;
   border-radius: 28px;
   background: var(--sidebar);
@@ -834,6 +837,34 @@ select {
   color: white;
   text-decoration: none;
   box-shadow: 0 14px 30px rgba(217, 93, 57, 0.35);
+}
+
+.message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.assistant-card {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(31, 111, 91, 0.06);
+}
+
+.assistant-card.tone-danger {
+  background: rgba(200, 70, 48, 0.09);
+  border-color: rgba(200, 70, 48, 0.25);
+}
+
+.assistant-card.tone-warning {
+  background: rgba(217, 93, 57, 0.1);
+  border-color: rgba(217, 93, 57, 0.25);
 }
 
 .approval-card,

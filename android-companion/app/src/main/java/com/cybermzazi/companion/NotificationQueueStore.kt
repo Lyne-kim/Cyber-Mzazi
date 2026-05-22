@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 object NotificationQueueStore {
     private const val KEY_QUEUE = "queued_notifications"
-    private const val MAX_QUEUE_SIZE = 50
+    private const val MAX_QUEUE_SIZE = 300
 
     private fun prefs(context: Context) =
         context.getSharedPreferences("cyber_mzazi_companion", Context.MODE_PRIVATE)

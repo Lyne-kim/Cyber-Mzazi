@@ -36,6 +36,9 @@ class Family(TimestampMixin, db.Model):
     safety_resource_documents = db.relationship(
         "SafetyResourceDocument", back_populates="family", lazy="dynamic"
     )
+    safety_resource_links = db.relationship(
+        "SafetyResourceLink", back_populates="family", lazy="dynamic"
+    )
     notification_devices = db.relationship(
         "NotificationIngestionDevice", back_populates="family", lazy="dynamic"
     )
@@ -183,6 +186,20 @@ class SafetyResourceDocument(TimestampMixin, db.Model):
 
     family = db.relationship("Family", back_populates="safety_resource_documents")
     uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])
+
+
+class SafetyResourceLink(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    title = db.Column(db.String(160), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    topic = db.Column(db.String(80), nullable=False, default="Digital safety")
+    audience = db.Column(db.String(20), nullable=False, default="all")
+    summary = db.Column(db.Text)
+
+    family = db.relationship("Family", back_populates="safety_resource_links")
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
 
 
 class NotificationIngestionDevice(TimestampMixin, db.Model):

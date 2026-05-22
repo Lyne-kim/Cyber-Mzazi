@@ -91,7 +91,7 @@
       {% endif %}
     </section>
 
-    <a class="quick-action-fab" href="{{ url_for('parent.alerts') }}" title="Flag content">+</a>
+    <a class="quick-action-fab" href="{{ url_for('parent.alerts') }}" title="Flag content">🚩</a>
   </aside>
   <button class="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
 
@@ -219,15 +219,20 @@
             {% if message.verification_notes %}
               <p class="meta">Notes: {{ message.verification_notes }}</p>
             {% endif %}
-            <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
-              <select name="reviewed_label">
-                <option value="">Review label</option>
-                {% for label in review_labels %}
-                  <option value="{{ label }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-              <button class="button small" type="submit">Save review</button>
-            </form>
+            <div class="message-actions">
+              <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
+                <select name="reviewed_label">
+                  <option value="">Review label</option>
+                  {% for label in review_labels %}
+                    <option value="{{ label }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <button class="button small" type="submit">Save review</button>
+              </form>
+              <form class="inline-form" method="post" action="{{ url_for('parent.delete_message', message_id=message.id) }}">
+                <button class="button ghost small" type="submit">Delete alert</button>
+              </form>
+            </div>
           </article>
         {% else %}
           {% if not logout_request_cards %}
@@ -408,11 +413,58 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Safety Resources") }}</p>
         <h3>{{ t("Safety Resources") }}</h3>
-        <ul class="simple-list">
-          <li>Conversation guide</li>
-          <li>Crisis contact</li>
-          <li>School resource</li>
-        </ul>
+        <p class="muted">Save trusted web resources for your family, then upload local documents only when a link is not enough.</p>
+        <form class="stack upload-zone" method="post" action="{{ url_for('parent.add_resource_link') }}">
+          <div class="auth-form-grid">
+            <label>
+              Resource title
+              <input type="text" name="title" placeholder="Online safety guide" required>
+            </label>
+            <label>
+              Web link
+              <input type="url" name="url" placeholder="https://..." required>
+            </label>
+            <label>
+              Topic
+              <input type="text" name="topic" placeholder="Grooming, scams, privacy">
+            </label>
+            <label>
+              Audience
+              <select name="audience">
+                <option value="all">Parent and child</option>
+                <option value="parent">Parent only</option>
+                <option value="child">Child only</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Short note
+            <textarea name="summary" rows="3" placeholder="Why this resource is useful"></textarea>
+          </label>
+          <button class="button small" type="submit">Add web resource</button>
+        </form>
+        <div class="stack">
+          {% for link in safety_links %}
+            <article class="mini-panel resource-item">
+              <strong>{{ link.title }}</strong>
+              <p class="muted">{{ link.topic }} / {{ link.audience|title }}</p>
+              {% if link.summary %}
+                <p>{{ link.summary }}</p>
+              {% endif %}
+              <div class="button-row">
+                <a class="button ghost small" href="{{ link.url }}" target="_blank" rel="noopener">Open link</a>
+                <form method="post" action="{{ url_for('parent.delete_resource_link', link_id=link.id) }}">
+                  <button class="button ghost small" type="submit">Remove</button>
+                </form>
+              </div>
+            </article>
+          {% else %}
+            <div class="mini-panel">
+              <strong>Start with curated links</strong>
+              <p class="muted">Add trusted pages from a child protection agency, school, platform safety center, or local support service.</p>
+            </div>
+          {% endfor %}
+        </div>
         <form class="stack upload-zone" method="post" action="{{ url_for('parent.attach_resource_documents') }}" enctype="multipart/form-data">
           <label>
             {{ t("Upload documents") }}
@@ -431,6 +483,34 @@
             <p class="muted">No documents uploaded yet.</p>
           {% endfor %}
         </div>
+      </section>
+    {% elif page_key == "ai_assistant" %}
+      <section class="panel">
+        <p class="eyebrow">AI Safety Assistant</p>
+        <h3>Ask about a message, slang, link, or incident</h3>
+        <p class="muted">The assistant uses the Cyber Mzazi classifier and gives guidance. It does not replace emergency, legal, medical, or mental-health professionals.</p>
+        <form class="stack" method="post" action="{{ url_for('parent.ai_assistant') }}">
+          <label>
+            Message or question
+            <textarea name="assistant_prompt" rows="8" placeholder="Paste a suspicious message, slang, link, or describe what happened..." required>{{ assistant_prompt or "" }}</textarea>
+          </label>
+          <button class="button accent" type="submit">Ask assistant</button>
+        </form>
+        {% if assistant_result and assistant_result.ok %}
+          <article class="assistant-card tone-{{ assistant_result.tone }}">
+            <div class="message-topline">
+              <strong>{{ assistant_result.label_title }} / {{ assistant_result.risk_level|title }} risk</strong>
+              <span>{{ "%.0f"|format(assistant_result.confidence * 100) }}%</span>
+            </div>
+            <p>{{ assistant_result.explanation }}</p>
+            <p><strong>Guidance:</strong> {{ assistant_result.guidance }}</p>
+            <ul class="simple-list">
+              {% for step in assistant_result.next_steps %}
+                <li>{{ step }}</li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endif %}
       </section>
     {% elif page_key == "help_support" %}
       <section class="panel">

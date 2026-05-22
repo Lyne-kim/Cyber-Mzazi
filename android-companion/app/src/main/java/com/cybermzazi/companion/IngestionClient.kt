@@ -15,27 +15,47 @@ object IngestionClient {
         payload: NotificationPayload,
         onComplete: ((Boolean, String) -> Unit)? = null,
     ) {
+        if (!Prefs.isChildSignedIn(context)) {
+            val message = "Child is signed out. Notification upload paused."
+            Prefs.setLastStatus(context, message)
+            onComplete?.invoke(false, message)
+            return
+        }
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val token = Prefs.getDeviceToken(context).trim()
+        val payloads = splitPayload(payload)
         if (baseUrl.isBlank() || token.isBlank()) {
             val message = "Pair this device first."
             Prefs.setLastStatus(context, message)
-            NotificationQueueStore.enqueue(context, payload)
+            payloads.forEach { NotificationQueueStore.enqueue(context, it) }
             RecentNotificationLog.append(context, payload.appName, payload.notificationTitle, payload.notificationText, "Queued: missing settings")
             onComplete?.invoke(false, message)
             return
         }
 
         executor.execute {
-            val result = upload(baseUrl, token, payload)
-            val ok = result.startsWith("Uploaded")
-            if (ok) {
-                RecentNotificationLog.append(context, payload.appName, payload.notificationTitle, payload.notificationText, result)
-                flushQueuedNotifications(context)
-            } else {
-                NotificationQueueStore.enqueue(context, payload)
-                RecentNotificationLog.append(context, payload.appName, payload.notificationTitle, payload.notificationText, "Queued: $result")
+            var sentCount = 0
+            val failed = mutableListOf<NotificationPayload>()
+            var lastResult = ""
+            payloads.forEach { item ->
+                val result = upload(baseUrl, token, item)
+                lastResult = result
+                if (result.startsWith("Uploaded")) {
+                    sentCount += 1
+                    RecentNotificationLog.append(context, item.appName, item.notificationTitle, item.notificationText, result)
+                } else {
+                    failed += item
+                    NotificationQueueStore.enqueue(context, item)
+                    RecentNotificationLog.append(context, item.appName, item.notificationTitle, item.notificationText, "Queued: $result")
+                }
             }
+            val ok = failed.isEmpty()
+            val result = if (payloads.size == 1) {
+                lastResult
+            } else {
+                "Uploaded $sentCount of ${payloads.size} notification message(s)."
+            }
+            if (ok) flushQueuedNotifications(context)
             Prefs.setLastStatus(context, result)
             onComplete?.invoke(ok, result)
         }
@@ -45,6 +65,10 @@ object IngestionClient {
         context: Context,
         onComplete: ((Boolean, String) -> Unit)? = null,
     ) {
+        if (!Prefs.isChildSignedIn(context)) {
+            onComplete?.invoke(false, "Child is signed out. Notification upload paused.")
+            return
+        }
         val baseUrl = Prefs.getBaseUrl(context).trim().trimEnd('/')
         val token = Prefs.getDeviceToken(context).trim()
         if (baseUrl.isBlank() || token.isBlank()) {
@@ -116,4 +140,20 @@ object IngestionClient {
         }.getOrElse { throwable ->
             "Upload error: ${throwable.message ?: "Unknown error"}"
         }
+
+    private fun splitPayload(payload: NotificationPayload): List<NotificationPayload> {
+        val normalized = payload.notificationText
+            .replace("\r\n", "\n")
+            .replace('\r', '\n')
+            .trim()
+        val parts = normalized
+            .split('\n')
+            .map { it.trim() }
+            .filter { it.length >= 2 }
+            .distinct()
+        val messages = if (parts.size > 1) parts else listOf(normalized)
+        return messages.take(300).map { text ->
+            payload.copy(notificationText = text)
+        }
+    }
 }

@@ -14,6 +14,7 @@ from .services.email_verification import (
     send_verification_email,
     verify_email_token,
 )
+from .services.cooldowns import resend_wait_seconds
 from .services.parent_alerts import send_logout_request_alert
 from .services.phone_verification import (
     normalize_phone,
@@ -327,6 +328,13 @@ def resend_verification():
     if user.email_verified:
         flash("That email is already verified. You can sign in now.", "info")
         return redirect(url_for("auth.parent_login"))
+    wait_seconds = resend_wait_seconds(
+        user.verification_email_sent_at,
+        int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+    )
+    if wait_seconds:
+        flash(f"Wait {wait_seconds} seconds before requesting another email code.", "warning")
+        return render_template("parent_login.html", pending_identifier=identifier)
 
     ok, message = send_verification_email(user)
     if ok:
@@ -358,6 +366,13 @@ def resend_phone_verification():
     if user.phone_verified:
         flash("That phone number is already verified. You can sign in now.", "info")
         return redirect(url_for("auth.parent_login"))
+    wait_seconds = resend_wait_seconds(
+        user.phone_verification_sent_at,
+        int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+    )
+    if wait_seconds:
+        flash(f"Wait {wait_seconds} seconds before requesting another SMS code.", "warning")
+        return render_template("parent_login.html", pending_identifier=identifier)
 
     ok, message = send_phone_verification_code(user)
     if ok:

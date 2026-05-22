@@ -22,9 +22,11 @@ from .models import (
     MessageRecord,
     NotificationIngestionDevice,
     SafetyResourceDocument,
+    SafetyResourceLink,
     User,
 )
 from .services.audit import log_event
+from .services.cooldowns import resend_wait_seconds
 from .services.email_verification import (
     send_verification_email,
     verify_email_token,
@@ -52,6 +54,7 @@ from .services.prediction_service import (
     prediction_backend_status,
 )
 from .services.review_feedback import build_review_signature
+from .services.safety_assistant import build_safety_assistant_response
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
 
@@ -151,6 +154,13 @@ def _password_change_verified() -> bool:
     return datetime.utcnow() <= timestamp + timedelta(seconds=max_age)
 
 
+def _resolve_logout_request(logout_request: LogoutRequest, status: str) -> None:
+    logout_request.status = status
+    logout_request.resolved_by_id = current_user.id
+    logout_request.resolved_at = datetime.utcnow()
+    db.session.add(logout_request)
+
+
 def _message_payload(message: MessageRecord) -> dict:
     return {
         "id": message.id,
@@ -211,6 +221,18 @@ def _document_payload(document: SafetyResourceDocument) -> dict:
         "created_at": document.created_at.isoformat(),
         "uploaded_by_id": document.uploaded_by_id,
         "download_url": f"/parent/safety-resources/documents/{document.id}",
+    }
+
+
+def _resource_link_payload(link: SafetyResourceLink) -> dict:
+    return {
+        "id": link.id,
+        "title": link.title,
+        "url": link.url,
+        "topic": link.topic,
+        "audience": link.audience,
+        "summary": link.summary,
+        "created_at": link.created_at.isoformat(),
     }
 
 
@@ -289,6 +311,11 @@ def _parent_page_payload() -> dict:
         .order_by(SafetyResourceDocument.created_at.desc())
         .all()
     )
+    resource_links = (
+        SafetyResourceLink.query.filter_by(family_id=current_user.family_id)
+        .order_by(SafetyResourceLink.created_at.desc())
+        .all()
+    )
     logout_request_cards = []
     for item in logout_requests:
         logout_request_cards.append(
@@ -321,6 +348,7 @@ def _parent_page_payload() -> dict:
         "approval_history": [_logout_request_payload(item) for item in approval_history],
         "linked_devices": [_notification_device_payload(device) for device in linked_devices],
         "safety_documents": [_document_payload(document) for document in documents],
+        "safety_links": [_resource_link_payload(link) for link in resource_links],
         "summary": {
             "alert_count": alert_count,
             "high_risk_count": high_risk_count,
@@ -347,7 +375,7 @@ def _child_page_payload() -> dict:
             child_user_id=current_user.id,
         )
         .filter(LogoutRequest.status.in_(["pending", "approved", "denied"]))
-        .order_by(LogoutRequest.updated_at.desc())
+        .order_by(LogoutRequest.created_at.desc())
         .first()
     )
     return {
@@ -697,6 +725,12 @@ def resend_verification():
         return _error("Parent email account was not found.", 404)
     if user.email_verified:
         return _error("That email is already verified.", 409)
+    wait_seconds = resend_wait_seconds(
+        user.verification_email_sent_at,
+        int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+    )
+    if wait_seconds:
+        return _error(f"Wait {wait_seconds} seconds before requesting another email code.", 429)
 
     ok, message = send_verification_email(user)
     if not ok:
@@ -728,6 +762,12 @@ def resend_phone_verification():
         return _error("Parent phone account was not found.", 404)
     if user.phone_verified:
         return _error("That phone number is already verified.", 409)
+    wait_seconds = resend_wait_seconds(
+        user.phone_verification_sent_at,
+        int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+    )
+    if wait_seconds:
+        return _error(f"Wait {wait_seconds} seconds before requesting another SMS code.", 429)
 
     ok, message = send_phone_verification_code(user)
     if not ok:
@@ -806,6 +846,22 @@ def current_session():
     return jsonify({"ok": True, "user": _user_payload(current_user)})
 
 
+@api_bp.post("/assistant/chat")
+@login_required
+def assistant_chat():
+    payload = request.get_json(silent=True) or {}
+    prompt = str(payload.get("prompt", "")).strip()
+    audience = current_user.role if current_user.role in {"parent", "child"} else "parent"
+    result = build_safety_assistant_response(
+        prompt,
+        audience=audience,
+        family_id=current_user.family_id,
+    )
+    if not result.get("ok"):
+        return _error(result.get("error", "Assistant could not analyse that yet."), 400)
+    return jsonify({"ok": True, "assistant": result})
+
+
 @api_bp.post("/account/profile")
 @login_required
 def update_profile():
@@ -839,9 +895,9 @@ def update_profile():
         if current_user.phone and current_user.phone != old_phone:
             current_user.phone_verified = False
     elif current_user.role == "child":
-        username = str(payload.get("username", "")).strip()
-        if username:
-            current_user.username = username
+        # Child profiles can update their display name only. Parent contact and
+        # child username stay owned by the parent/family account setup.
+        pass
 
     log_event(
         current_user.family_id,
@@ -866,6 +922,24 @@ def send_password_change_verification():
         return _error("Parent verification is required before changing password.", 403)
     if channel not in {"email", "phone"}:
         channel = "email" if verification_user.email else "phone"
+    if channel == "phone":
+        wait_seconds = resend_wait_seconds(
+            verification_user.phone_verification_sent_at,
+            int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+        )
+        if wait_seconds:
+            return _error(f"Wait {wait_seconds} seconds before requesting another SMS code.", 429)
+    else:
+        try:
+            sent_at = datetime.fromisoformat(str(session.get("password_change_code_sent_at", "")))
+        except ValueError:
+            sent_at = None
+        wait_seconds = resend_wait_seconds(
+            sent_at,
+            int(current_app.config.get("VERIFICATION_RESEND_COOLDOWN_SECONDS", 60)),
+        )
+        if wait_seconds:
+            return _error(f"Wait {wait_seconds} seconds before requesting another email code.", 429)
 
     code = _generate_short_code()
     max_age = int(current_app.config.get("PASSWORD_CHANGE_CODE_MAX_AGE", 900))
@@ -1070,6 +1144,41 @@ def parent_safety_resources():
     return jsonify({"ok": True, "page": "safety_resources", **_parent_page_payload()})
 
 
+@api_bp.post("/parent/safety-resources/links")
+@login_required
+def parent_add_resource_link():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    payload = request.get_json(silent=True) or {}
+    title = str(payload.get("title", "")).strip()
+    url = str(payload.get("url", "")).strip()
+    topic = str(payload.get("topic", "")).strip() or "Digital safety"
+    audience = str(payload.get("audience", "all")).strip().lower()
+    summary = str(payload.get("summary", "")).strip()
+    if audience not in {"all", "parent", "child"}:
+        audience = "all"
+    if not title or not (url.startswith("https://") or url.startswith("http://")):
+        return _error("title and a valid web URL are required.")
+    resource_link = SafetyResourceLink(
+        family_id=current_user.family_id,
+        created_by_id=current_user.id,
+        title=title,
+        url=url,
+        topic=topic,
+        audience=audience,
+        summary=summary,
+    )
+    db.session.add(resource_link)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "resource_link_added",
+        f"Added safety resource link via API: {title}",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "resource_link": _resource_link_payload(resource_link)}), 201
+
+
 @api_bp.get("/parent/help-support")
 @login_required
 def parent_help_support():
@@ -1159,6 +1268,32 @@ def review_message(message_id: int):
     return jsonify({"ok": True, "message": _message_payload(record)})
 
 
+@api_bp.post("/parent/messages/<int:message_id>/delete")
+@login_required
+def delete_message(message_id: int):
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+
+    record = MessageRecord.query.filter_by(
+        id=message_id,
+        family_id=current_user.family_id,
+    ).first()
+    if record is None:
+        return _error("Message not found.", 404)
+
+    subject_user_id = record.submitted_by_id
+    db.session.delete(record)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "message_deleted",
+        f"Deleted alert/message {message_id} via API",
+        subject_user_id=subject_user_id,
+    )
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 @api_bp.post("/parent/logout-requests/<int:request_id>/approve")
 @login_required
 def approve_logout(request_id: int):
@@ -1171,9 +1306,7 @@ def approve_logout(request_id: int):
     if logout_request is None:
         return _error("Logout request not found.", 404)
 
-    logout_request.status = "approved"
-    logout_request.resolved_by_id = current_user.id
-    logout_request.resolved_at = datetime.utcnow()
+    _resolve_logout_request(logout_request, "approved")
     log_event(
         current_user.family_id,
         current_user.id,
@@ -1197,9 +1330,7 @@ def deny_logout(request_id: int):
     if logout_request is None:
         return _error("Logout request not found.", 404)
 
-    logout_request.status = "denied"
-    logout_request.resolved_by_id = current_user.id
-    logout_request.resolved_at = datetime.utcnow()
+    _resolve_logout_request(logout_request, "denied")
     log_event(
         current_user.family_id,
         current_user.id,

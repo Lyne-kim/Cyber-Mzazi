@@ -2,11 +2,12 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from flask_login import current_user, login_required, logout_user
 
 from .extensions import db
-from .models import LogoutRequest, MessageRecord, User
+from .models import LogoutRequest, MessageRecord, SafetyResourceLink, User
 from .services.audit import log_event
 from .services.parent_alerts import send_high_risk_message_alert
 from .services.prediction_service import PredictionUnavailable, predict_message
 from .services.review_feedback import build_review_signature
+from .services.safety_assistant import build_safety_assistant_response
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES
 
@@ -17,6 +18,8 @@ child_bp = Blueprint("child", __name__, url_prefix="/child")
 CHILD_NAV_ITEMS = [
     {"endpoint": "child.dashboard", "icon": "&#127968;", "label": "Home", "key": "home"},
     {"endpoint": "child.my_safety", "icon": "&#128737;", "label": "My Safety", "key": "my_safety"},
+    {"endpoint": "child.ai_assistant", "icon": "&#129302;", "label": "Ask AI", "key": "ai_assistant"},
+    {"endpoint": "child.resources", "icon": "&#128218;", "label": "Resources", "key": "resources"},
     {"endpoint": "child.settings", "icon": "&#9881;", "label": "Settings", "key": "settings"},
 ]
 
@@ -51,9 +54,16 @@ def _child_data() -> dict:
         .order_by(LogoutRequest.updated_at.desc())
         .first()
     )
+    resource_links = (
+        SafetyResourceLink.query.filter_by(family_id=current_user.family_id)
+        .filter(SafetyResourceLink.audience.in_(["all", "child"]))
+        .order_by(SafetyResourceLink.created_at.desc())
+        .all()
+    )
     return {
         "messages": messages,
         "pending_logout": pending_logout,
+        "safety_links": resource_links,
     }
 
 
@@ -80,12 +90,79 @@ def my_safety():
 
 @child_bp.route("/talk")
 def talk():
-    return redirect(url_for("child.dashboard"))
+    return redirect(url_for("child.ai_assistant"))
 
 
 @child_bp.route("/help")
 def help_questions():
-    return redirect(url_for("child.dashboard"))
+    return redirect(url_for("child.resources"))
+
+
+@child_bp.route("/assistant", methods=["GET", "POST"])
+def ai_assistant():
+    assistant_result = None
+    assistant_prompt = ""
+    if request.method == "POST":
+        assistant_prompt = request.form.get("assistant_prompt", "").strip()
+        assistant_result = build_safety_assistant_response(
+            assistant_prompt,
+            audience="child",
+            family_id=current_user.family_id,
+        )
+        if not assistant_result.get("ok"):
+            flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
+        elif assistant_result.get("should_alert_guardian"):
+            record = MessageRecord(
+                family_id=current_user.family_id,
+                submitted_by_id=current_user.id,
+                source_platform="AI Safety Assistant",
+                sender_handle="Child question",
+                message_text=assistant_prompt,
+                review_signature=build_review_signature(assistant_prompt),
+                capture_method="assistant_chat",
+                predicted_label=assistant_result["label"],
+                predicted_confidence=assistant_result["confidence"],
+                risk_indicators=assistant_result["indicators"],
+                verification_status="assistant_review",
+                verification_label=assistant_result["label"],
+                verification_confidence=assistant_result["confidence"],
+                verification_notes=assistant_result["guidance"],
+            )
+            db.session.add(record)
+            parent_user = current_user.family.users.filter_by(role="parent").first()
+            email_alert_sent, _email_alert_message = send_high_risk_message_alert(parent_user, current_user, record)
+            log_event(
+                current_user.family_id,
+                current_user.id,
+                "assistant_high_risk_alert",
+                "Child AI assistant conversation created a parent dashboard alert.",
+                subject_user_id=current_user.id,
+            )
+            if email_alert_sent and parent_user:
+                log_event(
+                    current_user.family_id,
+                    parent_user.id,
+                    "parent_alert_emailed",
+                    f"Parent alert email sent for assistant message {record.id}.",
+                    subject_user_id=current_user.id,
+                )
+            db.session.commit()
+            flash("This looks serious, so it was shared with your parent/guardian for help.", "warning")
+    context = _child_data()
+    return render_template(
+        "child_page.html",
+        page_key="ai_assistant",
+        page_title="AI Safety Assistant",
+        child_nav_items=CHILD_NAV_ITEMS,
+        assistant_prompt=assistant_prompt,
+        assistant_result=assistant_result,
+        **context,
+    )
+
+
+@child_bp.route("/resources")
+def resources():
+    return _render_child_page("resources", "Safety Resources")
 
 
 @child_bp.route("/settings")

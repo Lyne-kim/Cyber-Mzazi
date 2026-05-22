@@ -1,6 +1,7 @@
-from io import BytesIO
 from datetime import datetime
+from io import BytesIO
 from urllib.parse import quote
+from urllib.parse import urlparse
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
@@ -15,12 +16,14 @@ from .models import (
     MessageRecord,
     NotificationIngestionDevice,
     SafetyResourceDocument,
+    SafetyResourceLink,
     User,
 )
 from .services.audit import log_event
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import issue_ingestion_token
 from .services.review_feedback import build_review_signature
+from .services.safety_assistant import build_safety_assistant_response
 from .ui_text import SUPPORTED_LANGUAGES
 
 
@@ -30,7 +33,7 @@ MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
 
 PARENT_NAV_ITEMS = [
-    {"endpoint": "parent.alerts", "icon": "&#128680;", "label": "Alerts", "key": "alerts"},
+    {"endpoint": "parent.alerts", "icon": "&#128681;", "label": "Alerts", "key": "alerts"},
     {"endpoint": "parent.dashboard", "icon": "&#128202;", "label": "Dashboard", "key": "dashboard"},
     {"endpoint": "parent.child_profile", "icon": "&#128100;", "label": "Child Profile", "key": "child_profile"},
     {"endpoint": "parent.activity_log", "icon": "&#128203;", "label": "Activity Log", "key": "activity_log"},
@@ -40,6 +43,7 @@ PARENT_NAV_ITEMS = [
 PARENT_SUPPORT_ITEMS = [
     {"endpoint": "parent.family_hub", "icon": "&#128106;", "label": "Family Hub", "key": "family_hub"},
     {"endpoint": "parent.safety_resources", "icon": "&#128218;", "label": "Safety Resources", "key": "safety_resources"},
+    {"endpoint": "parent.ai_assistant", "icon": "&#129302;", "label": "AI Assistant", "key": "ai_assistant"},
     {"endpoint": "parent.help_support", "icon": "&#10067;", "label": "Help & Support", "key": "help_support"},
     {"endpoint": "parent.privacy_center", "icon": "&#128196;", "label": "Privacy Center", "key": "privacy_center"},
     {"endpoint": "parent.system_status", "icon": "&#128257;", "label": "System Status", "key": "system_status"},
@@ -60,6 +64,13 @@ def _alert_session_key(selected_child_id: int | None) -> str:
 
 def _latest_alert_key(notification_items: list[dict]) -> str:
     return notification_items[0]["key"] if notification_items else ""
+
+
+def _resolve_logout_request(logout_request: LogoutRequest, status: str) -> None:
+    logout_request.status = status
+    logout_request.resolved_by_id = current_user.id
+    logout_request.resolved_at = datetime.utcnow()
+    db.session.add(logout_request)
 
 
 def _mark_alerts_seen(selected_child_id: int | None, notification_items: list[dict]) -> None:
@@ -198,6 +209,11 @@ def _parent_data() -> dict:
         .order_by(SafetyResourceDocument.created_at.desc())
         .all()
     )
+    safety_links = (
+        SafetyResourceLink.query.filter_by(family_id=current_user.family_id)
+        .order_by(SafetyResourceLink.created_at.desc())
+        .all()
+    )
     logout_request_logs = (
         ActivityLog.query.filter_by(
             family_id=current_user.family_id,
@@ -299,6 +315,7 @@ def _parent_data() -> dict:
         "activity_logs": activity_logs,
         "approval_history": approval_history,
         "safety_documents": safety_documents,
+        "safety_links": safety_links,
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
@@ -388,6 +405,33 @@ def family_hub():
 @parent_bp.route("/safety-resources")
 def safety_resources():
     return _render_parent_page("safety_resources", "Safety Resources")
+
+
+@parent_bp.route("/ai-assistant", methods=["GET", "POST"])
+def ai_assistant():
+    assistant_result = None
+    assistant_prompt = ""
+    if request.method == "POST":
+        assistant_prompt = request.form.get("assistant_prompt", "").strip()
+        assistant_result = build_safety_assistant_response(
+            assistant_prompt,
+            audience="parent",
+            family_id=current_user.family_id,
+        )
+        if not assistant_result.get("ok"):
+            flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
+    context = _parent_data()
+    return render_template(
+        "parent_page.html",
+        page_key="ai_assistant",
+        page_title="AI Assistant",
+        primary_nav_items=PARENT_NAV_ITEMS,
+        support_nav_items=PARENT_SUPPORT_ITEMS,
+        advanced_nav_items=PARENT_ADVANCED_ITEMS,
+        assistant_prompt=assistant_prompt,
+        assistant_result=assistant_result,
+        **context,
+    )
 
 
 @parent_bp.route("/help-support")
@@ -549,6 +593,60 @@ def attach_resource_documents():
     return redirect(url_for("parent.safety_resources"))
 
 
+@parent_bp.post("/safety-resources/links")
+def add_resource_link():
+    title = request.form.get("title", "").strip()
+    url = request.form.get("url", "").strip()
+    topic = request.form.get("topic", "").strip() or "Digital safety"
+    audience = request.form.get("audience", "all").strip().lower()
+    summary = request.form.get("summary", "").strip()
+
+    parsed = urlparse(url)
+    if not title or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        flash("Enter a title and a valid https:// resource link.", "warning")
+        return redirect(url_for("parent.safety_resources"))
+    if audience not in {"all", "parent", "child"}:
+        audience = "all"
+
+    resource_link = SafetyResourceLink(
+        family_id=current_user.family_id,
+        created_by_id=current_user.id,
+        title=title,
+        url=url,
+        topic=topic,
+        audience=audience,
+        summary=summary,
+    )
+    db.session.add(resource_link)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "resource_link_added",
+        f"Added safety resource link: {title}",
+    )
+    db.session.commit()
+    flash("Safety resource link added.", "success")
+    return redirect(url_for("parent.safety_resources"))
+
+
+@parent_bp.post("/safety-resources/links/<int:link_id>/delete")
+def delete_resource_link(link_id: int):
+    resource_link = SafetyResourceLink.query.filter_by(
+        id=link_id,
+        family_id=current_user.family_id,
+    ).first_or_404()
+    db.session.delete(resource_link)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "resource_link_deleted",
+        f"Deleted safety resource link: {resource_link.title}",
+    )
+    db.session.commit()
+    flash("Safety resource link removed.", "success")
+    return redirect(url_for("parent.safety_resources"))
+
+
 @parent_bp.post("/android-devices")
 def create_android_device():
     selected_child, _children = get_selected_child(current_user.family_id)
@@ -657,14 +755,32 @@ def review_message(message_id: int):
     return redirect(url_for("parent.alerts"))
 
 
+@parent_bp.post("/messages/<int:message_id>/delete")
+def delete_message(message_id: int):
+    record = MessageRecord.query.filter_by(
+        id=message_id,
+        family_id=current_user.family_id,
+    ).first_or_404()
+    subject_user_id = record.submitted_by_id
+    db.session.delete(record)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "message_deleted",
+        f"Deleted alert/message {message_id}",
+        subject_user_id=subject_user_id,
+    )
+    db.session.commit()
+    flash("Alert deleted.", "success")
+    return redirect(url_for("parent.alerts"))
+
+
 @parent_bp.post("/logout-requests/<int:request_id>/approve")
 def approve_logout(request_id: int):
     logout_request = LogoutRequest.query.filter_by(
         id=request_id, family_id=current_user.family_id, status="pending"
     ).first_or_404()
-    logout_request.status = "approved"
-    logout_request.resolved_by_id = current_user.id
-    logout_request.resolved_at = datetime.utcnow()
+    _resolve_logout_request(logout_request, "approved")
     log_event(
         current_user.family_id,
         current_user.id,
@@ -682,9 +798,7 @@ def deny_logout(request_id: int):
     logout_request = LogoutRequest.query.filter_by(
         id=request_id, family_id=current_user.family_id, status="pending"
     ).first_or_404()
-    logout_request.status = "denied"
-    logout_request.resolved_by_id = current_user.id
-    logout_request.resolved_at = datetime.utcnow()
+    _resolve_logout_request(logout_request, "denied")
     log_event(
         current_user.family_id,
         current_user.id,

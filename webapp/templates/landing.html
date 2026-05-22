@@ -188,12 +188,19 @@
       text-decoration: none;
       font-size: 0.9rem;
       font-weight: 800;
-      transition: transform 0.18s ease, background 0.18s ease;
+      opacity: 1;
+      pointer-events: auto;
+      transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease;
     }
 
     .landing-back-top:hover {
       transform: translateY(-2px);
       background: var(--landing-green-dark);
+    }
+
+    .landing-back-top.is-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .landing-hero {
@@ -1028,5 +1035,20 @@
       <a href="{{ url_for('auth.register') }}">Register</a>
     </div>
   </footer>
-  <a class="landing-back-top" href="#top" aria-label="Back to top">Top</a>
+  <a class="landing-back-top is-hidden" href="#top" aria-label="Back to top">Top</a>
+  <script>
+    (() => {
+      const button = document.querySelector(".landing-back-top");
+      if (!button) return;
+      const updateBackTop = () => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        const nearBottom = scrollable > 0 && scrollTop / scrollable > 0.72;
+        button.classList.toggle("is-hidden", !nearBottom || scrollTop < 80);
+      };
+      updateBackTop();
+      window.addEventListener("scroll", updateBackTop, { passive: true });
+      window.addEventListener("resize", updateBackTop);
+    })();
+  </script>
 {% endblock %}

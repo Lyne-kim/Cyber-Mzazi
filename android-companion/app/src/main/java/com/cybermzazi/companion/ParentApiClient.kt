@@ -48,14 +48,10 @@ object ParentApiClient {
                 if (connection.responseCode !in 200..299) {
                     return@runCatching ParentApiResult(false, parseError(response, "Child sign-in failed."))
                 }
-                val cookie = connection.headerFields["Set-Cookie"]
-                    ?.firstOrNull()
-                    ?.substringBefore(";")
-                    .orEmpty()
+                val cookie = storeSessionCookie(context, connection)
                 if (cookie.isBlank()) {
                     return@runCatching ParentApiResult(false, "Child sign-in did not return a session.")
                 }
-                Prefs.setParentSessionCookie(context, cookie)
                 ParentApiResult(true, "Child sign-in ready.")
             }.getOrElse { throwable ->
                 ParentApiResult(false, "Child sign-in error: ${throwable.message ?: "Unknown error"}")
@@ -83,9 +79,7 @@ object ParentApiClient {
         postJson(
             context = context,
             path = "/api/account/profile",
-            body = JSONObject()
-                .put("name", name)
-                .put("contact", contact),
+            body = JSONObject().put("name", name),
             successMessage = "Profile saved.",
             onComplete = onComplete,
         )
@@ -218,6 +212,7 @@ object ParentApiClient {
                     writer.write(body.toString())
                 }
                 val response = readResponse(connection)
+                storeSessionCookie(context, connection)
                 if (connection.responseCode == 401) {
                     Prefs.clearParentSession(context)
                     return@runCatching ParentApiResult(false, "Session expired. Sign in again.")
@@ -244,6 +239,17 @@ object ParentApiClient {
 
     private fun parseError(response: String, fallback: String): String =
         runCatching { JSONObject(response).optString("error").ifBlank { fallback } }.getOrDefault(fallback)
+
+    private fun storeSessionCookie(context: Context, connection: HttpURLConnection): String {
+        val cookie = connection.headerFields["Set-Cookie"]
+            ?.firstOrNull()
+            ?.substringBefore(";")
+            .orEmpty()
+        if (cookie.isNotBlank()) {
+            Prefs.setParentSessionCookie(context, cookie)
+        }
+        return cookie
+    }
 
     private data class ParentApiResult(val ok: Boolean, val message: String)
 

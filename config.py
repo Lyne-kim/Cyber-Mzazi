@@ -120,6 +120,9 @@ class Config:
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
+    VERIFICATION_RESEND_COOLDOWN_SECONDS = int(
+        os.getenv("VERIFICATION_RESEND_COOLDOWN_SECONDS", "60")
+    )
     PHONE_VERIFICATION_CODE_MAX_AGE = int(
         os.getenv("PHONE_VERIFICATION_CODE_MAX_AGE", "900")
     )

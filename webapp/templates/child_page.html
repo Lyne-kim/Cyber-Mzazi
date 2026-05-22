@@ -145,6 +145,13 @@
               <p>{{ t("My Safety") }}</p>
             </div>
           </a>
+          <a class="action-card" href="{{ url_for('child.ai_assistant') }}">
+            <span>&#129302;</span>
+            <div>
+              <strong>Ask for help with a message</strong>
+              <p>AI Safety Assistant</p>
+            </div>
+          </a>
           <a class="action-card" href="{{ url_for('child.settings') }}">
             <span>&#9881;</span>
             <div>
@@ -235,6 +242,53 @@
               <li>I do not secretly record your camera or microphone</li>
             </ul>
           </div>
+        </div>
+      </section>
+    {% elif page_key == "ai_assistant" %}
+      <section class="panel">
+        <p class="eyebrow">AI Safety Assistant</p>
+        <h3>Ask before you reply</h3>
+        <p class="muted">Paste a message or ask what something means. If it looks serious, Cyber Mzazi will ask your parent/guardian to help.</p>
+        <form method="post" action="{{ url_for('child.ai_assistant') }}">
+          <label>
+            Message or question
+            <textarea name="assistant_prompt" rows="7" placeholder="Example: Someone online is asking for my private photos..." required>{{ assistant_prompt or "" }}</textarea>
+          </label>
+          <button class="button accent" type="submit">Ask assistant</button>
+        </form>
+        {% if assistant_result and assistant_result.ok %}
+          <article class="assistant-card tone-{{ assistant_result.tone }}">
+            <div class="message-topline">
+              <strong>{{ assistant_result.label_title }} / {{ assistant_result.risk_level|title }} risk</strong>
+              <span>{{ "%.0f"|format(assistant_result.confidence * 100) }}%</span>
+            </div>
+            <p>{{ assistant_result.explanation }}</p>
+            <p><strong>What to do:</strong> {{ assistant_result.guidance }}</p>
+            <ul class="simple-list">
+              {% for step in assistant_result.next_steps %}
+                <li>{{ step }}</li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endif %}
+      </section>
+    {% elif page_key == "resources" %}
+      <section class="panel">
+        <p class="eyebrow">Safety Resources</p>
+        <h3>Helpful links</h3>
+        <div class="stack">
+          {% for link in safety_links %}
+            <article class="mini-panel resource-item">
+              <strong>{{ link.title }}</strong>
+              <p class="muted">{{ link.topic }}</p>
+              {% if link.summary %}
+                <p>{{ link.summary }}</p>
+              {% endif %}
+              <a class="button ghost small" href="{{ link.url }}" target="_blank" rel="noopener">Open link</a>
+            </article>
+          {% else %}
+            <p class="muted">Your parent/guardian has not added safety links yet.</p>
+          {% endfor %}
         </div>
       </section>
     {% elif page_key == "settings" %}

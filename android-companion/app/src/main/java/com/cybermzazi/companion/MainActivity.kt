@@ -178,6 +178,7 @@ class MainActivity : AppCompatActivity() {
         inAppSoundsSwitch = findViewById(R.id.inAppSoundsSwitch)
         profileNameInput = findViewById(R.id.profileNameInput)
         profileContactInput = findViewById(R.id.profileContactInput)
+        profileContactInput.visibility = View.GONE
         passwordVerificationCodeInput = findViewById(R.id.passwordVerificationCodeInput)
         currentPasswordInput = findViewById(R.id.currentPasswordInput)
         newPasswordInput = findViewById(R.id.newPasswordInput)
@@ -536,7 +537,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendPasswordVerificationCode() {
-        val channel = if (profileContactInput.text.toString().contains("@")) "email" else "phone"
+        val parentContact = Prefs.getChildParentContact(this)
+        val channel = if (parentContact.contains("@")) "email" else "phone"
         ParentApiClient.sendPasswordVerification(this, channel) { ok, message ->
             runOnUiThread {
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -827,7 +829,6 @@ class MainActivity : AppCompatActivity() {
                     childSignedIn = true
                     Prefs.setChildSession(this, parentContact, childUsername)
                     profileNameInput.setText(childUsername)
-                    profileContactInput.setText(parentContact)
                     childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
                     refreshChildRole(showHome = false)
                     updateMenuAccess()
