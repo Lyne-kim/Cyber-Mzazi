@@ -103,6 +103,8 @@ def ai_assistant():
     assistant_result = None
     assistant_prompt = ""
     assistant_history = session.get("child_assistant_history", [])
+    if not isinstance(assistant_history, list):
+        assistant_history = []
     if request.method == "POST":
         assistant_prompt = request.form.get("assistant_prompt", "").strip()
         assistant_result = build_safety_assistant_response(

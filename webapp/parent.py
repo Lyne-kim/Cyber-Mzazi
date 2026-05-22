@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+from types import SimpleNamespace
 from urllib.parse import quote
 from urllib.parse import urlparse
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
@@ -141,20 +142,12 @@ def _build_notification_items(selected_child, messages, logout_requests) -> list
     return notifications
 
 
-def _normalize_stored_prediction(message: MessageRecord) -> bool:
-    changed = False
+def _message_dashboard_view(message: MessageRecord) -> SimpleNamespace:
     raw_label = str(message.predicted_label or "").strip().lower()
     normalized_label = normalize_label(raw_label)
-    if raw_label != normalized_label:
-        message.predicted_label = normalized_label
-        message.risk_indicators = ",".join(RISK_TERMS.get(normalized_label, ["review"]))
-        changed = True
-
-    verification_label = normalize_label(message.verification_label, default="")
-    if message.verification_label and message.verification_label != verification_label:
-        message.verification_label = verification_label or normalized_label
-        changed = True
-
+    risk_indicators = message.risk_indicators
+    verification_label = normalize_label(message.verification_label, default="") if message.verification_label else None
+    confidence = float(message.predicted_confidence or 0.0)
     lowered = str(message.message_text or "").lower()
     commerce_terms = {
         "offer",
@@ -174,17 +167,37 @@ def _normalize_stored_prediction(message: MessageRecord) -> bool:
         "jumia",
     }
     if (
-        message.predicted_label != SAFE_LABEL
-        and float(message.predicted_confidence or 0.0) < 0.78
+        normalized_label != SAFE_LABEL
+        and confidence < 0.78
         and any(term in lowered for term in commerce_terms)
     ):
-        message.predicted_label = SAFE_LABEL
-        message.predicted_confidence = max(float(message.predicted_confidence or 0.0), 0.72)
-        message.risk_indicators = ",".join(RISK_TERMS[SAFE_LABEL])
-        message.verification_label = SAFE_LABEL
-        changed = True
+        normalized_label = SAFE_LABEL
+        confidence = max(confidence, 0.72)
+        risk_indicators = ",".join(RISK_TERMS[SAFE_LABEL])
+        verification_label = SAFE_LABEL
 
-    return changed
+    return SimpleNamespace(
+        id=message.id,
+        family_id=message.family_id,
+        submitted_by_id=message.submitted_by_id,
+        source_platform=message.source_platform,
+        sender_handle=message.sender_handle,
+        message_text=message.message_text,
+        capture_method=message.capture_method,
+        notification_title=message.notification_title,
+        source_app_package=message.source_app_package,
+        predicted_label=normalized_label,
+        predicted_confidence=confidence,
+        risk_indicators=risk_indicators,
+        verification_status=message.verification_status,
+        verification_label=verification_label,
+        verification_confidence=message.verification_confidence,
+        verification_notes=message.verification_notes,
+        reviewed_label=normalize_label(message.reviewed_label, default="") if message.reviewed_label else None,
+        reviewed_by_id=message.reviewed_by_id,
+        created_at=message.created_at,
+        updated_at=message.updated_at,
+    )
 
 
 @parent_bp.before_request
@@ -211,7 +224,7 @@ def _parent_data() -> dict:
         .order_by(NotificationIngestionDevice.created_at.desc())
         .all()
     )
-    messages = (
+    raw_messages = (
         MessageRecord.query.filter_by(
             family_id=current_user.family_id,
             submitted_by_id=selected_child.id if selected_child else None,
@@ -220,11 +233,7 @@ def _parent_data() -> dict:
         .limit(15)
         .all()
     )
-    prediction_changed = False
-    for message in messages:
-        prediction_changed = _normalize_stored_prediction(message) or prediction_changed
-    if prediction_changed:
-        db.session.commit()
+    messages = [_message_dashboard_view(message) for message in raw_messages]
     logout_requests = (
         LogoutRequest.query.filter_by(
             family_id=current_user.family_id,
@@ -463,6 +472,8 @@ def ai_assistant():
     assistant_result = None
     assistant_prompt = ""
     assistant_history = session.get("parent_assistant_history", [])
+    if not isinstance(assistant_history, list):
+        assistant_history = []
     if request.method == "POST":
         assistant_prompt = request.form.get("assistant_prompt", "").strip()
         assistant_result = build_safety_assistant_response(
