@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import secrets
+import json
 from datetime import datetime, timedelta
+from pathlib import Path
 from urllib.parse import quote
 
 from flask import Blueprint, current_app, jsonify, request, session
 from flask_login import current_user, login_required, login_user, logout_user
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -27,7 +29,7 @@ from .services.email_verification import (
     send_verification_email,
     verify_email_token,
 )
-from .services.mail_delivery import send_email
+from .services.mail_delivery import is_mail_delivery_configured, send_email
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import (
     issue_ingestion_token,
@@ -39,6 +41,7 @@ from .services.parent_alerts import (
     send_logout_request_alert,
 )
 from .services.phone_verification import (
+    is_sms_configured,
     normalize_phone,
     send_phone_verification_code,
     verify_phone_code,
@@ -59,6 +62,7 @@ MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
 PUBLIC_API_ENDPOINTS = {
     "api.health",
+    "api.developer_status",
     "api.register_family",
     "api.login",
     "api.logout",
@@ -364,6 +368,111 @@ def health():
             "model_loaded": backend["model_loaded"],
             "model_provider": backend["provider"],
             "model_endpoint": backend["endpoint"],
+        }
+    )
+
+
+def _developer_status_authorized() -> bool:
+    expected_token = str(current_app.config.get("DEVELOPER_STATUS_TOKEN", "")).strip()
+    supplied_token = (
+        request.headers.get("X-Developer-Token", "").strip()
+        or request.args.get("token", "").strip()
+    )
+    return bool(expected_token and secrets.compare_digest(supplied_token, expected_token))
+
+
+def _path_status(config_key: str) -> dict:
+    raw_path = str(current_app.config.get(config_key, "")).strip()
+    exists = bool(raw_path and Path(raw_path).exists())
+    return {"path": raw_path, "exists": exists}
+
+
+def _load_model_metrics() -> dict:
+    metrics_path = str(current_app.config.get("MODEL_METRICS_PATH", "")).strip()
+    if not metrics_path:
+        return {"path": "", "exists": False, "summary": {}}
+    path = Path(metrics_path)
+    if not path.exists():
+        return {"path": metrics_path, "exists": False, "summary": {}}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"path": metrics_path, "exists": True, "error": str(exc), "summary": {}}
+    summary = {
+        "model_name": payload.get("model_name"),
+        "rows_used": payload.get("rows_used"),
+        "epochs": payload.get("epochs"),
+        "batch_size": payload.get("batch_size"),
+        "max_length": payload.get("max_length"),
+        "validation_accuracy": payload.get("validation_accuracy"),
+        "validation_macro_f1": payload.get("validation_macro_f1"),
+        "validation_loss": payload.get("validation_loss"),
+        "dataset_path": payload.get("dataset_path"),
+        "trained_at": payload.get("trained_at") or payload.get("updated_at"),
+        "labels": payload.get("labels"),
+        "class_distribution": payload.get("class_distribution"),
+        "epoch_history": payload.get("epoch_history"),
+    }
+    return {"path": metrics_path, "exists": True, "summary": summary}
+
+
+def _database_status() -> dict:
+    try:
+        db.session.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {"configured": True, "reachable": False, "message": str(exc)}
+    return {"configured": True, "reachable": True, "message": "Database connection is healthy."}
+
+
+@api_bp.get("/developer/status")
+def developer_status():
+    if not _developer_status_authorized():
+        return _error("Not found.", 404)
+    backend = prediction_backend_status()
+    metrics = _load_model_metrics()
+    artifact_labels = metrics.get("summary", {}).get("labels") or []
+    return jsonify(
+        {
+            "ok": True,
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "dataset": _path_status("DATASET_PATH"),
+            "model_artifact": _path_status("MODEL_ARTIFACT_PATH"),
+            "model_metrics": metrics,
+            "labels": {
+                "code": SUPPORTED_LABELS,
+                "artifact": artifact_labels,
+                "match": not artifact_labels or list(artifact_labels) == SUPPORTED_LABELS,
+            },
+            "model": {
+                "provider_config": current_app.config.get("MODEL_PROVIDER"),
+                "runtime_provider": backend["provider"],
+                "loaded": backend["model_loaded"],
+                "endpoint_configured": bool(current_app.config.get("MODEL_API_URL")),
+                "endpoint": backend["endpoint"],
+                "heuristic_fallback": bool(current_app.config.get("ENABLE_HEURISTIC_FALLBACK")),
+                "review_feedback_matching": bool(current_app.config.get("ENABLE_REVIEW_FEEDBACK_MATCHING")),
+            },
+            "configuration": {
+                "database": _database_status(),
+                "mail": {
+                    "configured": is_mail_delivery_configured(),
+                    "server": current_app.config.get("MAIL_SERVER"),
+                    "port": current_app.config.get("MAIL_PORT"),
+                    "sender_configured": bool(
+                        current_app.config.get("MAIL_DEFAULT_SENDER")
+                        or current_app.config.get("MAIL_USERNAME")
+                    ),
+                },
+                "sms": {
+                    "provider": current_app.config.get("SMS_PROVIDER"),
+                    "configured": is_sms_configured(),
+                    "shortcode_configured": bool(current_app.config.get("TEXTSMS_SHORTCODE")),
+                    "partner_configured": bool(current_app.config.get("TEXTSMS_PARTNER_ID")),
+                    "endpoint_configured": bool(current_app.config.get("TEXTSMS_ENDPOINT")),
+                },
+                "app_base_url_configured": bool(current_app.config.get("APP_BASE_URL")),
+            },
         }
     )
 

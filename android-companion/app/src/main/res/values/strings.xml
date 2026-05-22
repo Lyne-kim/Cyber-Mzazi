@@ -206,6 +206,7 @@
     <string name="allowed_apps_label">Allowed app packages</string>
     <string name="blocked_apps_label">Blocked app packages</string>
     <string name="save_settings">Save settings</string>
+    <string name="app_version_info">Cyber Mzazi child app v%1$s</string>
     <string name="preferences_section">Preferences</string>
     <string name="dark_mode_toggle">Dark mode</string>
     <string name="language_toggle">Use Swahili</string>

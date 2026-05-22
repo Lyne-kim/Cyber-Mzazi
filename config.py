@@ -67,6 +67,7 @@ class Config:
     MODEL_API_TOKEN = os.getenv("MODEL_API_TOKEN", "").strip()
     MODEL_INFERENCE_TOKEN = os.getenv("MODEL_INFERENCE_TOKEN", "").strip()
     MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "auto").strip().lower()
+    DEVELOPER_STATUS_TOKEN = os.getenv("DEVELOPER_STATUS_TOKEN", "").strip()
     ENABLE_HEURISTIC_FALLBACK = os.getenv(
         "ENABLE_HEURISTIC_FALLBACK",
         "true",

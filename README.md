@@ -155,6 +155,9 @@ Important variables commonly used in this project:
 - `EMAIL_VERIFICATION_MAX_AGE`
 - `ANDROID_COMPANION_DOWNLOAD_URL`
 - `MODEL_PROVIDER`
+- `MODEL_API_URL`
+- `MODEL_API_TOKEN`
+- `DEVELOPER_STATUS_TOKEN`
 - `ENABLE_HEURISTIC_FALLBACK`
 - `FORCE_MODEL_RETRAIN`
 
@@ -171,6 +174,22 @@ python scripts\init_db.py
 ```
 
 The app also includes runtime schema repair logic for older deployments.
+
+### Developer model/status checks
+
+Local developer summary:
+
+```powershell
+python scripts\model_status.py
+```
+
+Hidden API summary, only when `DEVELOPER_STATUS_TOKEN` is set:
+
+```powershell
+curl -H "X-Developer-Token: <token>" http://localhost:5000/api/developer/status
+```
+
+This route is not linked from parent or child pages.
 
 ### 4. Run the web app locally
 

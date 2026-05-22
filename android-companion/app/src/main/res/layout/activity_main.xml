@@ -529,7 +529,8 @@
                             android:id="@+id/tokenInput"
                             style="@style/CyberInput"
                             android:layout_marginTop="10dp"
-                            android:hint="@string/token_hint" />
+                            android:hint="@string/token_hint"
+                            android:visibility="gone" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -648,6 +649,15 @@
                         android:layout_marginTop="16dp"
                         android:text="@string/save_settings"
                         android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/appVersionText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:textColor="@color/cyber_mzazi_muted"
+                        android:textSize="13sp" />
                 </LinearLayout>
 
                 <LinearLayout

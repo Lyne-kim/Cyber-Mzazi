@@ -21,6 +21,8 @@ services:
         value: ""
       - key: MODEL_API_TOKEN
         value: ""
+      - key: DEVELOPER_STATUS_TOKEN
+        value: ""
       - key: ENABLE_HEURISTIC_FALLBACK
         value: "true"
       - key: FORCE_MODEL_RETRAIN

@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var currentPasswordInput: EditText
     private lateinit var newPasswordInput: EditText
     private lateinit var confirmNewPasswordInput: EditText
+    private lateinit var appVersionText: TextView
 
     private lateinit var menuHome: TextView
     private lateinit var menuAuth: TextView
@@ -181,6 +182,7 @@ class MainActivity : AppCompatActivity() {
         currentPasswordInput = findViewById(R.id.currentPasswordInput)
         newPasswordInput = findViewById(R.id.newPasswordInput)
         confirmNewPasswordInput = findViewById(R.id.confirmNewPasswordInput)
+        appVersionText = findViewById(R.id.appVersionText)
 
         menuHome = findViewById(R.id.menuHome)
         menuAuth = findViewById(R.id.menuAuth)
@@ -251,6 +253,16 @@ class MainActivity : AppCompatActivity() {
         goPairChildButton.setOnClickListener { signOut() }
         goCaptureChildButton.setOnClickListener { showSection(SECTION_CAPTURE) }
         goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
+        childPairingChecklistText.setOnClickListener { showSection(SECTION_QR) }
+        childNotificationChecklistText.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+        childFiltersChecklistText.setOnClickListener { showSection(SECTION_FILTERS) }
+        childConnectionCardText.setOnClickListener { showSection(SECTION_QR) }
+        childNotificationCardText.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+        childFiltersCardText.setOnClickListener { showSection(SECTION_FILTERS) }
 
         saveButton.setOnClickListener { saveSettings() }
         scanQrButton.setOnClickListener { startQrPairing() }
@@ -355,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         recentLogText.text = RecentNotificationLog.render(this)
         childSetupStatusText.text = buildChildSetupStatus()
         updateChildDashboardCards()
+        appVersionText.text = getString(R.string.app_version_info, appVersionName())
         darkModeSwitch.isChecked = Prefs.isDarkMode(this)
         languageSwitch.isChecked = Prefs.getLanguage(this) == "sw"
         inAppSoundsSwitch.isChecked = Prefs.inAppSoundsEnabled(this)
@@ -778,6 +791,11 @@ class MainActivity : AppCompatActivity() {
         val marker = if (done) "[OK]" else "[!]"
         return "$marker ${if (done) doneLabel else label}"
     }
+
+    private fun appVersionName(): String =
+        runCatching {
+            packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+        }.getOrDefault("debug").ifBlank { "debug" }
 
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
