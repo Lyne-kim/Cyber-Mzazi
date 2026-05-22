@@ -73,6 +73,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var currentPasswordInput: EditText
     private lateinit var newPasswordInput: EditText
     private lateinit var confirmNewPasswordInput: EditText
+    private lateinit var assistantPromptInput: EditText
+    private lateinit var assistantResultText: TextView
     private lateinit var appVersionText: TextView
 
     private lateinit var menuHome: TextView
@@ -85,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuLog: TextView
     private lateinit var menuProfile: TextView
     private lateinit var menuPassword: TextView
+    private lateinit var menuAssistant: TextView
     private lateinit var menuLogout: TextView
 
     private lateinit var roleSection: View
@@ -98,6 +101,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childLoginSection: View
     private lateinit var profileSection: View
     private lateinit var passwordSection: View
+    private lateinit var assistantSection: View
 
     private lateinit var openChildLoginButton: Button
     private lateinit var childLoginButton: Button
@@ -108,6 +112,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var goFiltersChildButton: Button
     private lateinit var saveButton: Button
     private lateinit var scanQrButton: Button
+    private lateinit var askAssistantButton: Button
     private lateinit var passwordConfirmCodeButton: Button
 
     private var currentSection = 0
@@ -183,6 +188,8 @@ class MainActivity : AppCompatActivity() {
         currentPasswordInput = findViewById(R.id.currentPasswordInput)
         newPasswordInput = findViewById(R.id.newPasswordInput)
         confirmNewPasswordInput = findViewById(R.id.confirmNewPasswordInput)
+        assistantPromptInput = findViewById(R.id.assistantPromptInput)
+        assistantResultText = findViewById(R.id.assistantResultText)
         appVersionText = findViewById(R.id.appVersionText)
 
         menuHome = findViewById(R.id.menuHome)
@@ -195,6 +202,7 @@ class MainActivity : AppCompatActivity() {
         menuLog = findViewById(R.id.menuLog)
         menuProfile = findViewById(R.id.menuProfile)
         menuPassword = findViewById(R.id.menuPassword)
+        menuAssistant = findViewById(R.id.menuAssistant)
         menuLogout = findViewById(R.id.menuLogout)
 
         roleSection = findViewById(R.id.roleSection)
@@ -208,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         childLoginSection = findViewById(R.id.childLoginSection)
         profileSection = findViewById(R.id.profileSection)
         passwordSection = findViewById(R.id.passwordSection)
+        assistantSection = findViewById(R.id.assistantSection)
         openChildLoginButton = findViewById(R.id.openChildLoginButton)
         childLoginButton = findViewById(R.id.childLoginButton)
         openNotificationSettingsButton = findViewById(R.id.openNotificationSettingsButton)
@@ -217,6 +226,7 @@ class MainActivity : AppCompatActivity() {
         goFiltersChildButton = findViewById(R.id.goFiltersChildButton)
         saveButton = findViewById(R.id.saveButton)
         scanQrButton = findViewById(R.id.scanQrButton)
+        askAssistantButton = findViewById(R.id.askAssistantButton)
         passwordConfirmCodeButton = findViewById(R.id.passwordConfirmCodeButton)
 
         backButton.setOnClickListener { navigateBack() }
@@ -244,6 +254,7 @@ class MainActivity : AppCompatActivity() {
         menuLog.setOnClickListener { showSection(SECTION_LOGS) }
         menuProfile.setOnClickListener { showSection(SECTION_PROFILE) }
         menuPassword.setOnClickListener { showSection(SECTION_PASSWORD) }
+        menuAssistant.setOnClickListener { showSection(SECTION_ASSISTANT) }
         menuLogout.setOnClickListener { signOut() }
         openChildLoginButton.setOnClickListener { showSection(SECTION_CHILD_AUTH) }
         childLoginButton.setOnClickListener { signInChild() }
@@ -290,6 +301,14 @@ class MainActivity : AppCompatActivity() {
         passwordConfirmCodeButton.setOnClickListener { confirmPasswordVerificationCode() }
         findViewById<Button>(R.id.passwordSaveButton).setOnClickListener {
             changePassword()
+        }
+        findViewById<Button>(R.id.openAssistantButton).setOnClickListener {
+            showSection(SECTION_ASSISTANT)
+        }
+        askAssistantButton.setOnClickListener { askAssistant() }
+        findViewById<Button>(R.id.clearAssistantButton).setOnClickListener {
+            assistantPromptInput.text?.clear()
+            assistantResultText.text = getString(R.string.assistant_result_empty)
         }
 
         darkModeSwitch.setOnCheckedChangeListener { _, enabled ->
@@ -431,6 +450,7 @@ class MainActivity : AppCompatActivity() {
             menuLog,
             menuProfile,
             menuPassword,
+            menuAssistant,
             menuLogout,
         )
         menuItems.forEach { it.visibility = View.GONE }
@@ -443,6 +463,7 @@ class MainActivity : AppCompatActivity() {
         menuFilters.visibility = View.VISIBLE
         menuProfile.visibility = View.VISIBLE
         menuPassword.visibility = View.VISIBLE
+        menuAssistant.visibility = View.VISIBLE
         menuLogout.visibility = View.VISIBLE
         menuStatus.visibility = View.VISIBLE
         menuLog.visibility = View.VISIBLE
@@ -589,6 +610,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun askAssistant() {
+        val prompt = assistantPromptInput.text.toString().trim()
+        if (prompt.isBlank()) {
+            Toast.makeText(this, R.string.assistant_prompt_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        askAssistantButton.isEnabled = false
+        assistantResultText.text = getString(R.string.assistant_thinking)
+        ParentApiClient.askAssistant(this, prompt) { ok, message ->
+            runOnUiThread {
+                askAssistantButton.isEnabled = true
+                assistantResultText.text = message
+                Toast.makeText(
+                    this,
+                    if (ok) R.string.assistant_done else R.string.assistant_failed,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
     private fun refreshChildRole(showHome: Boolean = true) {
         Prefs.setDeviceRole(this)
         updateRoleUi()
@@ -601,6 +643,7 @@ class MainActivity : AppCompatActivity() {
             position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
             position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
             position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
+            position == SECTION_ASSISTANT && !isSignedIn() -> SECTION_HOME
             position == SECTION_QR && childSignedIn -> SECTION_QR
             position == SECTION_QR && !childSignedIn -> SECTION_HOME
             (position == SECTION_CAPTURE || position == SECTION_FILTERS) && !childSignedIn -> SECTION_HOME
@@ -621,6 +664,7 @@ class MainActivity : AppCompatActivity() {
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
         profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
         passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
+        assistantSection.visibility = if (resolvedPosition == SECTION_ASSISTANT) View.VISIBLE else View.GONE
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
         drawerLayout.closeDrawer(GravityCompat.START)
@@ -637,6 +681,7 @@ class MainActivity : AppCompatActivity() {
         updateDrawerItem(menuLog, position == SECTION_LOGS)
         updateDrawerItem(menuProfile, position == SECTION_PROFILE)
         updateDrawerItem(menuPassword, position == SECTION_PASSWORD)
+        updateDrawerItem(menuAssistant, position == SECTION_ASSISTANT)
         updateDrawerItem(menuLogout, false)
     }
 
@@ -937,6 +982,7 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_CHILD_ACCOUNT = 10
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
+        private const val SECTION_ASSISTANT = 14
         private const val STATE_CURRENT_SECTION = "current_section"
     }
 }

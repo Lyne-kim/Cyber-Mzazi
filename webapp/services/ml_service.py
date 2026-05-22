@@ -6,7 +6,7 @@ from functools import lru_cache
 from flask import current_app
 
 from ml.artifacts import resolve_legacy_artifact_file, resolve_transformer_artifact_dir
-from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS
+from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS, normalize_label
 
 
 class MessageClassifier:
@@ -87,7 +87,7 @@ class MessageClassifier:
                 logits = self.model(**encoded).logits
             probabilities = self.torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
             top_index = int(np.argmax(probabilities))
-            label = self.classes[top_index]
+            label = normalize_label(self.classes[top_index])
             confidence = float(probabilities[top_index])
             label, confidence = self._apply_keyword_hints(text, label, confidence)
             return {
@@ -108,7 +108,7 @@ class MessageClassifier:
 
         blended = (0.45 * linear_probs) + (0.55 * rf_prob_matrix)
         top_index = int(np.argmax(blended[0]))
-        label = self.classes[top_index]
+        label = normalize_label(self.classes[top_index])
         confidence = float(blended[0][top_index])
         label, confidence = self._apply_keyword_hints(text, label, confidence)
 
@@ -151,7 +151,7 @@ class HeuristicMessageClassifier:
         # A few broad backstops for common message patterns that can cross platforms.
         if any(term in lowered for term in ["http://", "https://", "bit.ly", "tinyurl", "otp", "verify code"]):
             scores["phishing"] = scores.get("phishing", 0) + 1
-        if any(term in lowered for term in ["send money", "cashout", "mpesa", "m-pesa", "wallet", "bank alert"]):
+        if any(term in lowered for term in ["send money", "cashout", "mpesa", "m-pesa", "bank alert", "wire money", "transfer now"]):
             scores["scam"] = scores.get("scam", 0) + 1
         if any(term in lowered for term in ["nudes", "video of you", "i will post", "i'll post", "expose you"]):
             scores["sextortion"] = scores.get("sextortion", 0) + 1

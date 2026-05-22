@@ -91,7 +91,6 @@
       {% endif %}
     </section>
 
-    <a class="quick-action-fab" href="{{ url_for('parent.alerts') }}" title="Flag content">🚩</a>
   </aside>
   <button class="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
 
@@ -168,12 +167,20 @@
     {% elif page_key == "alerts" %}
       <section class="panel">
         <div class="panel-header">
-      <div>
-        <p class="eyebrow">{{ t("Alerts") }}</p>
-        <h3>{{ t("Alerts") }}</h3>
-      </div>
-      <span class="info-chip">Scores, flags, approvals.</span>
-    </div>
+          <div>
+            <p class="eyebrow">{{ t("Alerts") }}</p>
+            <h3>{{ t("Alerts") }}</h3>
+          </div>
+          <div class="alert-toolbar">
+            <a class="button ghost small" href="{{ url_for('parent.ai_assistant') }}">&#128681; Flag content</a>
+            {% if active_messages %}
+              <button class="button ghost small" type="button" id="toggle-alert-selection">Select alerts</button>
+              <button class="button danger small bulk-alert-action" type="submit" form="bulk-delete-form" hidden>Delete selected</button>
+            {% endif %}
+          </div>
+        </div>
+        <p class="info-chip inline-card">Scores, flags, and approvals are shown here for the selected child.</p>
+        <form id="bulk-delete-form" method="post" action="{{ url_for('parent.bulk_delete_messages') }}"></form>
         {% if message_label_breakdown %}
           <div class="label-summary-grid">
             {% for item in message_label_breakdown %}
@@ -202,7 +209,11 @@
           </article>
         {% endfor %}
         {% for message in active_messages %}
-          <article class="message-card">
+          <article class="message-card selectable-alert-card">
+            <label class="alert-select-control" hidden>
+              <input type="checkbox" name="message_ids" value="{{ message.id }}" form="bulk-delete-form">
+              <span>Select alert</span>
+            </label>
             <div class="message-topline">
               <strong>{{ message.source_platform|title }}</strong>
               <span>{{ message.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
@@ -487,12 +498,26 @@
     {% elif page_key == "ai_assistant" %}
       <section class="panel">
         <p class="eyebrow">AI Safety Assistant</p>
-        <h3>Ask about a message, slang, link, or incident</h3>
-        <p class="muted">The assistant uses the Cyber Mzazi classifier and gives guidance. It does not replace emergency, legal, medical, or mental-health professionals.</p>
+        <h3>Chat about a message, slang, link, or incident</h3>
+        <p class="muted">Say hello, ask what something means, paste a suspicious message, or describe the problem. The assistant explains the risk and recommends a next step.</p>
+        {% if assistant_history %}
+          <div class="assistant-thread">
+            {% for turn in assistant_history %}
+              <article class="assistant-turn user-turn">
+                <strong>You</strong>
+                <p>{{ turn.user }}</p>
+              </article>
+              <article class="assistant-turn assistant-turn">
+                <strong>Cyber Mzazi{% if turn.label_title %} / {{ turn.label_title }}{% endif %}</strong>
+                <p>{{ turn.assistant }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
         <form class="stack" method="post" action="{{ url_for('parent.ai_assistant') }}">
           <label>
             Message or question
-            <textarea name="assistant_prompt" rows="8" placeholder="Paste a suspicious message, slang, link, or describe what happened..." required>{{ assistant_prompt or "" }}</textarea>
+            <textarea name="assistant_prompt" rows="5" placeholder="Example: Hello, can you help me understand this message? Someone said..." required></textarea>
           </label>
           <button class="button accent" type="submit">Ask assistant</button>
         </form>
@@ -502,7 +527,7 @@
               <strong>{{ assistant_result.label_title }} / {{ assistant_result.risk_level|title }} risk</strong>
               <span>{{ "%.0f"|format(assistant_result.confidence * 100) }}%</span>
             </div>
-            <p>{{ assistant_result.explanation }}</p>
+            <p>{{ assistant_result.assistant_message or assistant_result.explanation }}</p>
             <p><strong>Guidance:</strong> {{ assistant_result.guidance }}</p>
             <ul class="simple-list">
               {% for step in assistant_result.next_steps %}
@@ -638,8 +663,13 @@
     const statusNode = document.getElementById("browser-notification-status");
     const soundStatusNode = document.getElementById("alert-sound-status");
     const alertBadge = document.querySelector(".alert-badge");
+    const selectionToggle = document.getElementById("toggle-alert-selection");
+    const bulkAlertAction = document.querySelector(".bulk-alert-action");
+    const alertSelectControls = Array.from(document.querySelectorAll(".alert-select-control"));
+    const alertCheckboxes = Array.from(document.querySelectorAll(".alert-select-control input[type='checkbox']"));
     const soundStorageKey = `cyber-mzazi:alert-sound:${familyId}`;
     let soundEnabled = localStorage.getItem(soundStorageKey) !== "off";
+    let alertSelectionEnabled = false;
 
     const setStatus = () => {
       if (!statusNode || !("Notification" in window)) return;
@@ -835,6 +865,36 @@
           playAlertSound();
         }
       });
+    }
+
+    const refreshBulkDeleteState = () => {
+      if (!bulkAlertAction) return;
+      const selectedCount = alertCheckboxes.filter((checkbox) => checkbox.checked).length;
+      bulkAlertAction.textContent = selectedCount ? `Delete selected (${selectedCount})` : "Delete selected";
+      bulkAlertAction.disabled = selectedCount === 0;
+    };
+
+    if (selectionToggle) {
+      selectionToggle.addEventListener("click", () => {
+        alertSelectionEnabled = !alertSelectionEnabled;
+        selectionToggle.textContent = alertSelectionEnabled ? "Cancel selection" : "Select alerts";
+        if (bulkAlertAction) {
+          bulkAlertAction.hidden = !alertSelectionEnabled;
+        }
+        alertSelectControls.forEach((control) => {
+          control.hidden = !alertSelectionEnabled;
+        });
+        if (!alertSelectionEnabled) {
+          alertCheckboxes.forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+        }
+        refreshBulkDeleteState();
+      });
+      alertCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener("change", refreshBulkDeleteState);
+      });
+      refreshBulkDeleteState();
     }
 
     setStatus();

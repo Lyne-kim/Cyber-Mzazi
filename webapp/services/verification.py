@@ -3,10 +3,11 @@ from __future__ import annotations
 import requests
 from flask import current_app
 
-from ml.labels import LABEL_HINTS
+from ml.labels import LABEL_HINTS, normalize_label
 
 
 def verify_message(text: str, predicted_label: str) -> dict:
+    predicted_label = normalize_label(predicted_label)
     verifier_url = current_app.config.get("WEB_VERIFIER_URL")
     token = current_app.config.get("WEB_VERIFIER_TOKEN")
 

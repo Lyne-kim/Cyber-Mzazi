@@ -56,22 +56,40 @@ LABEL_METADATA = {
     "misinformation": {"title": "Misinformation", "tone": "warning"},
 }
 
+LABEL_ALIASES = {
+    "malware": "phishing",
+    "defacement": "phishing",
+    "bot_activity": "scam",
+    "bot": "scam",
+    "toxic": "cyberbullying",
+    "hate": "cyberbullying",
+    "sexual": "sexual_content",
+    "fake": "misinformation",
+    "election_misinformation": "misinformation",
+}
+
+
+def normalize_label(label: str | None, default: str = SAFE_LABEL) -> str:
+    normalized = str(label or "").strip().lower()
+    normalized = LABEL_ALIASES.get(normalized, normalized)
+    return normalized if normalized in SUPPORTED_LABELS else default
+
 
 def label_title(label: str) -> str:
-    normalized = str(label or "").strip().lower()
+    normalized = normalize_label(label, default="")
     if normalized in LABEL_METADATA:
         return LABEL_METADATA[normalized]["title"]
     return normalized.replace("_", " ").title() or "Unknown"
 
 
 def label_tone(label: str) -> str:
-    normalized = str(label or "").strip().lower()
+    normalized = normalize_label(label, default="")
     return LABEL_METADATA.get(normalized, {}).get("tone", "warning")
 
 
 def label_summary_rows(labels: list[str]) -> list[dict]:
     counts = Counter(
-        label for label in (str(item or "").strip().lower() for item in labels) if label
+        label for label in (normalize_label(item, default="") for item in labels) if label
     )
     rows = []
     for label, count in counts.items():

@@ -6,6 +6,8 @@ import requests
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 
+from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, normalize_label
+
 from .ml_service import get_classifier
 from .review_feedback import find_review_feedback
 
@@ -20,6 +22,75 @@ class PredictionResult:
 
 class PredictionUnavailable(RuntimeError):
     pass
+
+
+COMMERCE_SAFE_TERMS = {
+    "offer",
+    "offers",
+    "sale",
+    "discount",
+    "shop",
+    "shopping",
+    "dress",
+    "wallet",
+    "deodorant",
+    "delivery",
+    "cart",
+    "order",
+    "promo",
+    "kilimall",
+    "jumia",
+}
+
+
+def _has_supported_risk_hint(text: str) -> bool:
+    lowered = str(text or "").lower()
+    return any(keyword in lowered for keywords in LABEL_HINTS.values() for keyword in keywords)
+
+
+def _looks_like_low_risk_commerce(text: str) -> bool:
+    lowered = str(text or "").lower()
+    return any(term in lowered for term in COMMERCE_SAFE_TERMS)
+
+
+def _sanitize_prediction(text: str, label: object, confidence: object, risk_indicators: object) -> PredictionResult:
+    raw_label = str(label or "").strip().lower()
+    normalized = normalize_label(raw_label)
+    try:
+        safe_confidence = float(confidence)
+    except (TypeError, ValueError):
+        safe_confidence = 0.0
+
+    if (
+        raw_label != normalized
+        or (normalized != SAFE_LABEL and safe_confidence < 0.5)
+    ):
+        classifier = get_classifier()
+        heuristic = classifier.predict(text) if classifier is not None else {
+            "label": SAFE_LABEL,
+            "confidence": 0.0,
+            "risk_indicators": "none",
+        }
+        normalized = normalize_label(heuristic.get("label"))
+        safe_confidence = float(heuristic.get("confidence", safe_confidence))
+        risk_indicators = heuristic.get("risk_indicators", risk_indicators)
+
+    if (
+        normalized != SAFE_LABEL
+        and safe_confidence < 0.78
+        and _looks_like_low_risk_commerce(text)
+        and not _has_supported_risk_hint(text)
+    ):
+        normalized = SAFE_LABEL
+        safe_confidence = max(safe_confidence, 0.72)
+        risk_indicators = ",".join(RISK_TERMS[SAFE_LABEL])
+
+    return PredictionResult(
+        label=normalized,
+        confidence=safe_confidence,
+        risk_indicators=str(risk_indicators or ",".join(RISK_TERMS.get(normalized, ["review"]))),
+        provider="",
+    )
 
 
 def prediction_backend_status() -> dict:
@@ -58,7 +129,7 @@ def predict_message(text: str, family_id: int | None = None) -> PredictionResult
         review_feedback = None
     if review_feedback is not None:
         return PredictionResult(
-            label=str(review_feedback["label"]),
+            label=normalize_label(str(review_feedback["label"])),
             confidence=float(review_feedback["confidence"]),
             risk_indicators=str(review_feedback["risk_indicators"]),
             provider=str(review_feedback["provider"]),
@@ -73,7 +144,7 @@ def predict_message(text: str, family_id: int | None = None) -> PredictionResult
             "risk_indicators": "none",
         }
         return PredictionResult(
-            label=str(prediction["label"]),
+            label=normalize_label(str(prediction["label"])),
             confidence=float(prediction["confidence"]),
             risk_indicators=str(prediction["risk_indicators"]),
             provider="heuristic",
@@ -95,12 +166,14 @@ def predict_message(text: str, family_id: int | None = None) -> PredictionResult
             response.raise_for_status()
             payload = response.json()
             prediction = payload.get("prediction") or {}
-            return PredictionResult(
-                label=str(prediction.get("label", "safe")),
-                confidence=float(prediction.get("confidence", 0.0)),
-                risk_indicators=str(prediction.get("risk_indicators", "")),
-                provider="remote",
+            sanitized = _sanitize_prediction(
+                text,
+                prediction.get("label", SAFE_LABEL),
+                prediction.get("confidence", 0.0),
+                prediction.get("risk_indicators", ""),
             )
+            sanitized.provider = "remote"
+            return sanitized
         except (requests.RequestException, ValueError, TypeError) as exc:
             raise PredictionUnavailable(f"Remote model request failed: {exc}") from exc
 
@@ -108,9 +181,11 @@ def predict_message(text: str, family_id: int | None = None) -> PredictionResult
     if classifier is None:
         raise PredictionUnavailable("Model is not ready.")
     prediction = classifier.predict(text)
-    return PredictionResult(
-        label=prediction["label"],
-        confidence=float(prediction["confidence"]),
-        risk_indicators=prediction["risk_indicators"],
-        provider="local",
+    sanitized = _sanitize_prediction(
+        text,
+        prediction.get("label", SAFE_LABEL),
+        prediction.get("confidence", 0.0),
+        prediction.get("risk_indicators", ""),
     )
+    sanitized.provider = "local"
+    return sanitized

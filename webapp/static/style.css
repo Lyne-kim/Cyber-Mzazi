@@ -1,18 +1,18 @@
 :root {
-  --bg: #f3efe3;
-  --panel: #fffaf2;
-  --text: #1f2421;
-  --muted: #607062;
+  --bg: #edf6f4;
+  --panel: #fffefa;
+  --text: #10202a;
+  --muted: #546b67;
   --line: rgba(31, 36, 33, 0.12);
   --line-strong: rgba(31, 36, 33, 0.22);
-  --primary: #1f6f5b;
-  --accent: #d95d39;
+  --primary: #0d7f72;
+  --accent: #2563a8;
   --danger: #c84630;
   --child: #22577a;
   --child-soft: #eef6fb;
-  --sidebar: #112720;
+  --sidebar: #0d2b24;
   --sidebar-text: #f1f6f3;
-  --shadow: 0 18px 40px rgba(31, 36, 33, 0.08);
+  --shadow: 0 18px 40px rgba(16, 32, 42, 0.08);
 }
 
 * {
@@ -28,8 +28,8 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(217, 93, 57, 0.15), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(31, 111, 91, 0.14), transparent 25%),
+    radial-gradient(circle at top left, rgba(37, 99, 168, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(13, 127, 114, 0.16), transparent 25%),
     var(--bg);
 }
 
@@ -97,6 +97,10 @@ body.public-theme.auth-screen {
 
 .button.accent {
   background: var(--accent);
+}
+
+.button.danger {
+  background: var(--danger);
 }
 
 .button.ghost {
@@ -664,7 +668,7 @@ select {
 }
 
 .stat-card.emphasis {
-  background: linear-gradient(135deg, rgba(217, 93, 57, 0.12), rgba(31, 111, 91, 0.1));
+  background: linear-gradient(135deg, rgba(37, 99, 168, 0.1), rgba(13, 127, 114, 0.11));
 }
 
 .message-card,
@@ -847,6 +851,45 @@ select {
   margin-top: 0.8rem;
 }
 
+.alert-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.selectable-alert-card {
+  position: relative;
+}
+
+.alert-select-control {
+  display: inline-flex;
+  width: fit-content;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(13, 127, 114, 0.22);
+  border-radius: 999px;
+  background: rgba(13, 127, 114, 0.08);
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.alert-select-control[hidden],
+.bulk-alert-action[hidden] {
+  display: none !important;
+}
+
+.alert-select-control input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
 .assistant-card {
   display: grid;
   gap: 0.75rem;
@@ -865,6 +908,34 @@ select {
 .assistant-card.tone-warning {
   background: rgba(217, 93, 57, 0.1);
   border-color: rgba(217, 93, 57, 0.25);
+}
+
+.assistant-thread {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.assistant-turn {
+  display: grid;
+  gap: 0.35rem;
+  max-width: min(760px, 100%);
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.assistant-turn.user-turn {
+  justify-self: end;
+  background: rgba(13, 127, 114, 0.1);
+  border-color: rgba(13, 127, 114, 0.18);
+}
+
+.assistant-turn.assistant-turn {
+  justify-self: start;
+  background: rgba(37, 99, 168, 0.08);
+  border-color: rgba(37, 99, 168, 0.14);
 }
 
 .approval-card,

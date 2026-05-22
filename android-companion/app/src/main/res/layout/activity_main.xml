@@ -412,6 +412,14 @@
                         android:layout_marginTop="22dp"
                         android:text="@string/report_message" />
 
+                    <Button
+                        android:id="@+id/openAssistantButton"
+                        style="@style/CyberPrimaryButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/assistant_nav" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -773,6 +781,76 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/assistantSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/assistant_title"
+                        android:textColor="@color/cyber_mzazi_seed"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/assistant_copy"
+                        android:textColor="@color/cyber_mzazi_muted"
+                        android:textSize="15sp" />
+
+                    <EditText
+                        android:id="@+id/assistantPromptInput"
+                        style="@style/CyberInput"
+                        android:layout_height="150dp"
+                        android:layout_marginTop="18dp"
+                        android:gravity="top"
+                        android:hint="@string/assistant_prompt_hint"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="5" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/askAssistantButton"
+                            style="@style/CyberPrimaryButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/ask_assistant" />
+
+                        <Button
+                            android:id="@+id/clearAssistantButton"
+                            style="@style/CyberOutlineButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/clear_assistant" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/assistantResultText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/bg_card"
+                        android:lineSpacingExtra="4dp"
+                        android:padding="18dp"
+                        android:text="@string/assistant_result_empty"
+                        android:textColor="@color/cyber_mzazi_text"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/actionsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1006,6 +1084,7 @@
         <TextView android:id="@+id/menuAuth" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/auth_nav" />
         <TextView android:id="@+id/menuQr" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/qr_nav" />
         <TextView android:id="@+id/menuSettings" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/settings_nav" />
+        <TextView android:id="@+id/menuAssistant" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/assistant_nav" />
         <TextView android:id="@+id/menuProfile" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/edit_profile" />
         <TextView android:id="@+id/menuPassword" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/change_password" />
         <TextView android:id="@+id/menuCapture" style="@style/SidebarItem" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/capture_nav" />

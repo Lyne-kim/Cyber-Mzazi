@@ -248,11 +248,25 @@
       <section class="panel">
         <p class="eyebrow">AI Safety Assistant</p>
         <h3>Ask before you reply</h3>
-        <p class="muted">Paste a message or ask what something means. If it looks serious, Cyber Mzazi will ask your parent/guardian to help.</p>
+        <p class="muted">Say hello, ask for help, paste a message, or explain what happened. If it looks serious, Cyber Mzazi will ask your parent/guardian to help.</p>
+        {% if assistant_history %}
+          <div class="assistant-thread">
+            {% for turn in assistant_history %}
+              <article class="assistant-turn user-turn">
+                <strong>You</strong>
+                <p>{{ turn.user }}</p>
+              </article>
+              <article class="assistant-turn assistant-turn">
+                <strong>Cyber Mzazi{% if turn.label_title %} / {{ turn.label_title }}{% endif %}</strong>
+                <p>{{ turn.assistant }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
         <form method="post" action="{{ url_for('child.ai_assistant') }}">
           <label>
             Message or question
-            <textarea name="assistant_prompt" rows="7" placeholder="Example: Someone online is asking for my private photos..." required>{{ assistant_prompt or "" }}</textarea>
+            <textarea name="assistant_prompt" rows="5" placeholder="Example: Hi, someone online is asking for my private photos..." required></textarea>
           </label>
           <button class="button accent" type="submit">Ask assistant</button>
         </form>
@@ -262,7 +276,7 @@
               <strong>{{ assistant_result.label_title }} / {{ assistant_result.risk_level|title }} risk</strong>
               <span>{{ "%.0f"|format(assistant_result.confidence * 100) }}%</span>
             </div>
-            <p>{{ assistant_result.explanation }}</p>
+            <p>{{ assistant_result.assistant_message or assistant_result.explanation }}</p>
             <p><strong>What to do:</strong> {{ assistant_result.guidance }}</p>
             <ul class="simple-list">
               {% for step in assistant_result.next_steps %}

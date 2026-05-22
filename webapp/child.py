@@ -102,6 +102,7 @@ def help_questions():
 def ai_assistant():
     assistant_result = None
     assistant_prompt = ""
+    assistant_history = session.get("child_assistant_history", [])
     if request.method == "POST":
         assistant_prompt = request.form.get("assistant_prompt", "").strip()
         assistant_result = build_safety_assistant_response(
@@ -111,7 +112,17 @@ def ai_assistant():
         )
         if not assistant_result.get("ok"):
             flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
-        elif assistant_result.get("should_alert_guardian"):
+        else:
+            assistant_history.append(
+                {
+                    "user": assistant_prompt,
+                    "assistant": assistant_result.get("assistant_message") or assistant_result.get("explanation"),
+                    "risk_level": assistant_result.get("risk_level"),
+                    "label_title": assistant_result.get("label_title"),
+                }
+            )
+            session["child_assistant_history"] = assistant_history[-8:]
+        if assistant_result and assistant_result.get("should_alert_guardian"):
             record = MessageRecord(
                 family_id=current_user.family_id,
                 submitted_by_id=current_user.id,
@@ -156,6 +167,7 @@ def ai_assistant():
         child_nav_items=CHILD_NAV_ITEMS,
         assistant_prompt=assistant_prompt,
         assistant_result=assistant_result,
+        assistant_history=assistant_history,
         **context,
     )
 

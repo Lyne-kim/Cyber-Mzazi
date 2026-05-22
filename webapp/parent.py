@@ -7,7 +7,7 @@ from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 
-from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title
+from ml.labels import RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS, label_summary_rows, label_title, normalize_label
 
 from .extensions import db
 from .models import (
@@ -141,6 +141,52 @@ def _build_notification_items(selected_child, messages, logout_requests) -> list
     return notifications
 
 
+def _normalize_stored_prediction(message: MessageRecord) -> bool:
+    changed = False
+    raw_label = str(message.predicted_label or "").strip().lower()
+    normalized_label = normalize_label(raw_label)
+    if raw_label != normalized_label:
+        message.predicted_label = normalized_label
+        message.risk_indicators = ",".join(RISK_TERMS.get(normalized_label, ["review"]))
+        changed = True
+
+    verification_label = normalize_label(message.verification_label, default="")
+    if message.verification_label and message.verification_label != verification_label:
+        message.verification_label = verification_label or normalized_label
+        changed = True
+
+    lowered = str(message.message_text or "").lower()
+    commerce_terms = {
+        "offer",
+        "offers",
+        "sale",
+        "discount",
+        "shop",
+        "shopping",
+        "dress",
+        "wallet",
+        "deodorant",
+        "delivery",
+        "cart",
+        "order",
+        "promo",
+        "kilimall",
+        "jumia",
+    }
+    if (
+        message.predicted_label != SAFE_LABEL
+        and float(message.predicted_confidence or 0.0) < 0.78
+        and any(term in lowered for term in commerce_terms)
+    ):
+        message.predicted_label = SAFE_LABEL
+        message.predicted_confidence = max(float(message.predicted_confidence or 0.0), 0.72)
+        message.risk_indicators = ",".join(RISK_TERMS[SAFE_LABEL])
+        message.verification_label = SAFE_LABEL
+        changed = True
+
+    return changed
+
+
 @parent_bp.before_request
 @login_required
 def require_parent():
@@ -174,6 +220,11 @@ def _parent_data() -> dict:
         .limit(15)
         .all()
     )
+    prediction_changed = False
+    for message in messages:
+        prediction_changed = _normalize_stored_prediction(message) or prediction_changed
+    if prediction_changed:
+        db.session.commit()
     logout_requests = (
         LogoutRequest.query.filter_by(
             family_id=current_user.family_id,
@@ -411,6 +462,7 @@ def safety_resources():
 def ai_assistant():
     assistant_result = None
     assistant_prompt = ""
+    assistant_history = session.get("parent_assistant_history", [])
     if request.method == "POST":
         assistant_prompt = request.form.get("assistant_prompt", "").strip()
         assistant_result = build_safety_assistant_response(
@@ -420,6 +472,16 @@ def ai_assistant():
         )
         if not assistant_result.get("ok"):
             flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
+        else:
+            assistant_history.append(
+                {
+                    "user": assistant_prompt,
+                    "assistant": assistant_result.get("assistant_message") or assistant_result.get("explanation"),
+                    "risk_level": assistant_result.get("risk_level"),
+                    "label_title": assistant_result.get("label_title"),
+                }
+            )
+            session["parent_assistant_history"] = assistant_history[-8:]
     context = _parent_data()
     return render_template(
         "parent_page.html",
@@ -430,6 +492,7 @@ def ai_assistant():
         advanced_nav_items=PARENT_ADVANCED_ITEMS,
         assistant_prompt=assistant_prompt,
         assistant_result=assistant_result,
+        assistant_history=assistant_history,
         **context,
     )
 
@@ -772,6 +835,41 @@ def delete_message(message_id: int):
     )
     db.session.commit()
     flash("Alert deleted.", "success")
+    return redirect(url_for("parent.alerts"))
+
+
+@parent_bp.post("/messages/bulk-delete")
+def bulk_delete_messages():
+    message_ids = [
+        int(message_id)
+        for message_id in request.form.getlist("message_ids")
+        if str(message_id).isdigit()
+    ]
+    if not message_ids:
+        flash("Select at least one alert first.", "warning")
+        return redirect(url_for("parent.alerts"))
+
+    records = MessageRecord.query.filter(
+        MessageRecord.family_id == current_user.family_id,
+        MessageRecord.id.in_(message_ids),
+    ).all()
+    if not records:
+        flash("No matching alerts were found.", "warning")
+        return redirect(url_for("parent.alerts"))
+
+    deleted_count = len(records)
+    subject_ids = {record.submitted_by_id for record in records if record.submitted_by_id}
+    for record in records:
+        db.session.delete(record)
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "messages_bulk_deleted",
+        f"Deleted {deleted_count} selected alert(s)",
+        subject_user_id=next(iter(subject_ids), None),
+    )
+    db.session.commit()
+    flash(f"{deleted_count} alert(s) deleted.", "success")
     return redirect(url_for("parent.alerts"))
 
 

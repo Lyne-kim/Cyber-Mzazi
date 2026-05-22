@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ml.labels import label_title, label_tone
+from ml.labels import SAFE_LABEL, label_title, label_tone, normalize_label
 
 from .prediction_service import PredictionUnavailable, predict_message
 
@@ -59,6 +59,79 @@ LABEL_GUIDANCE = {
     },
 }
 
+GREETING_WORDS = {
+    "hi",
+    "hello",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "habari",
+    "niaje",
+    "mambo",
+    "sasa",
+}
+
+HELP_WORDS = {
+    "help",
+    "what can you do",
+    "how can you help",
+    "what do you do",
+    "how does this work",
+    "can you help",
+}
+
+THANK_WORDS = {"thanks", "thank you", "asante", "shukran"}
+
+
+def _matches_any(text: str, phrases: set[str]) -> bool:
+    lowered = text.lower().strip(" ?.!,")
+    return any(phrase in lowered for phrase in phrases)
+
+
+def _intro_message(audience_key: str) -> str:
+    if audience_key == "child":
+        return (
+            "Hi, I am the Cyber Mzazi AI Safety Assistant. I can help you understand a message, "
+            "spot unsafe online behavior, explain why something may be risky, and suggest what to do next. "
+            "Tell me what happened or paste the message you are worried about."
+        )
+    return (
+        "Hello, I am the Cyber Mzazi AI Safety Assistant. I can explain suspicious messages, slang, links, "
+        "online risks, and recommended parent actions. Paste the message or describe the situation, and I will "
+        "classify the risk and suggest next steps."
+    )
+
+
+def _thanks_message(audience_key: str) -> str:
+    if audience_key == "child":
+        return "You are welcome. If something online feels confusing, scary, secretive, or pressuring, tell me what happened and I will help you think through it."
+    return "You are welcome. Share any message, link, slang, or incident and I will help you assess the risk and decide what to do next."
+
+
+def _solution_text(label: str, risk_level: str, audience_key: str, guidance: str) -> str:
+    title = label_title(label).lower()
+    if label == SAFE_LABEL:
+        if audience_key == "child":
+            return (
+                "This looks low risk from the text provided. Still be careful: do not share passwords, private photos, "
+                "school details, location, or verification codes. If the person keeps pressuring you, tell a trusted adult."
+            )
+        return (
+            "This looks low risk from the text provided. Keep the conversation open, check the wider context, "
+            "and remind the child not to share private details or one-time codes."
+        )
+
+    if audience_key == "child":
+        return (
+            f"This may be {title}, so the safest choice is to pause before replying. {guidance} "
+            "If you feel scared, pressured, or asked to keep secrets, get help from your parent/guardian or another trusted adult now."
+        )
+    return (
+        f"This may be {title} and the risk level is {risk_level}. {guidance} "
+        "Talk to the child calmly, save evidence, block/report if needed, and review whether the sender has contacted them before."
+    )
+
 
 def build_safety_assistant_response(prompt: str, *, audience: str, family_id: int | None = None) -> dict:
     cleaned_prompt = " ".join(str(prompt or "").split())
@@ -69,9 +142,50 @@ def build_safety_assistant_response(prompt: str, *, audience: str, family_id: in
         }
 
     audience_key = "child" if audience == "child" else "parent"
+    if _matches_any(cleaned_prompt, GREETING_WORDS) or _matches_any(cleaned_prompt, HELP_WORDS):
+        return {
+            "ok": True,
+            "label": SAFE_LABEL,
+            "label_title": "Conversation",
+            "tone": "safe",
+            "confidence": 1.0,
+            "risk_level": "none",
+            "indicators": "conversation",
+            "explanation": _intro_message(audience_key),
+            "guidance": "Describe the problem in your own words or paste the message you want me to check.",
+            "assistant_message": _intro_message(audience_key),
+            "next_steps": [
+                "Paste the message, link, screenshot text, or slang you want explained.",
+                "Tell me who sent it and whether they asked for secrecy, money, photos, links, or codes.",
+                "I will explain the risk and give a practical next step.",
+            ],
+            "should_alert_guardian": False,
+            "response_type": "greeting",
+        }
+
+    if _matches_any(cleaned_prompt, THANK_WORDS):
+        return {
+            "ok": True,
+            "label": SAFE_LABEL,
+            "label_title": "Conversation",
+            "tone": "safe",
+            "confidence": 1.0,
+            "risk_level": "none",
+            "indicators": "conversation",
+            "explanation": _thanks_message(audience_key),
+            "guidance": "You can continue the conversation by describing the next concern.",
+            "assistant_message": _thanks_message(audience_key),
+            "next_steps": [
+                "Ask another question if you are unsure.",
+                "Share the exact words or link if you want a better risk check.",
+            ],
+            "should_alert_guardian": False,
+            "response_type": "conversation",
+        }
+
     try:
         prediction = predict_message(cleaned_prompt, family_id=family_id)
-        label = prediction.label
+        label = normalize_label(prediction.label)
         confidence = prediction.confidence
         indicators = prediction.risk_indicators
     except PredictionUnavailable as exc:
@@ -88,6 +202,7 @@ def build_safety_assistant_response(prompt: str, *, audience: str, family_id: in
         f"I classified this as {title.lower()} with {confidence:.0%} confidence. "
         f"The main signals were: {indicators or 'general wording and context'}."
     )
+    solution = _solution_text(label, risk_level, audience_key, guidance)
     if audience_key == "child":
         next_steps = [
             "Do not share passwords, private photos, money, school details, or your location.",
@@ -111,6 +226,8 @@ def build_safety_assistant_response(prompt: str, *, audience: str, family_id: in
         "indicators": indicators,
         "explanation": explanation,
         "guidance": guidance,
+        "assistant_message": f"{explanation} {solution}",
         "next_steps": next_steps,
         "should_alert_guardian": audience_key == "child" and risk_level == "high",
+        "response_type": "safety_analysis",
     }

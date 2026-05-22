@@ -216,6 +216,17 @@
     <string name="change_password">Change password</string>
     <string name="sign_out">Sign out</string>
     <string name="signed_out">Signed out.</string>
+    <string name="assistant_nav">AI Safety Assistant</string>
+    <string name="assistant_title">AI Safety Assistant</string>
+    <string name="assistant_copy">Say hello, ask for help, paste a message, or describe what happened. Cyber Mzazi will explain the risk and what to do next.</string>
+    <string name="assistant_prompt_hint">Example: Hi, someone online is asking for my private photos...</string>
+    <string name="ask_assistant">Ask assistant</string>
+    <string name="clear_assistant">Clear</string>
+    <string name="assistant_result_empty">Your assistant answer will appear here.</string>
+    <string name="assistant_thinking">Checking this with Cyber Mzazi...</string>
+    <string name="assistant_prompt_required">Enter a message or question first.</string>
+    <string name="assistant_done">Assistant response ready.</string>
+    <string name="assistant_failed">Assistant request failed.</string>
     <string name="language_sw_saved">Language set to Swahili.</string>
     <string name="language_en_saved">Language set to English.</string>
     <string name="sounds_on">In-app sounds on.</string>

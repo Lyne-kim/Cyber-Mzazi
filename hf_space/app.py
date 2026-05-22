@@ -50,6 +50,24 @@ RISK_TERMS = {
     "misinformation": ["false_claims", "manipulation", "deception"],
 }
 
+SUPPORTED_LABELS = set(RISK_TERMS)
+LABEL_ALIASES = {
+    "malware": "phishing",
+    "defacement": "phishing",
+    "bot_activity": "scam",
+    "bot": "scam",
+    "toxic": "cyberbullying",
+    "hate": "cyberbullying",
+    "sexual": "sexual_content",
+    "fake": "misinformation",
+}
+
+
+def normalize_label(label: str | None) -> str:
+    normalized = str(label or "").strip().lower()
+    normalized = LABEL_ALIASES.get(normalized, normalized)
+    return normalized if normalized in SUPPORTED_LABELS else "safe"
+
 _load_lock = Lock()
 
 
@@ -139,7 +157,7 @@ class MessageClassifier:
             logits = self.model(**encoded).logits
         probabilities = torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
         top_index = int(np.argmax(probabilities))
-        label = self.classes[top_index]
+        label = normalize_label(self.classes[top_index])
         confidence = float(probabilities[top_index])
         label, confidence = self._apply_keyword_hints(text, label, confidence)
         return {

@@ -13,6 +13,17 @@
     <string name="change_password">Badili nenosiri</string>
     <string name="sign_out">Ondoka</string>
     <string name="save_settings">Hifadhi mipangilio</string>
+    <string name="assistant_nav">Msaidizi wa Usalama wa AI</string>
+    <string name="assistant_title">Msaidizi wa Usalama wa AI</string>
+    <string name="assistant_copy">Salimia, omba msaada, bandika ujumbe, au eleza kilichotokea. Cyber Mzazi itaeleza hatari na hatua inayofuata.</string>
+    <string name="assistant_prompt_hint">Mfano: Habari, mtu mtandaoni anaomba picha zangu za siri...</string>
+    <string name="ask_assistant">Uliza msaidizi</string>
+    <string name="clear_assistant">Futa</string>
+    <string name="assistant_result_empty">Jibu la msaidizi litaonekana hapa.</string>
+    <string name="assistant_thinking">Cyber Mzazi inakagua ujumbe huu...</string>
+    <string name="assistant_prompt_required">Weka ujumbe au swali kwanza.</string>
+    <string name="assistant_done">Jibu la msaidizi liko tayari.</string>
+    <string name="assistant_failed">Ombi la msaidizi halijafaulu.</string>
     <string name="dark_mode_toggle">Hali ya giza</string>
     <string name="language_toggle">Tumia Kiswahili</string>
     <string name="in_app_sounds_toggle">Sauti ndani ya programu</string>

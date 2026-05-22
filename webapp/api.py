@@ -862,6 +862,26 @@ def assistant_chat():
     return jsonify({"ok": True, "assistant": result})
 
 
+@api_bp.get("/safety-resources/links")
+@login_required
+def safety_resource_links():
+    audience = current_user.role if current_user.role in {"parent", "child"} else "all"
+    links = (
+        SafetyResourceLink.query.filter(
+            SafetyResourceLink.family_id == current_user.family_id,
+            SafetyResourceLink.audience.in_(["all", audience]),
+        )
+        .order_by(SafetyResourceLink.created_at.desc())
+        .all()
+    )
+    return jsonify(
+        {
+            "ok": True,
+            "resource_links": [_resource_link_payload(link) for link in links],
+        }
+    )
+
+
 @api_bp.post("/account/profile")
 @login_required
 def update_profile():
