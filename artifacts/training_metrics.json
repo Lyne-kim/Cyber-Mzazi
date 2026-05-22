@@ -1,6 +1,6 @@
 {
-  "dataset_path": "C:\\Users\\Admin\\Downloads\\datasets",
-  "dataset_rows": 1239,
+  "dataset_path": "C:\\Users\\lyne\\Documents\\Cyber Mzazi\\dataset.csv",
+  "dataset_rows": 800,
   "classes": [
     "safe",
     "grooming",
@@ -9,280 +9,442 @@
     "betting",
     "phishing",
     "scam",
-    "financial_fraud",
-    "malware",
     "cyberbullying",
     "violence",
-    "hate_speech",
-    "bot_activity",
     "misinformation"
   ],
-  "model_name": "C:\\Users\\Admin\\OneDrive\\Documents\\Cyber Mzazi\\artifacts\\message_model_stage2",
-  "epochs": 1,
+  "model_name": "distilbert-base-multilingual-cased",
+  "epochs": 4,
   "batch_size": 8,
   "max_length": 160,
-  "max_rows_per_label": 120,
-  "max_rows_per_source_label": 60,
+  "max_rows_per_label": 180,
+  "max_rows_per_source_label": 80,
   "device": "cpu",
   "class_distribution": {
-    "hate_speech": 120,
-    "cyberbullying": 120,
-    "violence": 120,
-    "sexual_content": 120,
-    "safe": 120,
-    "malware": 120,
-    "phishing": 99,
-    "scam": 92,
-    "betting": 60,
-    "bot_activity": 60,
-    "misinformation": 60,
-    "financial_fraud": 60,
-    "sextortion": 60,
-    "grooming": 28
+    "betting": 80,
+    "cyberbullying": 80,
+    "grooming": 80,
+    "misinformation": 80,
+    "phishing": 80,
+    "safe": 80,
+    "scam": 80,
+    "sextortion": 80,
+    "sexual_content": 80,
+    "violence": 80
   },
   "source_distribution": {
-    "Multilablel Cyberbully Data.csv": 299,
-    "original.csv": 219,
-    "dataset.csv": 149,
-    "malicious_phish.csv": 109,
-    "train_dataset.csv": 83,
-    "bongo_scam (1).csv": 74,
-    "bot_detection_data.csv": 71,
-    "Grooming Swahili Data sets.csv": 61,
-    "mobile-threats-detection.json": 40,
-    "facebook-romance-scams.json": 32,
-    "phishing-email-inbound.json": 30,
-    "common-malware-vectors.json": 30,
-    "ransomware-cases.json": 28,
-    "dataset2.xlsx": 14
+    "dataset.csv": 800
   },
   "used_sources": [
-    "bongo_scam (1).csv",
-    "bot_detection_data.csv",
-    "common-malware-vectors.json",
-    "dataset.csv",
-    "dataset2.xlsx",
-    "facebook-romance-scams.json",
-    "Grooming Swahili Data sets.csv",
-    "malicious_phish.csv",
-    "mobile-threats-detection.json",
-    "Multilablel Cyberbully Data.csv",
-    "original.csv",
-    "phishing-email-inbound.json",
-    "ransomware-cases.json",
-    "train_dataset.csv"
+    "dataset.csv"
   ],
-  "skipped_sources": [
-    "phishing-dataset.py"
-  ],
+  "skipped_sources": [],
   "history": [
     {
       "epoch": 1,
-      "train_loss": 1.0400303313809056,
-      "validation_loss": 1.1391353760996172,
-      "validation_accuracy": 0.5806451612903226,
-      "validation_macro_f1": 0.6404589123472304,
+      "train_loss": 1.8328685462474823,
+      "validation_loss": 1.2104133695363999,
+      "validation_accuracy": 0.7,
+      "validation_macro_f1": 0.6588546620994439,
       "validation_report": {
         "safe": {
-          "precision": 0.75,
-          "recall": 0.125,
-          "f1-score": 0.21428571428571427,
-          "support": 24.0
+          "precision": 0.4444444444444444,
+          "recall": 0.5,
+          "f1-score": 0.47058823529411764,
+          "support": 16.0
         },
         "grooming": {
           "precision": 1.0,
-          "recall": 0.6666666666666666,
-          "f1-score": 0.8,
-          "support": 6.0
+          "recall": 0.125,
+          "f1-score": 0.2222222222222222,
+          "support": 16.0
         },
         "sexual_content": {
-          "precision": 0.4117647058823529,
-          "recall": 0.2916666666666667,
-          "f1-score": 0.34146341463414637,
-          "support": 24.0
+          "precision": 0.5294117647058824,
+          "recall": 0.5625,
+          "f1-score": 0.5454545454545454,
+          "support": 16.0
         },
         "sextortion": {
+          "precision": 0.875,
+          "recall": 0.875,
+          "f1-score": 0.875,
+          "support": 16.0
+        },
+        "betting": {
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1-score": 0.8888888888888888,
+          "support": 16.0
+        },
+        "phishing": {
+          "precision": 0.8421052631578947,
+          "recall": 1.0,
+          "f1-score": 0.9142857142857143,
+          "support": 16.0
+        },
+        "scam": {
+          "precision": 0.7894736842105263,
+          "recall": 0.9375,
+          "f1-score": 0.8571428571428571,
+          "support": 16.0
+        },
+        "cyberbullying": {
+          "precision": 1.0,
+          "recall": 0.125,
+          "f1-score": 0.2222222222222222,
+          "support": 16.0
+        },
+        "violence": {
+          "precision": 0.46875,
+          "recall": 0.9375,
+          "f1-score": 0.625,
+          "support": 16.0
+        },
+        "misinformation": {
+          "precision": 1.0,
+          "recall": 0.9375,
+          "f1-score": 0.967741935483871,
+          "support": 16.0
+        },
+        "accuracy": 0.7,
+        "macro avg": {
+          "precision": 0.7749185156518748,
+          "recall": 0.7,
+          "f1-score": 0.6588546620994438,
+          "support": 160.0
+        },
+        "weighted avg": {
+          "precision": 0.7749185156518748,
+          "recall": 0.7,
+          "f1-score": 0.6588546620994438,
+          "support": 160.0
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9213004000484943,
+      "validation_loss": 0.712499974668026,
+      "validation_accuracy": 0.78125,
+      "validation_macro_f1": 0.7513352984320726,
+      "validation_report": {
+        "safe": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 16.0
+        },
+        "grooming": {
+          "precision": 0.5789473684210527,
+          "recall": 0.6875,
+          "f1-score": 0.6285714285714286,
+          "support": 16.0
+        },
+        "sexual_content": {
+          "precision": 0.65,
+          "recall": 0.8125,
+          "f1-score": 0.7222222222222222,
+          "support": 16.0
+        },
+        "sextortion": {
+          "precision": 0.9333333333333333,
+          "recall": 0.875,
+          "f1-score": 0.9032258064516129,
+          "support": 16.0
+        },
+        "betting": {
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1-score": 0.8888888888888888,
+          "support": 16.0
+        },
+        "phishing": {
+          "precision": 0.8421052631578947,
+          "recall": 1.0,
+          "f1-score": 0.9142857142857143,
+          "support": 16.0
+        },
+        "scam": {
+          "precision": 1.0,
+          "recall": 0.9375,
+          "f1-score": 0.967741935483871,
+          "support": 16.0
+        },
+        "cyberbullying": {
+          "precision": 0.6190476190476191,
+          "recall": 0.8125,
+          "f1-score": 0.7027027027027027,
+          "support": 16.0
+        },
+        "violence": {
+          "precision": 0.9166666666666666,
+          "recall": 0.6875,
+          "f1-score": 0.7857142857142857,
+          "support": 16.0
+        },
+        "misinformation": {
           "precision": 1.0,
           "recall": 1.0,
           "f1-score": 1.0,
-          "support": 12.0
+          "support": 16.0
+        },
+        "accuracy": 0.78125,
+        "macro avg": {
+          "precision": 0.7340100250626567,
+          "recall": 0.78125,
+          "f1-score": 0.7513352984320726,
+          "support": 160.0
+        },
+        "weighted avg": {
+          "precision": 0.7340100250626567,
+          "recall": 0.78125,
+          "f1-score": 0.7513352984320726,
+          "support": 160.0
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.5419642012566328,
+      "validation_loss": 0.47827434316277506,
+      "validation_accuracy": 0.84375,
+      "validation_macro_f1": 0.8147030147030148,
+      "validation_report": {
+        "safe": {
+          "precision": 0.5,
+          "recall": 0.0625,
+          "f1-score": 0.1111111111111111,
+          "support": 16.0
+        },
+        "grooming": {
+          "precision": 0.5833333333333334,
+          "recall": 0.875,
+          "f1-score": 0.7,
+          "support": 16.0
+        },
+        "sexual_content": {
+          "precision": 0.7142857142857143,
+          "recall": 0.9375,
+          "f1-score": 0.8108108108108109,
+          "support": 16.0
+        },
+        "sextortion": {
+          "precision": 0.9411764705882353,
+          "recall": 1.0,
+          "f1-score": 0.9696969696969697,
+          "support": 16.0
+        },
+        "betting": {
+          "precision": 0.9411764705882353,
+          "recall": 1.0,
+          "f1-score": 0.9696969696969697,
+          "support": 16.0
+        },
+        "phishing": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 16.0
+        },
+        "scam": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 16.0
+        },
+        "cyberbullying": {
+          "precision": 0.7368421052631579,
+          "recall": 0.875,
+          "f1-score": 0.8,
+          "support": 16.0
+        },
+        "violence": {
+          "precision": 0.9166666666666666,
+          "recall": 0.6875,
+          "f1-score": 0.7857142857142857,
+          "support": 16.0
+        },
+        "misinformation": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 16.0
+        },
+        "accuracy": 0.84375,
+        "macro avg": {
+          "precision": 0.8333480760725344,
+          "recall": 0.84375,
+          "f1-score": 0.8147030147030148,
+          "support": 160.0
+        },
+        "weighted avg": {
+          "precision": 0.8333480760725344,
+          "recall": 0.84375,
+          "f1-score": 0.8147030147030148,
+          "support": 160.0
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.3330448878929019,
+      "validation_loss": 0.43144170138984916,
+      "validation_accuracy": 0.825,
+      "validation_macro_f1": 0.8110252904989748,
+      "validation_report": {
+        "safe": {
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1-score": 0.5,
+          "support": 16.0
+        },
+        "grooming": {
+          "precision": 0.8,
+          "recall": 0.25,
+          "f1-score": 0.38095238095238093,
+          "support": 16.0
+        },
+        "sexual_content": {
+          "precision": 0.6818181818181818,
+          "recall": 0.9375,
+          "f1-score": 0.7894736842105263,
+          "support": 16.0
+        },
+        "sextortion": {
+          "precision": 0.9411764705882353,
+          "recall": 1.0,
+          "f1-score": 0.9696969696969697,
+          "support": 16.0
         },
         "betting": {
           "precision": 1.0,
           "recall": 1.0,
           "f1-score": 1.0,
-          "support": 12.0
+          "support": 16.0
         },
         "phishing": {
-          "precision": 0.5806451612903226,
-          "recall": 0.9,
-          "f1-score": 0.7058823529411765,
-          "support": 20.0
-        },
-        "scam": {
-          "precision": 0.5454545454545454,
-          "recall": 0.3333333333333333,
-          "f1-score": 0.41379310344827586,
-          "support": 18.0
-        },
-        "financial_fraud": {
           "precision": 1.0,
           "recall": 1.0,
           "f1-score": 1.0,
-          "support": 12.0
+          "support": 16.0
         },
-        "malware": {
-          "precision": 0.8571428571428571,
-          "recall": 0.75,
-          "f1-score": 0.8,
-          "support": 24.0
+        "scam": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 16.0
         },
         "cyberbullying": {
-          "precision": 0.4,
-          "recall": 0.08333333333333333,
-          "f1-score": 0.13793103448275862,
-          "support": 24.0
+          "precision": 0.6842105263157895,
+          "recall": 0.8125,
+          "f1-score": 0.7428571428571429,
+          "support": 16.0
         },
         "violence": {
-          "precision": 0.25333333333333335,
-          "recall": 0.7916666666666666,
-          "f1-score": 0.3838383838383838,
-          "support": 24.0
-        },
-        "hate_speech": {
-          "precision": 0.5,
-          "recall": 0.3333333333333333,
-          "f1-score": 0.4,
-          "support": 24.0
-        },
-        "bot_activity": {
-          "precision": 0.8571428571428571,
-          "recall": 1.0,
-          "f1-score": 0.9230769230769231,
-          "support": 12.0
+          "precision": 0.7058823529411765,
+          "recall": 0.75,
+          "f1-score": 0.7272727272727273,
+          "support": 16.0
         },
         "misinformation": {
-          "precision": 0.7857142857142857,
-          "recall": 0.9166666666666666,
-          "f1-score": 0.8461538461538461,
-          "support": 12.0
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 16.0
         },
-        "accuracy": 0.5806451612903226,
+        "accuracy": 0.825,
         "macro avg": {
-          "precision": 0.7100855532828968,
-          "recall": 0.6565476190476189,
-          "f1-score": 0.6404589123472304,
-          "support": 248.0
+          "precision": 0.8313087531663383,
+          "recall": 0.825,
+          "f1-score": 0.8110252904989746,
+          "support": 160.0
         },
         "weighted avg": {
-          "precision": 0.6422546462535443,
-          "recall": 0.5806451612903226,
-          "f1-score": 0.5574884567961524,
-          "support": 248.0
+          "precision": 0.8313087531663383,
+          "recall": 0.825,
+          "f1-score": 0.8110252904989746,
+          "support": 160.0
         }
       }
     }
   ],
-  "validation_accuracy": 0.5806451612903226,
-  "validation_macro_f1": 0.6404589123472304,
-  "validation_loss": 1.1391353760996172,
+  "validation_accuracy": 0.825,
+  "validation_macro_f1": 0.8110252904989748,
+  "validation_loss": 0.43144170138984916,
   "validation_report": {
     "safe": {
-      "precision": 0.75,
-      "recall": 0.125,
-      "f1-score": 0.21428571428571427,
-      "support": 24.0
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 16.0
     },
     "grooming": {
-      "precision": 1.0,
-      "recall": 0.6666666666666666,
-      "f1-score": 0.8,
-      "support": 6.0
+      "precision": 0.8,
+      "recall": 0.25,
+      "f1-score": 0.38095238095238093,
+      "support": 16.0
     },
     "sexual_content": {
-      "precision": 0.4117647058823529,
-      "recall": 0.2916666666666667,
-      "f1-score": 0.34146341463414637,
-      "support": 24.0
+      "precision": 0.6818181818181818,
+      "recall": 0.9375,
+      "f1-score": 0.7894736842105263,
+      "support": 16.0
     },
     "sextortion": {
-      "precision": 1.0,
+      "precision": 0.9411764705882353,
       "recall": 1.0,
-      "f1-score": 1.0,
-      "support": 12.0
+      "f1-score": 0.9696969696969697,
+      "support": 16.0
     },
     "betting": {
       "precision": 1.0,
       "recall": 1.0,
       "f1-score": 1.0,
-      "support": 12.0
+      "support": 16.0
     },
     "phishing": {
-      "precision": 0.5806451612903226,
-      "recall": 0.9,
-      "f1-score": 0.7058823529411765,
-      "support": 20.0
-    },
-    "scam": {
-      "precision": 0.5454545454545454,
-      "recall": 0.3333333333333333,
-      "f1-score": 0.41379310344827586,
-      "support": 18.0
-    },
-    "financial_fraud": {
       "precision": 1.0,
       "recall": 1.0,
       "f1-score": 1.0,
-      "support": 12.0
+      "support": 16.0
     },
-    "malware": {
-      "precision": 0.8571428571428571,
-      "recall": 0.75,
-      "f1-score": 0.8,
-      "support": 24.0
+    "scam": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 16.0
     },
     "cyberbullying": {
-      "precision": 0.4,
-      "recall": 0.08333333333333333,
-      "f1-score": 0.13793103448275862,
-      "support": 24.0
+      "precision": 0.6842105263157895,
+      "recall": 0.8125,
+      "f1-score": 0.7428571428571429,
+      "support": 16.0
     },
     "violence": {
-      "precision": 0.25333333333333335,
-      "recall": 0.7916666666666666,
-      "f1-score": 0.3838383838383838,
-      "support": 24.0
-    },
-    "hate_speech": {
-      "precision": 0.5,
-      "recall": 0.3333333333333333,
-      "f1-score": 0.4,
-      "support": 24.0
-    },
-    "bot_activity": {
-      "precision": 0.8571428571428571,
-      "recall": 1.0,
-      "f1-score": 0.9230769230769231,
-      "support": 12.0
+      "precision": 0.7058823529411765,
+      "recall": 0.75,
+      "f1-score": 0.7272727272727273,
+      "support": 16.0
     },
     "misinformation": {
-      "precision": 0.7857142857142857,
-      "recall": 0.9166666666666666,
-      "f1-score": 0.8461538461538461,
-      "support": 12.0
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 16.0
     },
-    "accuracy": 0.5806451612903226,
+    "accuracy": 0.825,
     "macro avg": {
-      "precision": 0.7100855532828968,
-      "recall": 0.6565476190476189,
-      "f1-score": 0.6404589123472304,
-      "support": 248.0
+      "precision": 0.8313087531663383,
+      "recall": 0.825,
+      "f1-score": 0.8110252904989746,
+      "support": 160.0
     },
     "weighted avg": {
-      "precision": 0.6422546462535443,
-      "recall": 0.5806451612903226,
-      "f1-score": 0.5574884567961524,
-      "support": 248.0
+      "precision": 0.8313087531663383,
+      "recall": 0.825,
+      "f1-score": 0.8110252904989746,
+      "support": 160.0
     }
   }
 }

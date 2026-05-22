@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import requests
 from flask import current_app
+from sqlalchemy.exc import SQLAlchemyError
 
 from .ml_service import get_classifier
 from .review_feedback import find_review_feedback
@@ -50,7 +51,11 @@ def prediction_backend_status() -> dict:
 
 
 def predict_message(text: str, family_id: int | None = None) -> PredictionResult:
-    review_feedback = find_review_feedback(text, family_id=family_id)
+    try:
+        review_feedback = find_review_feedback(text, family_id=family_id)
+    except SQLAlchemyError as exc:
+        current_app.logger.warning("Review feedback lookup skipped: %s", exc)
+        review_feedback = None
     if review_feedback is not None:
         return PredictionResult(
             label=str(review_feedback["label"]),

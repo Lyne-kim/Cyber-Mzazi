@@ -3,7 +3,6 @@ package com.cybermzazi.companion
 import android.content.Context
 
 object Prefs {
-    const val ROLE_PARENT = "parent"
     const val ROLE_CHILD = "child"
 
     private const val PREFS_NAME = "cyber_mzazi_companion"
@@ -14,7 +13,6 @@ object Prefs {
     private const val KEY_ALLOWED_PACKAGES = "allowed_packages"
     private const val KEY_BLOCKED_PACKAGES = "blocked_packages"
     private const val KEY_DEVICE_ROLE = "device_role"
-    private const val KEY_PARENT_IDENTIFIER = "parent_identifier"
     private const val KEY_PARENT_SESSION_COOKIE = "parent_session_cookie"
     private const val KEY_CHILD_SIGNED_IN = "child_signed_in"
     private const val KEY_CHILD_USERNAME = "child_username"
@@ -73,21 +71,8 @@ object Prefs {
 
     fun isChildRole(context: Context): Boolean = getDeviceRole(context) == ROLE_CHILD
 
-    fun isParentRole(context: Context): Boolean = getDeviceRole(context) == ROLE_PARENT
-
-    fun setDeviceRole(context: Context, value: String) {
-        val normalized = when (value) {
-            ROLE_PARENT -> ROLE_PARENT
-            else -> ROLE_CHILD
-        }
-        prefs(context).edit().putString(KEY_DEVICE_ROLE, normalized).apply()
-    }
-
-    fun getParentIdentifier(context: Context): String =
-        prefs(context).getString(KEY_PARENT_IDENTIFIER, "").orEmpty()
-
-    fun setParentIdentifier(context: Context, value: String) {
-        prefs(context).edit().putString(KEY_PARENT_IDENTIFIER, value).apply()
+    fun setDeviceRole(context: Context) {
+        prefs(context).edit().putString(KEY_DEVICE_ROLE, ROLE_CHILD).apply()
     }
 
     fun getParentSessionCookie(context: Context): String =

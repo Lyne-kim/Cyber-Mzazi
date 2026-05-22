@@ -19,6 +19,19 @@ from .labels import RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS
 
 CHUNK_SIZE = 20_000
 
+LABEL_ALIASES = {
+    "normal": SAFE_LABEL,
+    "trust": SAFE_LABEL,
+    "neutral": SAFE_LABEL,
+    "fact": SAFE_LABEL,
+    "sexual": "sexual_content",
+    "bullying": "cyberbullying",
+    "fake": "misinformation",
+    "election_misinformation": "misinformation",
+    "romance_scam": "scam",
+    "malicious": "scam",
+}
+
 
 class TextDataset(Dataset):
     def __init__(self, texts: list[str], labels: list[int], tokenizer, max_length: int):
@@ -63,6 +76,11 @@ def _clean_language(value: object, default: str = "mixed") -> str:
     return language or default
 
 
+def _normalize_label(value: object) -> str:
+    label = _clean_text(value).lower()
+    return LABEL_ALIASES.get(label, label)
+
+
 def _join_indicators(*values: object) -> str:
     parts: list[str] = []
     for value in values:
@@ -98,7 +116,7 @@ def _make_row(
     source_name: str,
 ) -> dict | None:
     cleaned_text = _clean_text(text)
-    normalized_label = _clean_text(label).lower()
+    normalized_label = _normalize_label(label)
     if not cleaned_text or normalized_label not in SUPPORTED_LABELS:
         return None
     return {
@@ -170,7 +188,7 @@ def _load_bongo_scam(path: Path) -> list[dict]:
     rows = []
     for row in df.to_dict(orient="records"):
         label = (
-            "financial_fraud"
+            "scam"
             if _clean_text(row.get("Category")).lower() == "scam"
             else SAFE_LABEL
         )
@@ -215,7 +233,7 @@ def _load_multilabel_cyberbully(path: Path) -> list[dict]:
             label = "violence"
             indicators.append("threat")
         elif int(row.get("religious", 0) or 0) == 1:
-            label = "hate_speech"
+            label = "cyberbullying"
             indicators.append("religious")
         elif int(row.get("bully", 0) or 0) == 1:
             label = "cyberbullying"
@@ -284,7 +302,7 @@ def _load_common_malware(path: Path) -> list[dict]:
         rows.append(
             _make_row(
                 item.get("Input", ""),
-                "malware",
+                "phishing",
                 risk_indicators=item.get("Metadata", {}),
                 language="en",
                 source_name=path.name,
@@ -315,7 +333,7 @@ def _load_mobile_threats(path: Path) -> list[dict]:
         metadata = item.get("Metadata", {})
         text = item.get("Input", "")
         metadata_text = json.dumps(metadata, ensure_ascii=False).lower()
-        label = "phishing" if "phish" in text.lower() or "phish" in metadata_text else "malware"
+        label = "phishing"
         rows.append(
             _make_row(
                 text,
@@ -357,7 +375,7 @@ def _load_ransomware(path: Path) -> list[dict]:
         rows.append(
             _make_row(
                 item.get("Input", ""),
-                "malware",
+                "phishing",
                 risk_indicators=item.get("Metadata", {}),
                 language="en",
                 source_name=path.name,
@@ -370,7 +388,7 @@ def _load_bot_detection(path: Path) -> list[dict]:
     df = pd.read_csv(path, usecols=["Tweet", "Bot Label", "Hashtags"])
     rows = []
     for row in df.to_dict(orient="records"):
-        label = "bot_activity" if int(row.get("Bot Label", 0) or 0) == 1 else SAFE_LABEL
+        label = "scam" if int(row.get("Bot Label", 0) or 0) == 1 else SAFE_LABEL
         rows.append(
             _make_row(
                 f"{row.get('Tweet', '')} {row.get('Hashtags', '')}",
@@ -388,8 +406,8 @@ def _load_malicious_phish(path: Path) -> list[dict]:
     label_map = {
         "benign": SAFE_LABEL,
         "phishing": "phishing",
-        "malware": "malware",
-        "defacement": "malware",
+        "malware": "phishing",
+        "defacement": "phishing",
     }
     rows = []
     for row in df.to_dict(orient="records"):
@@ -412,7 +430,6 @@ def _load_original_toxicity(path: Path) -> list[dict]:
         SAFE_LABEL: 80,
         "cyberbullying": 80,
         "violence": 60,
-        "hate_speech": 60,
         "sexual_content": 60,
     }
     counts = {label: 0 for label in per_label_budget}
@@ -442,7 +459,7 @@ def _load_original_toxicity(path: Path) -> list[dict]:
                 label = "violence"
                 indicators = "threat"
             elif hate_score >= 0.30:
-                label = "hate_speech"
+                label = "cyberbullying"
                 indicators = "identity_attack"
             elif bullying_score >= 0.45:
                 label = "cyberbullying"
@@ -642,7 +659,7 @@ def train_and_save(
 
     texts = df["text"].tolist()
     labels = df["threat_type"].tolist()
-    classes = sorted(set(labels), key=lambda label: SUPPORTED_LABELS.index(label))
+    classes = list(SUPPORTED_LABELS)
     class_to_index = {label: index for index, label in enumerate(classes)}
     encoded = [class_to_index[label] for label in labels]
 

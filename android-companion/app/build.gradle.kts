@@ -68,6 +68,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    lint {
+        disable += "MissingTranslation"
+    }
 }
 
 dependencies {

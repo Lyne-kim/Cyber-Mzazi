@@ -1,9 +1,6 @@
 package com.cybermzazi.companion
 
 import android.Manifest
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -26,8 +23,6 @@ import androidx.core.os.LocaleListCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import com.google.zxing.BarcodeFormat
-import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
@@ -39,16 +34,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var roleBadge: TextView
     private lateinit var roleSummaryText: TextView
     private lateinit var captureRoleHint: TextView
-    private lateinit var parentRoleButton: Button
-    private lateinit var childRoleButton: Button
-    private lateinit var baseUrlInput: EditText
     private lateinit var tokenInput: EditText
     private lateinit var deviceNameInput: EditText
-    private lateinit var parentIdentifierInput: EditText
-    private lateinit var parentPasswordInput: EditText
-    private lateinit var parentPhoneCodeInput: EditText
-    private lateinit var parentChildDeviceNameInput: EditText
-    private lateinit var parentAlertSummaryText: TextView
     private lateinit var childStatusOverviewText: TextView
     private lateinit var childStatusDeviceText: TextView
     private lateinit var childStatusNotificationsText: TextView
@@ -56,12 +43,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childStatusFiltersText: TextView
     private lateinit var childStatusSyncText: TextView
     private lateinit var childSetupStatusText: TextView
-    private lateinit var parentGreetingText: TextView
-    private lateinit var parentFamilyNameText: TextView
-    private lateinit var parentChildStatusText: TextView
-    private lateinit var parentAlertsWeekText: TextView
-    private lateinit var parentRecentMessagesText: TextView
-    private lateinit var parentDeviceStatusText: TextView
     private lateinit var childGreetingText: TextView
     private lateinit var childTopStatusBadgeText: TextView
     private lateinit var childSetupProgressText: TextView
@@ -74,14 +55,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var childNotificationCardText: TextView
     private lateinit var childSyncCardText: TextView
     private lateinit var childFiltersCardText: TextView
-    private lateinit var registerFamilyNameInput: EditText
-    private lateinit var registerParentNameInput: EditText
-    private lateinit var registerParentContactInput: EditText
-    private lateinit var registerParentPasswordInput: EditText
-    private lateinit var registerChildNameInput: EditText
-    private lateinit var registerChildUsernameInput: EditText
-    private lateinit var registerChildPasswordInput: EditText
-    private lateinit var registerFamilyStatusText: TextView
     private lateinit var childParentContactInput: EditText
     private lateinit var childUsernameInput: EditText
     private lateinit var childPasswordInput: EditText
@@ -91,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var recentLogText: TextView
     private lateinit var pairingQrImage: ImageView
-    private lateinit var pairingLinkText: TextView
     private lateinit var darkModeSwitch: Switch
     private lateinit var languageSwitch: Switch
     private lateinit var inAppSoundsSwitch: Switch
@@ -121,32 +93,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var filtersSection: View
     private lateinit var statusSection: View
     private lateinit var logSection: View
-    private lateinit var parentHomeSection: View
-    private lateinit var parentDashboardSection: View
     private lateinit var childHomeSection: View
-    private lateinit var registerFamilySection: View
     private lateinit var childLoginSection: View
     private lateinit var profileSection: View
     private lateinit var passwordSection: View
 
     private lateinit var openChildLoginButton: Button
-    private lateinit var registerFamilyButton: Button
     private lateinit var childLoginButton: Button
-    private lateinit var openParentDashboardButton: Button
-    private lateinit var openParentAlertsButton: Button
-    private lateinit var openChildDevicesButton: Button
-    private lateinit var parentLoginButton: Button
-    private lateinit var parentVerifyPhoneButton: Button
-    private lateinit var parentResendPhoneCodeButton: Button
-    private lateinit var refreshParentAlertsButton: Button
-    private lateinit var openParentNotificationSettingsButton: Button
+    private lateinit var openNotificationSettingsButton: Button
     private lateinit var statusPairDeviceButton: Button
-    private lateinit var reviewLatestSafeButton: Button
-    private lateinit var approveLogoutButton: Button
-    private lateinit var denyLogoutButton: Button
-    private lateinit var createChildDeviceLinkButton: Button
-    private lateinit var copyPairingLinkButton: Button
-    private lateinit var sharePairingLinkButton: Button
     private lateinit var goPairChildButton: Button
     private lateinit var goCaptureChildButton: Button
     private lateinit var goFiltersChildButton: Button
@@ -187,16 +142,8 @@ class MainActivity : AppCompatActivity() {
         roleBadge = findViewById(R.id.roleBadge)
         roleSummaryText = findViewById(R.id.roleSummaryText)
         captureRoleHint = findViewById(R.id.captureRoleHint)
-        parentRoleButton = findViewById(R.id.parentRoleButton)
-        childRoleButton = findViewById(R.id.childRoleButton)
-        baseUrlInput = findViewById(R.id.baseUrlInput)
         tokenInput = findViewById(R.id.tokenInput)
         deviceNameInput = findViewById(R.id.deviceNameInput)
-        parentIdentifierInput = findViewById(R.id.parentIdentifierInput)
-        parentPasswordInput = findViewById(R.id.parentPasswordInput)
-        parentPhoneCodeInput = findViewById(R.id.parentPhoneCodeInput)
-        parentChildDeviceNameInput = findViewById(R.id.parentChildDeviceNameInput)
-        parentAlertSummaryText = findViewById(R.id.parentAlertSummaryText)
         childStatusOverviewText = findViewById(R.id.childStatusOverviewText)
         childStatusDeviceText = findViewById(R.id.childStatusDeviceText)
         childStatusNotificationsText = findViewById(R.id.childStatusNotificationsText)
@@ -204,12 +151,6 @@ class MainActivity : AppCompatActivity() {
         childStatusFiltersText = findViewById(R.id.childStatusFiltersText)
         childStatusSyncText = findViewById(R.id.childStatusSyncText)
         childSetupStatusText = findViewById(R.id.childSetupStatusText)
-        parentGreetingText = findViewById(R.id.parentGreetingText)
-        parentFamilyNameText = findViewById(R.id.parentFamilyNameText)
-        parentChildStatusText = findViewById(R.id.parentChildStatusText)
-        parentAlertsWeekText = findViewById(R.id.parentAlertsWeekText)
-        parentRecentMessagesText = findViewById(R.id.parentRecentMessagesText)
-        parentDeviceStatusText = findViewById(R.id.parentDeviceStatusText)
         childGreetingText = findViewById(R.id.childGreetingText)
         childTopStatusBadgeText = findViewById(R.id.childTopStatusBadgeText)
         childSetupProgressText = findViewById(R.id.childSetupProgressText)
@@ -222,14 +163,6 @@ class MainActivity : AppCompatActivity() {
         childNotificationCardText = findViewById(R.id.childNotificationCardText)
         childSyncCardText = findViewById(R.id.childSyncCardText)
         childFiltersCardText = findViewById(R.id.childFiltersCardText)
-        registerFamilyNameInput = findViewById(R.id.registerFamilyNameInput)
-        registerParentNameInput = findViewById(R.id.registerParentNameInput)
-        registerParentContactInput = findViewById(R.id.registerParentContactInput)
-        registerParentPasswordInput = findViewById(R.id.registerParentPasswordInput)
-        registerChildNameInput = findViewById(R.id.registerChildNameInput)
-        registerChildUsernameInput = findViewById(R.id.registerChildUsernameInput)
-        registerChildPasswordInput = findViewById(R.id.registerChildPasswordInput)
-        registerFamilyStatusText = findViewById(R.id.registerFamilyStatusText)
         childParentContactInput = findViewById(R.id.childParentContactInput)
         childUsernameInput = findViewById(R.id.childUsernameInput)
         childPasswordInput = findViewById(R.id.childPasswordInput)
@@ -239,7 +172,6 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         recentLogText = findViewById(R.id.recentLogText)
         pairingQrImage = findViewById(R.id.pairingQrImage)
-        pairingLinkText = findViewById(R.id.pairingLinkText)
         darkModeSwitch = findViewById(R.id.darkModeSwitch)
         languageSwitch = findViewById(R.id.languageSwitch)
         inAppSoundsSwitch = findViewById(R.id.inAppSoundsSwitch)
@@ -269,31 +201,14 @@ class MainActivity : AppCompatActivity() {
         filtersSection = findViewById(R.id.filtersSection)
         statusSection = findViewById(R.id.statusSection)
         logSection = findViewById(R.id.logSection)
-        parentHomeSection = findViewById(R.id.parentHomeSection)
-        parentDashboardSection = findViewById(R.id.parentDashboardSection)
         childHomeSection = findViewById(R.id.childHomeSection)
-        registerFamilySection = findViewById(R.id.registerFamilySection)
         childLoginSection = findViewById(R.id.childLoginSection)
         profileSection = findViewById(R.id.profileSection)
         passwordSection = findViewById(R.id.passwordSection)
         openChildLoginButton = findViewById(R.id.openChildLoginButton)
-        registerFamilyButton = findViewById(R.id.registerFamilyButton)
         childLoginButton = findViewById(R.id.childLoginButton)
-        openParentDashboardButton = findViewById(R.id.openParentDashboardButton)
-        openParentAlertsButton = findViewById(R.id.openParentAlertsButton)
-        openChildDevicesButton = findViewById(R.id.openChildDevicesButton)
-        parentLoginButton = findViewById(R.id.parentLoginButton)
-        parentVerifyPhoneButton = findViewById(R.id.parentVerifyPhoneButton)
-        parentResendPhoneCodeButton = findViewById(R.id.parentResendPhoneCodeButton)
-        refreshParentAlertsButton = findViewById(R.id.refreshParentAlertsButton)
-        openParentNotificationSettingsButton = findViewById(R.id.openParentNotificationSettingsButton)
+        openNotificationSettingsButton = findViewById(R.id.openNotificationSettingsButton)
         statusPairDeviceButton = findViewById(R.id.statusPairDeviceButton)
-        reviewLatestSafeButton = findViewById(R.id.reviewLatestSafeButton)
-        approveLogoutButton = findViewById(R.id.approveLogoutButton)
-        denyLogoutButton = findViewById(R.id.denyLogoutButton)
-        createChildDeviceLinkButton = findViewById(R.id.createChildDeviceLinkButton)
-        copyPairingLinkButton = findViewById(R.id.copyPairingLinkButton)
-        sharePairingLinkButton = findViewById(R.id.sharePairingLinkButton)
         goPairChildButton = findViewById(R.id.goPairChildButton)
         goCaptureChildButton = findViewById(R.id.goCaptureChildButton)
         goFiltersChildButton = findViewById(R.id.goFiltersChildButton)
@@ -328,45 +243,11 @@ class MainActivity : AppCompatActivity() {
         menuPassword.setOnClickListener { showSection(SECTION_PASSWORD) }
         menuLogout.setOnClickListener { signOut() }
         openChildLoginButton.setOnClickListener { showSection(SECTION_CHILD_AUTH) }
-        findViewById<Button>(R.id.registerBackToLoginButton).setOnClickListener {
-            showSection(SECTION_CHILD_AUTH)
-        }
-        parentRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
-        childRoleButton.setOnClickListener { setDeviceRole(Prefs.ROLE_CHILD) }
-
-        openParentDashboardButton.setOnClickListener { showSection(SECTION_CHILD_ACCOUNT) }
-        findViewById<Button>(R.id.parentDashboardPairButton).setOnClickListener { showSection(SECTION_QR) }
-        findViewById<Button>(R.id.parentDashboardSettingsButton).setOnClickListener { showSection(SECTION_SETTINGS) }
-        openParentAlertsButton.setOnClickListener { openWebPath("/parent/alerts") }
-        openChildDevicesButton.setOnClickListener { openWebPath("/parent/child-profile") }
-        parentLoginButton.setOnClickListener { signInParent() }
-        registerFamilyButton.setOnClickListener { registerFamilyAccount() }
         childLoginButton.setOnClickListener { signInChild() }
-        parentVerifyPhoneButton.setOnClickListener { verifyParentPhone() }
-        parentResendPhoneCodeButton.setOnClickListener { resendParentPhoneCode() }
-        refreshParentAlertsButton.setOnClickListener { refreshParentAlerts() }
-        openParentNotificationSettingsButton.setOnClickListener {
+        openNotificationSettingsButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
         statusPairDeviceButton.setOnClickListener { showSection(SECTION_QR) }
-        reviewLatestSafeButton.setOnClickListener {
-            runParentAction { callback ->
-                ParentApiClient.reviewLatestFlaggedMessageAsSafe(this, callback)
-            }
-        }
-        approveLogoutButton.setOnClickListener {
-            runParentAction { callback ->
-                ParentApiClient.approvePendingLogout(this, callback)
-            }
-        }
-        denyLogoutButton.setOnClickListener {
-            runParentAction { callback ->
-                ParentApiClient.denyPendingLogout(this, callback)
-            }
-        }
-        createChildDeviceLinkButton.setOnClickListener { createChildDeviceLink() }
-        copyPairingLinkButton.setOnClickListener { copyLatestPairingLink() }
-        sharePairingLinkButton.setOnClickListener { shareLatestPairingLink() }
         goPairChildButton.setOnClickListener { signOut() }
         goCaptureChildButton.setOnClickListener { showSection(SECTION_CAPTURE) }
         goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
@@ -374,25 +255,13 @@ class MainActivity : AppCompatActivity() {
         saveButton.setOnClickListener { saveSettings() }
         scanQrButton.setOnClickListener { startQrPairing() }
         findViewById<Button>(R.id.notificationAccessButton).setOnClickListener {
-            if (!Prefs.isChildRole(this)) {
-                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
-            } else {
-                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            }
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
         findViewById<Button>(R.id.sendTestButton).setOnClickListener {
-            if (!Prefs.isChildRole(this)) {
-                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
-            } else {
-                sendTestPayload()
-            }
+            sendTestPayload()
         }
         findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
-            if (!Prefs.isChildRole(this)) {
-                Toast.makeText(this, R.string.parent_mode_capture_disabled, Toast.LENGTH_SHORT).show()
-            } else {
-                retryQueue()
-            }
+            retryQueue()
         }
         findViewById<Button>(R.id.editProfileButton).setOnClickListener {
             showSection(SECTION_PROFILE)
@@ -439,7 +308,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         registerSettingsDirtyWatchers()
-        Prefs.setDeviceRole(this, Prefs.ROLE_CHILD)
+        Prefs.setDeviceRole(this)
         childSignedIn = Prefs.isChildSignedIn(this)
         populateFields()
         restoreChildSessionUi()
@@ -465,14 +334,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         populateFields()
         updateRoleUi()
-        if (Prefs.isChildRole(this)) {
-            IngestionClient.flushQueuedNotifications(this) { _, message ->
-                runOnUiThread {
-                    statusText.text = message
-                    recentLogText.text = RecentNotificationLog.render(this)
-                    childSetupStatusText.text = buildChildSetupStatus()
-                    updateChildDashboardCards()
-                }
+        IngestionClient.flushQueuedNotifications(this) { _, message ->
+            runOnUiThread {
+                statusText.text = message
+                recentLogText.text = RecentNotificationLog.render(this)
+                childSetupStatusText.text = buildChildSetupStatus()
+                updateChildDashboardCards()
             }
         }
         checkChildLogoutDecision()
@@ -480,10 +347,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun populateFields() {
         isPopulatingFields = true
-        baseUrlInput.setText(Prefs.getBaseUrl(this))
         tokenInput.setText(Prefs.getDeviceToken(this))
         deviceNameInput.setText(Prefs.getDeviceName(this))
-        parentIdentifierInput.setText(Prefs.getParentIdentifier(this))
         allowedPackagesInput.setText(Prefs.getAllowedPackages(this))
         blockedPackagesInput.setText(Prefs.getBlockedPackages(this))
         statusText.text = Prefs.getLastStatus(this)
@@ -518,18 +383,10 @@ class MainActivity : AppCompatActivity() {
         roleSummaryText.text = getString(R.string.role_child_copy)
         captureRoleHint.text = getString(R.string.actions_section_copy)
 
-        setRoleButtonState(parentRoleButton, false)
-        setRoleButtonState(childRoleButton, true)
-
-        parentChildDeviceNameInput.visibility = View.GONE
-        createChildDeviceLinkButton.visibility = View.GONE
-        copyPairingLinkButton.visibility = View.GONE
-        sharePairingLinkButton.visibility = View.GONE
-        openChildDevicesButton.visibility = View.GONE
         scanQrButton.visibility = View.VISIBLE
         updateMenuAccess()
 
-        if (currentSection == SECTION_AUTH || currentSection == SECTION_REGISTER || currentSection == SECTION_PARENT_DASHBOARD) {
+        if (currentSection == SECTION_AUTH) {
             currentSection = SECTION_HOME
         }
         syncDrawerState(currentSection)
@@ -563,12 +420,6 @@ class MainActivity : AppCompatActivity() {
             menuLogout,
         )
         menuItems.forEach { it.visibility = View.GONE }
-        openParentDashboardButton.visibility = View.GONE
-        openParentAlertsButton.visibility = View.GONE
-        refreshParentAlertsButton.visibility = View.GONE
-        reviewLatestSafeButton.visibility = View.GONE
-        approveLogoutButton.visibility = View.GONE
-        denyLogoutButton.visibility = View.GONE
         if (!signedIn) return
 
         menuHome.visibility = View.VISIBLE
@@ -592,7 +443,7 @@ class MainActivity : AppCompatActivity() {
     private fun navigateBack() {
         when {
             childSignedIn -> showSection(SECTION_CHILD_ACCOUNT)
-            currentSection == SECTION_REGISTER || currentSection == SECTION_CHILD_AUTH -> showSection(SECTION_HOME)
+            currentSection == SECTION_CHILD_AUTH -> showSection(SECTION_HOME)
             else -> showSection(SECTION_HOME)
         }
     }
@@ -723,14 +574,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setRoleButtonState(button: Button, active: Boolean) {
-        button.alpha = if (active) 1f else 0.72f
-        button.isAllCaps = false
-    }
-
-    private fun setDeviceRole(role: String, showHome: Boolean = true) {
-        Prefs.setDeviceRole(this, role)
-        Toast.makeText(this, R.string.role_saved, Toast.LENGTH_SHORT).show()
+    private fun refreshChildRole(showHome: Boolean = true) {
+        Prefs.setDeviceRole(this)
         updateRoleUi()
         if (showHome) showSection(SECTION_HOME)
     }
@@ -738,8 +583,6 @@ class MainActivity : AppCompatActivity() {
     private fun showSection(position: Int) {
         val resolvedPosition = when {
             position == SECTION_AUTH -> SECTION_CHILD_AUTH
-            position == SECTION_REGISTER -> SECTION_HOME
-            position == SECTION_PARENT_DASHBOARD -> SECTION_HOME
             position == SECTION_CHILD_ACCOUNT && !childSignedIn -> SECTION_HOME
             position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
             position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
@@ -752,11 +595,8 @@ class MainActivity : AppCompatActivity() {
         currentSection = resolvedPosition
 
         roleSection.visibility = if (resolvedPosition == SECTION_HOME) View.VISIBLE else View.GONE
-        parentHomeSection.visibility = View.GONE
-        parentDashboardSection.visibility = View.GONE
         childHomeSection.visibility =
             if (resolvedPosition == SECTION_CHILD_ACCOUNT) View.VISIBLE else View.GONE
-        registerFamilySection.visibility = View.GONE
         childLoginSection.visibility = if (resolvedPosition == SECTION_CHILD_AUTH) View.VISIBLE else View.GONE
         qrSection.visibility = if (resolvedPosition == SECTION_QR) View.VISIBLE else View.GONE
         settingsSection.visibility = if (resolvedPosition == SECTION_SETTINGS) View.VISIBLE else View.GONE
@@ -766,7 +606,6 @@ class MainActivity : AppCompatActivity() {
         logSection.visibility = if (resolvedPosition == SECTION_LOGS) View.VISIBLE else View.GONE
         profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
         passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
-        if (resolvedPosition == SECTION_QR) renderLatestPairingQr()
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
         drawerLayout.closeDrawer(GravityCompat.START)
@@ -946,67 +785,6 @@ class MainActivity : AppCompatActivity() {
         return enabledListeners.contains(packageName, ignoreCase = true)
     }
 
-    private fun openWebPath(path: String) {
-        val baseUrl = Prefs.getBaseUrl(this).trim().trimEnd('/')
-        if (baseUrl.isBlank()) {
-            Toast.makeText(this, R.string.base_url_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$baseUrl$path")))
-    }
-
-    private fun signInParent() {
-        Toast.makeText(this, R.string.child_only_app_notice, Toast.LENGTH_SHORT).show()
-        showSection(SECTION_CHILD_AUTH)
-    }
-
-    private fun registerFamilyAccount() {
-        val familyName = registerFamilyNameInput.text.toString().trim()
-        val parentName = registerParentNameInput.text.toString().trim()
-        val parentContact = registerParentContactInput.text.toString().trim()
-        val parentPassword = registerParentPasswordInput.text.toString()
-        val childName = registerChildNameInput.text.toString().trim()
-        val childUsername = registerChildUsernameInput.text.toString().trim()
-        val childPassword = registerChildPasswordInput.text.toString()
-        if (
-            familyName.isBlank() ||
-            parentName.isBlank() ||
-            parentContact.isBlank() ||
-            parentPassword.isBlank() ||
-            childName.isBlank() ||
-            childUsername.isBlank() ||
-            childPassword.isBlank()
-        ) {
-            Toast.makeText(this, R.string.register_fields_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        registerFamilyStatusText.text = getString(R.string.registering_family)
-        registerFamilyButton.isEnabled = false
-        ParentApiClient.registerFamily(
-            context = this,
-            familyName = familyName,
-            parentName = parentName,
-            parentContact = parentContact,
-            parentPassword = parentPassword,
-            childName = childName,
-            childUsername = childUsername,
-            childPassword = childPassword,
-        ) { ok, message ->
-            runOnUiThread {
-                registerFamilyButton.isEnabled = true
-                registerParentPasswordInput.text?.clear()
-                registerChildPasswordInput.text?.clear()
-                registerFamilyStatusText.text = message
-                Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
-                if (ok) {
-                    childSignedIn = false
-                    setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
-                    showSection(SECTION_CHILD_AUTH)
-                }
-            }
-        }
-    }
-
     private fun signInChild() {
         val parentContact = childParentContactInput.text.toString().trim()
         val childUsername = childUsernameInput.text.toString().trim()
@@ -1033,116 +811,12 @@ class MainActivity : AppCompatActivity() {
                     profileNameInput.setText(childUsername)
                     profileContactInput.setText(parentContact)
                     childGreetingText.text = getString(R.string.child_greeting_live, childUsername)
-                    setDeviceRole(Prefs.ROLE_CHILD, showHome = false)
+                    refreshChildRole(showHome = false)
                     updateMenuAccess()
                     showSection(SECTION_CHILD_ACCOUNT)
                 }
             }
         }
-    }
-
-    private fun verifyParentPhone() {
-        val identifier = parentIdentifierInput.text.toString().trim()
-        val code = parentPhoneCodeInput.text.toString().trim()
-        if (identifier.isBlank() || code.isBlank()) {
-            Toast.makeText(this, R.string.phone_verification_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        parentAlertSummaryText.text = getString(R.string.phone_verification_running)
-        parentVerifyPhoneButton.isEnabled = false
-        ParentApiClient.verifyPhone(this, identifier, code) { ok, message ->
-            runOnUiThread {
-                parentVerifyPhoneButton.isEnabled = true
-                if (ok) parentPhoneCodeInput.text?.clear()
-                parentAlertSummaryText.text = message
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun resendParentPhoneCode() {
-        val identifier = parentIdentifierInput.text.toString().trim()
-        if (identifier.isBlank()) {
-            Toast.makeText(this, R.string.parent_phone_required, Toast.LENGTH_SHORT).show()
-            return
-        }
-        parentAlertSummaryText.text = getString(R.string.phone_verification_sending)
-        parentResendPhoneCodeButton.isEnabled = false
-        ParentApiClient.resendPhoneVerification(this, identifier) { _, message ->
-            runOnUiThread {
-                parentResendPhoneCodeButton.isEnabled = true
-                parentAlertSummaryText.text = message
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun refreshParentAlerts() {
-        parentAlertSummaryText.text = getString(R.string.parent_alerts_loading)
-        ParentApiClient.fetchDashboard(this) { ok, dashboard, message ->
-            runOnUiThread {
-                parentAlertSummaryText.text = message
-                if (ok && dashboard != null) {
-                    parentFamilyNameText.text = dashboard.familyName
-                    parentChildStatusText.text = "${dashboard.childName} - Online"
-                    parentAlertsWeekText.text = getString(R.string.alert_count_format, dashboard.alertCount)
-                    parentRecentMessagesText.text = dashboard.recentMessages
-                    parentDeviceStatusText.text = dashboard.deviceStatus
-                }
-                if (!ok) {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun runParentAction(action: ((Boolean, String) -> Unit) -> Unit) {
-        parentAlertSummaryText.text = getString(R.string.parent_action_running)
-        action { ok, message ->
-            runOnUiThread {
-                parentAlertSummaryText.text = message
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                if (ok) refreshParentAlerts()
-            }
-        }
-    }
-
-    private fun createChildDeviceLink() {
-        val deviceName = parentChildDeviceNameInput.text.toString().trim()
-        parentAlertSummaryText.text = getString(R.string.creating_child_device_link)
-        createChildDeviceLinkButton.isEnabled = false
-        ParentApiClient.createChildDeviceLink(this, deviceName) { _, message ->
-            runOnUiThread {
-                createChildDeviceLinkButton.isEnabled = true
-                parentAlertSummaryText.text = message
-                renderLatestPairingQr()
-                Toast.makeText(this, message.lines().firstOrNull().orEmpty(), Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun copyLatestPairingLink() {
-        val pairingUri = ParentApiClient.getLatestPairingUri()
-        if (pairingUri.isBlank()) {
-            Toast.makeText(this, R.string.no_pairing_link_ready, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.pairing_link_label), pairingUri))
-        Toast.makeText(this, R.string.pairing_link_copied, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun shareLatestPairingLink() {
-        val pairingUri = ParentApiClient.getLatestPairingUri()
-        if (pairingUri.isBlank()) {
-            Toast.makeText(this, R.string.no_pairing_link_ready, Toast.LENGTH_SHORT).show()
-            return
-        }
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, pairingUri)
-        }
-        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_pairing_link)))
     }
 
     private fun sendTestPayload() {
@@ -1212,32 +886,15 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.invalid_pairing_qr, Toast.LENGTH_SHORT).show()
             return
         }
-        baseUrlInput.setText(Prefs.getBaseUrl(this))
         tokenInput.setText(uri.getQueryParameter("token").orEmpty())
         val qrDeviceName = uri.getQueryParameter("device_name").orEmpty()
         if (deviceNameInput.text.isNullOrBlank()) {
             deviceNameInput.setText(qrDeviceName)
         }
-        when (uri.getQueryParameter("role").orEmpty().trim().lowercase()) {
-            Prefs.ROLE_PARENT -> Prefs.setDeviceRole(this, Prefs.ROLE_PARENT)
-            Prefs.ROLE_CHILD -> Prefs.setDeviceRole(this, Prefs.ROLE_CHILD)
-        }
+        Prefs.setDeviceRole(this)
         saveSettings()
         updateRoleUi()
         Toast.makeText(this, R.string.qr_pairing_applied, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun renderLatestPairingQr() {
-        val pairingUri = ParentApiClient.getLatestPairingUri()
-        if (pairingUri.isBlank()) {
-            pairingQrImage.setImageResource(R.drawable.cyber_mzazi_logo)
-            pairingLinkText.visibility = View.GONE
-            return
-        }
-        val bitmap = BarcodeEncoder().encodeBitmap(pairingUri, BarcodeFormat.QR_CODE, 720, 720)
-        pairingQrImage.setImageBitmap(bitmap)
-        pairingLinkText.text = pairingUri
-        pairingLinkText.visibility = View.VISIBLE
     }
 
     private fun handlePairingIntent(intent: Intent?) {
@@ -1257,10 +914,8 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_FILTERS = 5
         private const val SECTION_STATUS = 6
         private const val SECTION_LOGS = 7
-        private const val SECTION_REGISTER = 8
         private const val SECTION_CHILD_AUTH = 9
         private const val SECTION_CHILD_ACCOUNT = 10
-        private const val SECTION_PARENT_DASHBOARD = 11
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
         private const val STATE_CURRENT_SECTION = "current_section"

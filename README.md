@@ -30,16 +30,13 @@ Implemented:
 
 ### AI classification
 
-Current production-safe path:
+Current recommended path:
 
-- `MODEL_PROVIDER=heuristic`
-- free-tier-friendly deployment without loading a large transformer in the main Render service
+- `MODEL_PROVIDER=auto`
+- use the configured Hugging Face DistilBERT API when available
+- fall back to the local model or heuristics when the external API is not configured
 
-Available but optional:
-
-- DistilBERT/Hugging Face Space flow for heavier inference experiments
-
-Expanded label coverage includes:
+Active label coverage includes:
 
 - `safe`
 - `grooming`
@@ -48,12 +45,8 @@ Expanded label coverage includes:
 - `betting`
 - `phishing`
 - `scam`
-- `financial_fraud`
-- `malware`
 - `cyberbullying`
 - `violence`
-- `hate_speech`
-- `bot_activity`
 - `misinformation`
 
 ### Android app
@@ -233,13 +226,14 @@ The repo includes:
 - [Procfile](Procfile)
 - [wsgi.py](wsgi.py)
 
-Current recommended free-tier-safe setup:
+Current recommended deployment setup:
 
-- `MODEL_PROVIDER=heuristic`
+- `MODEL_PROVIDER=auto`
+- `MODEL_API_URL=<your Hugging Face Space predict endpoint>` when using external DistilBERT inference
 - `ENABLE_HEURISTIC_FALLBACK=true`
 - `FORCE_MODEL_RETRAIN=false`
 
-Do **not** load the large transformer artifact directly in the main free Render service.
+Prefer external DistilBERT inference on Hugging Face Spaces for the main Render service when memory is limited.
 
 Typical startup command:
 

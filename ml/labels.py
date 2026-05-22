@@ -13,12 +13,8 @@ SUPPORTED_LABELS = [
     "betting",
     "phishing",
     "scam",
-    "financial_fraud",
-    "malware",
     "cyberbullying",
     "violence",
-    "hate_speech",
-    "bot_activity",
     "misinformation",
 ]
 
@@ -30,12 +26,8 @@ RISK_TERMS = {
     "betting": ["gambling", "financial_pressure", "false_promises"],
     "phishing": ["credential_theft", "fake_link", "impersonation"],
     "scam": ["social_engineering", "financial_request", "fraud"],
-    "financial_fraud": ["money_transfer", "urgent_payment", "account_takeover"],
-    "malware": ["malicious_attachment", "payload_delivery", "device_compromise"],
     "cyberbullying": ["harassment", "abuse", "threat_language"],
     "violence": ["physical_harm", "attack_language", "death_threat"],
-    "hate_speech": ["identity_attack", "religious_abuse", "targeted_slur"],
-    "bot_activity": ["automation", "spam_pattern", "fake_account"],
     "misinformation": ["false_claims", "manipulation", "deception"],
 }
 
@@ -46,12 +38,8 @@ LABEL_HINTS = {
     "betting": ["odds", "jackpot", "bet", "awin", "payout"],
     "phishing": ["verify your account", "click the link", "password reset", "login now", "account locked"],
     "scam": ["urgent payment", "claim your reward", "true love", "lottery", "bonus portal"],
-    "financial_fraud": ["m-pesa pin", "mpesa pin", "send money now", "wire money", "transfer now", "mobile money", "unlock your winnings", "winnings"],
-    "malware": ["apk", "macro", "attachment", "payload", "ransomware"],
     "cyberbullying": ["stupid", "worthless", "idiot", "loser", "hate you"],
     "violence": ["kill you", "beat you", "attack you", "hurt you badly", "deserve to die"],
-    "hate_speech": ["dirty muslim", "your tribe", "religion is trash", "you people", "slur"],
-    "bot_activity": ["automated post", "mass repost", "bot", "fake account", "spam burst"],
     "misinformation": ["fake news", "rumor", "forwards", "hoax", "unverified"],
 }
 
@@ -63,12 +51,8 @@ LABEL_METADATA = {
     "betting": {"title": "Betting", "tone": "warning"},
     "phishing": {"title": "Phishing", "tone": "danger"},
     "scam": {"title": "Scam", "tone": "warning"},
-    "financial_fraud": {"title": "Financial Fraud", "tone": "danger"},
-    "malware": {"title": "Malware", "tone": "danger"},
     "cyberbullying": {"title": "Cyberbullying", "tone": "warning"},
     "violence": {"title": "Violence", "tone": "danger"},
-    "hate_speech": {"title": "Hate Speech", "tone": "danger"},
-    "bot_activity": {"title": "Bot Activity", "tone": "warning"},
     "misinformation": {"title": "Misinformation", "tone": "warning"},
 }
 

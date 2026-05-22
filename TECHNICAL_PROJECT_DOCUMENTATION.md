@@ -16,7 +16,7 @@ The development of Cyber Mzazi combines web engineering, mobile development, mac
 
 Cyber Mzazi is a consent-led child online safety platform that enables parents or guardians to monitor and review potentially harmful digital messages affecting a child. The system provides a Flask web application, a MySQL database, a machine-learning classifier, and an Android companion app. Parents can register families, manage child profiles, review alerts, approve or deny child logout requests, and create Android device pairing links. Children can report messages through the web platform, while the Android companion can ingest supported notification text from a child phone after pairing and permission setup.
 
-The classification model detects fourteen safety categories: safe, grooming, sexual content, sextortion, betting, phishing, scam, financial fraud, malware, cyberbullying, violence, hate speech, bot activity, and misinformation. The current primary model is a multilingual DistilBERT-based sequence classifier with review-feedback matching and heuristic fallback support. This documentation presents the system architecture, methodology, implementation design, database schema, Android flow, API structure, and model computational equations.
+The classification model detects ten active safety categories: safe, grooming, sexual_content, sextortion, betting, phishing, scam, cyberbullying, violence, and misinformation. The current primary model is a multilingual DistilBERT-based sequence classifier with review-feedback matching and heuristic fallback support. This documentation presents the system architecture, methodology, implementation design, database schema, Android flow, API structure, and model computational equations.
 
 ## Acronyms/Abbreviations
 
@@ -350,7 +350,7 @@ The model design explains how Cyber Mzazi converts message text into safety labe
 
 ### 4.1.1 Overview of the Cyber Mzazi Model
 
-The classifier supports fourteen labels:
+The classifier supports ten active labels:
 
 - safe
 - grooming
@@ -359,12 +359,8 @@ The classifier supports fourteen labels:
 - betting
 - phishing
 - scam
-- financial_fraud
-- malware
 - cyberbullying
 - violence
-- hate_speech
-- bot_activity
 - misinformation
 
 ### 4.1.2 Purpose: Predicting Message Safety Labels

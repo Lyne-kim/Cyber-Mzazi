@@ -12,11 +12,9 @@ from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS
 class MessageClassifier:
     HIGH_SIGNAL_HINT_LABELS = {
         "phishing",
-        "financial_fraud",
         "grooming",
         "sextortion",
         "violence",
-        "hate_speech",
         "cyberbullying",
         "misinformation",
     }
@@ -125,17 +123,13 @@ class HeuristicMessageClassifier:
     PRIORITY_ORDER = [
         "sextortion",
         "grooming",
-        "financial_fraud",
         "phishing",
-        "malware",
         "violence",
-        "hate_speech",
         "sexual_content",
         "cyberbullying",
         "scam",
         "betting",
         "misinformation",
-        "bot_activity",
     ]
 
     def __init__(self):
@@ -158,7 +152,7 @@ class HeuristicMessageClassifier:
         if any(term in lowered for term in ["http://", "https://", "bit.ly", "tinyurl", "otp", "verify code"]):
             scores["phishing"] = scores.get("phishing", 0) + 1
         if any(term in lowered for term in ["send money", "cashout", "mpesa", "m-pesa", "wallet", "bank alert"]):
-            scores["financial_fraud"] = scores.get("financial_fraud", 0) + 1
+            scores["scam"] = scores.get("scam", 0) + 1
         if any(term in lowered for term in ["nudes", "video of you", "i will post", "i'll post", "expose you"]):
             scores["sextortion"] = scores.get("sextortion", 0) + 1
         if any(term in lowered for term in ["hate you", "ugly", "fool", "dumb", "useless"]):

@@ -291,7 +291,7 @@ def build_paragraphs() -> list[str]:
             ),
             paragraph("3.3 Data and Model Methodology", bold=True),
             paragraph(
-                "For AI training, the project combines multiple datasets related to online harm categories such as cyberbullying, grooming, phishing, scams, malware, misinformation, and financial fraud. DistilBERT-based training workflows were explored locally for richer classification, while a lightweight heuristic production mode was maintained for free-tier deployment stability. Parent-reviewed labels are also incorporated into future prediction workflows through live review-feedback matching and retraining support."
+                "For AI training, the project uses the active Cyber Mzazi dataset and label set covering safe, grooming, sexual content, sextortion, betting, phishing, scam, cyberbullying, violence, and misinformation. DistilBERT-based training workflows were explored locally for richer classification, while external model inference and heuristic fallback support deployment stability. Parent-reviewed labels are also incorporated into future prediction workflows through live review-feedback matching and retraining support."
             ),
             paragraph("3.4 System Development Method", bold=True),
             paragraph(
@@ -319,10 +319,10 @@ def build_paragraphs() -> list[str]:
             paragraph("2. Child Web Module - safety check reporting, My Safety, settings, and request sign-out workflow."),
             paragraph("3. API Module - structured endpoints for web and Android interactions."),
             paragraph("4. AI Module - message classification, label taxonomy, review-feedback matching, and retraining support."),
-            paragraph("5. Android Module - one Android app with role selection for parent or guardian and child flows."),
+            paragraph("5. Android Module - a child-focused companion app for pairing, notification access, filters, status, profile, password, and parent-approved logout workflows."),
             paragraph("4.3 AI Model Design", bold=True),
             paragraph(
-                "The project supports expanded classification labels including safe, grooming, sexual content, sextortion, betting, phishing, scam, financial fraud, malware, cyberbullying, violence, hate speech, bot activity, and misinformation. DistilBERT-based training was used locally to improve classification quality, while production-safe heuristics were maintained for live deployment on constrained infrastructure. The system now also incorporates reviewed parent feedback to influence future matching predictions."
+                "The project supports active classification labels including safe, grooming, sexual content, sextortion, betting, phishing, scam, cyberbullying, violence, and misinformation. DistilBERT-based training was used locally to improve classification quality, while external model inference and heuristic fallback support live deployment on constrained infrastructure. The system also incorporates reviewed parent feedback to influence future matching predictions."
             ),
             paragraph("4.4 Technology Stack", bold=True),
             paragraph("Frontend: HTML, CSS, Jinja templates, responsive mobile layouts."),

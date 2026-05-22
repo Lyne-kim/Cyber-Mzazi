@@ -31,13 +31,9 @@ LABEL_HINTS = {
     "sextortion": ["send pics", "leak your photos", "expose you", "blackmail", "nudes"],
     "betting": ["odds", "jackpot", "bet", "awin", "payout"],
     "phishing": ["verify your account", "click the link", "password reset", "login now", "account locked"],
-    "scam": ["urgent payment", "claim your reward", "true love", "lottery", "bonus portal"],
-    "financial_fraud": ["m-pesa pin", "mpesa pin", "send money now", "wire money", "transfer now", "mobile money"],
-    "malware": ["apk", "macro", "attachment", "payload", "ransomware"],
+    "scam": ["urgent payment", "claim your reward", "true love", "lottery", "bonus portal", "m-pesa pin", "mpesa pin", "send money now", "wire money", "transfer now", "mobile money"],
     "cyberbullying": ["stupid", "worthless", "idiot", "loser", "hate you"],
     "violence": ["kill you", "beat you", "attack you", "hurt you badly", "deserve to die"],
-    "hate_speech": ["dirty muslim", "your tribe", "religion is trash", "you people", "slur"],
-    "bot_activity": ["automated post", "mass repost", "bot", "fake account", "spam burst"],
     "misinformation": ["fake news", "rumor", "forwards", "hoax", "unverified"],
 }
 
@@ -49,12 +45,8 @@ RISK_TERMS = {
     "betting": ["gambling", "financial_pressure", "false_promises"],
     "phishing": ["credential_theft", "fake_link", "impersonation"],
     "scam": ["social_engineering", "financial_request", "fraud"],
-    "financial_fraud": ["money_transfer", "urgent_payment", "account_takeover"],
-    "malware": ["malicious_attachment", "payload_delivery", "device_compromise"],
     "cyberbullying": ["harassment", "abuse", "threat_language"],
     "violence": ["physical_harm", "attack_language", "death_threat"],
-    "hate_speech": ["identity_attack", "religious_abuse", "targeted_slur"],
-    "bot_activity": ["automation", "spam_pattern", "fake_account"],
     "misinformation": ["false_claims", "manipulation", "deception"],
 }
 
@@ -103,11 +95,9 @@ def download_and_extract_transformer_artifact(artifact_url: str, artifact_dir: P
 class MessageClassifier:
     HIGH_SIGNAL_HINT_LABELS = {
         "phishing",
-        "financial_fraud",
         "grooming",
         "sextortion",
         "violence",
-        "hate_speech",
         "cyberbullying",
         "misinformation",
     }
