@@ -232,8 +232,9 @@
             </div>
           </article>
         {% endfor %}
+        <div id="alert-list" class="alert-list">
         {% for message in active_messages %}
-          <article class="message-card selectable-alert-card tone-{{ label_tone(message.predicted_label) }}">
+          <article class="message-card selectable-alert-card tone-{{ label_tone(message.predicted_label) }}" data-alert-id="{{ message.id }}">
             <label class="alert-select-control" hidden>
               <input type="checkbox" name="message_ids" value="{{ message.id }}" form="bulk-delete-form">
               <span>Select alert</span>
@@ -268,17 +269,15 @@
                   </select>
                   <button class="button small" type="submit">Save review</button>
                 </form>
-                <form class="inline-form" method="post" action="{{ url_for('parent.delete_message', message_id=message.id) }}">
+                <form class="inline-form alert-delete-form" method="post" action="{{ url_for('parent.delete_message', message_id=message.id) }}">
                   <button class="button ghost small icon-button" type="submit" aria-label="Delete alert">&#128465;</button>
                 </form>
               </div>
             </div>
           </article>
-        {% else %}
-          {% if not logout_request_cards %}
-            <p class="muted">No active alerts yet.</p>
-          {% endif %}
         {% endfor %}
+          <p class="muted" id="no-alerts-message" {% if active_messages or logout_request_cards %}hidden{% endif %}>No active alerts yet.</p>
+        </div>
       </section>
     {% elif page_key == "child_profile" %}
       <section class="panel">
@@ -534,8 +533,8 @@
         <p class="eyebrow">AI Safety Assistant</p>
         <h3>Chat about a message, slang, link, or incident</h3>
         <p class="muted">Say hello, ask what something means, paste a suspicious message, or describe the problem. The assistant explains the risk and recommends a next step.</p>
+          <div class="assistant-thread" id="assistant-thread" aria-live="polite">
         {% if assistant_history %}
-          <div class="assistant-thread">
             {% for turn in assistant_history %}
               <article class="assistant-turn user-turn">
                 <strong>You</strong>
@@ -546,14 +545,14 @@
                 <p>{{ turn.assistant }}</p>
               </article>
             {% endfor %}
-          </div>
         {% endif %}
-        <form class="stack" method="post" action="{{ url_for('parent.ai_assistant') }}">
+          </div>
+        <form class="stack assistant-chat-form" method="post" action="{{ url_for('parent.ai_assistant') }}">
           <label>
             Message or question
             <textarea name="assistant_prompt" rows="5" placeholder="Example: Hello, can you help me understand this message? Someone said..." required></textarea>
           </label>
-          <button class="button accent" type="submit">Ask assistant</button>
+          <button class="button accent" type="submit" data-default-label="Ask assistant">Ask assistant</button>
         </form>
         {% if assistant_result and assistant_result.ok %}
           <article class="assistant-card tone-{{ assistant_result.tone }}">
@@ -929,6 +928,157 @@
         checkbox.addEventListener("change", refreshBulkDeleteState);
       });
       refreshBulkDeleteState();
+    }
+
+    const escapeHtml = (value) => {
+      const div = document.createElement("div");
+      div.textContent = value || "";
+      return div.innerHTML;
+    };
+
+    const removeDeletedAlerts = (deletedIds) => {
+      deletedIds.forEach((id) => {
+        alertCheckboxes
+          .filter((checkbox) => checkbox.value === String(id))
+          .forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+        document.querySelector(`[data-alert-id="${id}"]`)?.remove();
+      });
+      const remainingAlerts = document.querySelectorAll("[data-alert-id]").length;
+      const noAlertsMessage = document.getElementById("no-alerts-message");
+      if (noAlertsMessage && remainingAlerts === 0) {
+        noAlertsMessage.hidden = false;
+      }
+      updateAlertBadge(isAlertsPage ? 0 : remainingAlerts);
+      updateTitle(isAlertsPage ? 0 : remainingAlerts);
+      refreshBulkDeleteState();
+    };
+
+    document.querySelectorAll(".alert-delete-form").forEach((form) => {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const button = form.querySelector("button");
+        if (button) button.disabled = true;
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "same-origin",
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Alert could not be deleted.");
+          }
+          removeDeletedAlerts(payload.deleted_ids || []);
+        } catch (error) {
+          showToast({
+            title: "Delete failed",
+            body: error.message || "Alert could not be deleted.",
+            created_at_label: "Now",
+            severity: "warning",
+          });
+          if (button) button.disabled = false;
+        }
+      });
+    });
+
+    const bulkDeleteForm = document.getElementById("bulk-delete-form");
+    if (bulkDeleteForm) {
+      bulkDeleteForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!alertCheckboxes.some((checkbox) => checkbox.checked)) {
+          return;
+        }
+        if (bulkAlertAction) bulkAlertAction.disabled = true;
+        try {
+          const response = await fetch(bulkDeleteForm.action, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "same-origin",
+            body: new FormData(bulkDeleteForm),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Selected alerts could not be deleted.");
+          }
+          removeDeletedAlerts(payload.deleted_ids || []);
+          alertCheckboxes.forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+          refreshBulkDeleteState();
+        } catch (error) {
+          showToast({
+            title: "Delete failed",
+            body: error.message || "Selected alerts could not be deleted.",
+            created_at_label: "Now",
+            severity: "warning",
+          });
+        } finally {
+          if (bulkAlertAction) bulkAlertAction.disabled = false;
+        }
+      });
+    }
+
+    const assistantForm = document.querySelector(".assistant-chat-form");
+    const assistantThread = document.getElementById("assistant-thread");
+    const appendAssistantTurn = (turn) => {
+      if (!assistantThread) return;
+      const label = turn.label_title ? ` / ${turn.label_title}` : "";
+      assistantThread.insertAdjacentHTML(
+        "beforeend",
+        `
+          <article class="assistant-turn user-turn">
+            <strong>You</strong>
+            <p>${escapeHtml(turn.user)}</p>
+          </article>
+          <article class="assistant-turn assistant-turn">
+            <strong>Cyber Mzazi${escapeHtml(label)}</strong>
+            <p>${escapeHtml(turn.assistant)}</p>
+          </article>
+        `
+      );
+      assistantThread.scrollTo({ top: assistantThread.scrollHeight, behavior: "smooth" });
+    };
+
+    if (assistantForm) {
+      assistantForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const textarea = assistantForm.querySelector("textarea[name='assistant_prompt']");
+        const button = assistantForm.querySelector("button[type='submit']");
+        const prompt = textarea?.value.trim() || "";
+        if (!prompt) return;
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Thinking...";
+        }
+        try {
+          const response = await fetch(assistantForm.action, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "same-origin",
+            body: new FormData(assistantForm),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Assistant could not reply right now.");
+          }
+          appendAssistantTurn(payload.turn);
+          textarea.value = "";
+        } catch (error) {
+          showToast({
+            title: "Assistant error",
+            body: error.message || "Assistant could not reply right now.",
+            created_at_label: "Now",
+            severity: "warning",
+          });
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = button.dataset.defaultLabel || "Ask assistant";
+          }
+        }
+      });
     }
 
     setStatus();

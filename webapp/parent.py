@@ -55,6 +55,10 @@ PARENT_ADVANCED_ITEMS = [
 ]
 
 
+def _wants_json_response() -> bool:
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+
+
 def _alert_session_key(selected_child_id: int | None) -> str:
     child_key = selected_child_id if selected_child_id is not None else "all"
     return f"parent_alert_seen:{current_user.family_id}:{child_key}"
@@ -518,17 +522,33 @@ def ai_assistant():
             family_id=current_user.family_id,
         )
         if not assistant_result.get("ok"):
+            if _wants_json_response():
+                return jsonify({"ok": False, "error": assistant_result.get("error", "Assistant could not analyse that yet.")}), 400
             flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
         else:
+            assistant_message = assistant_result.get("assistant_message") or assistant_result.get("explanation")
             assistant_history.append(
                 {
                     "user": assistant_prompt,
-                    "assistant": assistant_result.get("assistant_message") or assistant_result.get("explanation"),
+                    "assistant": assistant_message,
                     "risk_level": assistant_result.get("risk_level"),
                     "label_title": assistant_result.get("label_title"),
                 }
             )
             session["parent_assistant_history"] = assistant_history[-8:]
+            if _wants_json_response():
+                return jsonify(
+                    {
+                        "ok": True,
+                        "turn": {
+                            "user": assistant_prompt,
+                            "assistant": assistant_message,
+                            "risk_level": assistant_result.get("risk_level"),
+                            "label_title": assistant_result.get("label_title"),
+                        },
+                        "assistant": assistant_result,
+                    }
+                )
     context = _parent_data()
     return render_template(
         "parent_page.html",
@@ -840,6 +860,8 @@ def delete_message(message_id: int):
         subject_user_id=subject_user_id,
     )
     db.session.commit()
+    if _wants_json_response():
+        return jsonify({"ok": True, "deleted_ids": [message_id], "deleted_count": 1})
     flash("Alert deleted.", "success")
     return redirect(url_for("parent.alerts"))
 
@@ -875,6 +897,14 @@ def bulk_delete_messages():
         subject_user_id=next(iter(subject_ids), None),
     )
     db.session.commit()
+    if _wants_json_response():
+        return jsonify(
+            {
+                "ok": True,
+                "deleted_ids": [record.id for record in records],
+                "deleted_count": deleted_count,
+            }
+        )
     flash(f"{deleted_count} alert(s) deleted.", "success")
     return redirect(url_for("parent.alerts"))
 

@@ -8,10 +8,12 @@ import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Switch
 import android.widget.TextView
@@ -74,6 +76,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var newPasswordInput: EditText
     private lateinit var confirmNewPasswordInput: EditText
     private lateinit var assistantPromptInput: EditText
+    private lateinit var assistantConversationContainer: LinearLayout
     private lateinit var assistantResultText: TextView
     private lateinit var appVersionText: TextView
 
@@ -189,6 +192,7 @@ class MainActivity : AppCompatActivity() {
         newPasswordInput = findViewById(R.id.newPasswordInput)
         confirmNewPasswordInput = findViewById(R.id.confirmNewPasswordInput)
         assistantPromptInput = findViewById(R.id.assistantPromptInput)
+        assistantConversationContainer = findViewById(R.id.assistantConversationContainer)
         assistantResultText = findViewById(R.id.assistantResultText)
         appVersionText = findViewById(R.id.appVersionText)
 
@@ -308,7 +312,7 @@ class MainActivity : AppCompatActivity() {
         askAssistantButton.setOnClickListener { askAssistant() }
         findViewById<Button>(R.id.clearAssistantButton).setOnClickListener {
             assistantPromptInput.text?.clear()
-            assistantResultText.text = getString(R.string.assistant_result_empty)
+            resetAssistantConversation()
         }
 
         darkModeSwitch.setOnCheckedChangeListener { _, enabled ->
@@ -542,12 +546,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveProfile() {
         val name = profileNameInput.text.toString().trim()
-        val contact = profileContactInput.text.toString().trim()
         if (name.isBlank()) {
             Toast.makeText(this, R.string.profile_name_required, Toast.LENGTH_SHORT).show()
             return
         }
-        ParentApiClient.updateProfile(this, name, contact) { ok, message ->
+        ParentApiClient.updateProfile(this, name) { ok, message ->
             runOnUiThread {
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 if (ok) {
@@ -617,11 +620,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
         askAssistantButton.isEnabled = false
-        assistantResultText.text = getString(R.string.assistant_thinking)
+        if (assistantConversationContainer.childCount == 1 && assistantResultText.parent != null) {
+            assistantConversationContainer.removeAllViews()
+        }
+        addAssistantBubble(prompt, fromChild = true)
+        val thinkingBubble = addAssistantBubble(getString(R.string.assistant_thinking), fromChild = false)
+        assistantPromptInput.text?.clear()
         ParentApiClient.askAssistant(this, prompt) { ok, message ->
             runOnUiThread {
                 askAssistantButton.isEnabled = true
-                assistantResultText.text = message
+                thinkingBubble.text = message
                 Toast.makeText(
                     this,
                     if (ok) R.string.assistant_done else R.string.assistant_failed,
@@ -630,6 +638,55 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun resetAssistantConversation() {
+        assistantConversationContainer.removeAllViews()
+        assistantResultText = TextView(this).apply {
+            text = getString(R.string.assistant_result_empty)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cyber_mzazi_muted))
+            textSize = 15f
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+        }
+        assistantConversationContainer.addView(assistantResultText)
+    }
+
+    private fun addAssistantBubble(message: String, fromChild: Boolean): TextView {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = if (fromChild) Gravity.END else Gravity.START
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(8)
+            }
+        }
+        val bubble = TextView(this).apply {
+            text = message
+            textSize = 15f
+            setLineSpacing(dp(2).toFloat(), 1.0f)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            maxWidth = resources.displayMetrics.widthPixels - dp(86)
+            setTextColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    if (fromChild) android.R.color.white else R.color.cyber_mzazi_text,
+                ),
+            )
+            setBackgroundResource(if (fromChild) R.drawable.bg_chat_user_bubble else R.drawable.bg_chat_assistant_bubble)
+        }
+        row.addView(
+            bubble,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+        assistantConversationContainer.addView(row)
+        return bubble
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun refreshChildRole(showHome: Boolean = true) {
         Prefs.setDeviceRole(this)

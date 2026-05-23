@@ -73,7 +73,6 @@ object ParentApiClient {
     fun updateProfile(
         context: Context,
         name: String,
-        contact: String,
         onComplete: (Boolean, String) -> Unit,
     ) {
         postJson(
@@ -197,7 +196,8 @@ object ParentApiClient {
                 return@postJsonForResponse
             }
             val formatted = runCatching {
-                val assistant = JSONObject(responseOrError).getJSONObject("assistant")
+                val root = JSONObject(responseOrError)
+                val assistant = root.getJSONObject("assistant")
                 val title = assistant.optString("label_title", "Safety check")
                 val risk = assistant.optString("risk_level", "unknown").replaceFirstChar { it.uppercase() }
                 val confidence = (assistant.optDouble("confidence", 0.0) * 100).toInt()
@@ -206,14 +206,16 @@ object ParentApiClient {
                 val guidance = assistant.optString("guidance")
                 val nextSteps = assistant.optJSONArray("next_steps")
                 buildString {
-                    append(title)
-                    if (risk.lowercase() != "none") append(" / $risk risk")
-                    if (confidence > 0) append(" ($confidence%)")
                     if (assistantMessage.isNotBlank()) {
-                        append("\n\n").append(assistantMessage)
+                        append(assistantMessage)
                     } else if (explanation.isNotBlank()) {
-                        append("\n\n").append(explanation)
+                        append(explanation)
+                    } else {
+                        append("I checked this and can help you decide what to do next.")
                     }
+                    append("\n\nSafety signal: ").append(title)
+                    if (risk.lowercase() != "none") append(" / ").append(risk).append(" risk")
+                    if (confidence > 0) append(" (").append(confidence).append("%)")
                     if (guidance.isNotBlank()) append("\n\nWhat to do:\n").append(guidance)
                     if (nextSteps != null && nextSteps.length() > 0) {
                         append("\n\nNext steps:")
@@ -221,8 +223,8 @@ object ParentApiClient {
                             append("\n").append(index + 1).append(". ").append(nextSteps.optString(index))
                         }
                     }
-                    if (assistant.optBoolean("should_alert_guardian", false)) {
-                        append("\n\nA high-risk result should be shared with your parent or guardian.")
+                    if (root.optBoolean("guardian_alerted", false) || assistant.optBoolean("should_alert_guardian", false)) {
+                        append("\n\nI shared this with your parent or guardian so they can help.")
                     }
                 }
             }.getOrElse {

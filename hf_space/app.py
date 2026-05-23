@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import tempfile
 from functools import lru_cache
@@ -62,11 +63,118 @@ LABEL_ALIASES = {
     "fake": "misinformation",
 }
 
+SAFE_SERVICE_PREFIXES = (
+    "i tried to call at",
+    "i tried calling at",
+    "i tried to call you at",
+    "please call me",
+    "please call me back",
+    "pls call me",
+    "call me back",
+    "you have a missed call",
+    "missed call from",
+    "nilijaribu kukupigia",
+    "nimejaribu kukupigia",
+    "tafadhali nipigie",
+)
+
+TRUSTED_SOURCE_PATTERNS = (
+    r"\bsafaricom\b",
+    r"\bm[\s._-]?pesa\b",
+    r"\bmpesa\b",
+    r"\bm[\s._-]?shwari\b",
+    r"\bfuliza\b",
+    r"\bokoa\b",
+    r"\bmy\s*safaricom\b",
+    r"\bsafaricom\s*home\b",
+    r"\bbank\b",
+    r"\bbanking\b",
+    r"\bkcb\b",
+    r"\bequity\b",
+    r"\bequitel\b",
+    r"\babsa\b",
+    r"\bncba\b",
+    r"\bcoop\b",
+    r"\bco[\s._-]?op\b",
+    r"\bco[\s._-]?operative\b",
+    r"\bstanbic\b",
+    r"\bstanchart\b",
+    r"\bstandard\s*chartered\b",
+    r"\bdtb\b",
+    r"\bi\s*&\s*m\b",
+    r"\bfamily\s*bank\b",
+    r"\bnational\s*bank\b",
+    r"\bkingdom\s*bank\b",
+    r"\bsidian\b",
+    r"\bcredit\s*bank\b",
+    r"\bprime\s*bank\b",
+    r"\buba\b",
+    r"\bboa\b",
+    r"\bstima\s*sacco\b",
+    r"\bmwalimu\s*sacco\b",
+    r"\bdstv\w*\b",
+    r"\bdstv[\s._-]?kenya\b",
+    r"\bgotv\w*\b",
+    r"\bzuku\b",
+    r"\bstar[\s._-]?times\b",
+    r"\bpoa\s*internet\b",
+    r"\bfaiba\b",
+    r"\bjamii\s*telecom\b",
+    r"\bjtl\b",
+    r"\bliquid\s*(home|telecom)?\b",
+    r"\btelkom\b",
+    r"\bairtel\b",
+    r"\bjumia\b",
+    r"\bkilimall\b",
+    r"\baliexpress\b",
+    r"\bshein\b",
+    r"\btemu\b",
+    r"\bnaivas\b",
+    r"\bcarrefour\b",
+    r"\bglovo\b",
+    r"\bbolt\s*food\b",
+    r"\buber\s*eats\b",
+    r"\blittle\s*cab\b",
+    r"\bbolt\b",
+)
+
 
 def normalize_label(label: str | None) -> str:
     normalized = str(label or "").strip().lower()
     normalized = LABEL_ALIASES.get(normalized, normalized)
     return normalized if normalized in SUPPORTED_LABELS else "safe"
+
+
+def normalize_text(value: object) -> str:
+    return " ".join(str(value or "").strip().lower().split())
+
+
+def safe_message_override(
+    text: object,
+    *,
+    source_platform: object = None,
+    sender_handle: object = None,
+    app_package: object = None,
+    notification_title: object = None,
+) -> dict | None:
+    normalized_text = normalize_text(text)
+    if any(normalized_text.startswith(prefix) for prefix in SAFE_SERVICE_PREFIXES):
+        return {"label": "safe", "confidence": 0.99, "risk_indicators": "service_callback_message"}
+
+    context = " ".join(
+        str(value or "")
+        for value in (source_platform, sender_handle, app_package, notification_title)
+        if value
+    )
+    context = normalize_text(context.replace("_", " ").replace("-", " ").replace(".", " "))
+    if not context:
+        return None
+
+    for pattern in TRUSTED_SOURCE_PATTERNS:
+        if re.search(pattern, context):
+            return {"label": "safe", "confidence": 0.99, "risk_indicators": "trusted_service_sender"}
+
+    return None
 
 _load_lock = Lock()
 
@@ -218,6 +326,16 @@ def predict():
     text = str(payload.get("text", "")).strip()
     if not text:
         return jsonify({"ok": False, "error": "Text is required."}), 400
+
+    safe_override = safe_message_override(
+        text,
+        source_platform=payload.get("source_platform") or payload.get("app_name"),
+        sender_handle=payload.get("sender_handle"),
+        app_package=payload.get("app_package"),
+        notification_title=payload.get("notification_title"),
+    )
+    if safe_override is not None:
+        return jsonify({"ok": True, "prediction": safe_override})
 
     try:
         classifier = get_classifier()

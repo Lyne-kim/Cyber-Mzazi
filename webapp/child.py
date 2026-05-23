@@ -1,6 +1,8 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
+
+from ml.labels import label_title, label_tone
 
 from .extensions import db
 from .models import LogoutRequest, MessageRecord, SafetyResourceLink, User
@@ -25,6 +27,10 @@ CHILD_NAV_ITEMS = [
 ]
 
 
+def _wants_json_response() -> bool:
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+
+
 @child_bp.before_request
 @login_required
 def require_child():
@@ -41,7 +47,10 @@ def require_child():
 
 def _child_data() -> dict:
     messages = (
-        MessageRecord.query.filter_by(family_id=current_user.family_id)
+        MessageRecord.query.filter_by(
+            family_id=current_user.family_id,
+            submitted_by_id=current_user.id,
+        )
         .order_by(MessageRecord.created_at.desc())
         .limit(10)
         .all()
@@ -67,10 +76,34 @@ def _child_data() -> dict:
         .order_by(SafetyResourceLink.created_at.desc())
         .all()
     )
+    high_risk_count = sum(
+        1
+        for message in messages
+        if label_tone(message.predicted_label) == "danger" or (message.predicted_confidence or 0) >= 0.7
+    )
+    pending_logout_label = "No request pending"
+    if pending_logout:
+        pending_logout_label = {
+            "approved": "Parent approved",
+            "denied": "Parent denied",
+            "pending": "Waiting for parent",
+        }.get(pending_logout.status, "No request pending")
+    latest_message = messages[0] if messages else None
     return {
         "messages": messages,
         "pending_logout": pending_logout,
         "safety_links": resource_links,
+        "label_title": label_title,
+        "label_tone": label_tone,
+        "child_summary": {
+            "checks_count": len(messages),
+            "high_risk_count": high_risk_count,
+            "resources_count": len(resource_links),
+            "logout_status": pending_logout_label,
+            "latest_message": latest_message,
+            "latest_label": label_title(latest_message.predicted_label) if latest_message else "No checks yet",
+            "latest_tone": label_tone(latest_message.predicted_label) if latest_message else "success",
+        },
     }
 
 
@@ -120,12 +153,15 @@ def ai_assistant():
             family_id=current_user.family_id,
         )
         if not assistant_result.get("ok"):
+            if _wants_json_response():
+                return jsonify({"ok": False, "error": assistant_result.get("error", "Assistant could not analyse that yet.")}), 400
             flash(assistant_result.get("error", "Assistant could not analyse that yet."), "danger")
         else:
+            assistant_message = assistant_result.get("assistant_message") or assistant_result.get("explanation")
             assistant_history.append(
                 {
                     "user": assistant_prompt,
-                    "assistant": assistant_result.get("assistant_message") or assistant_result.get("explanation"),
+                    "assistant": assistant_message,
                     "risk_level": assistant_result.get("risk_level"),
                     "label_title": assistant_result.get("label_title"),
                 }
@@ -167,7 +203,35 @@ def ai_assistant():
                     subject_user_id=current_user.id,
                 )
             db.session.commit()
+            if _wants_json_response():
+                return jsonify(
+                    {
+                        "ok": True,
+                        "guardian_alerted": True,
+                        "turn": {
+                            "user": assistant_prompt,
+                            "assistant": assistant_message,
+                            "risk_level": assistant_result.get("risk_level"),
+                            "label_title": assistant_result.get("label_title"),
+                        },
+                        "assistant": assistant_result,
+                    }
+                )
             flash("This looks serious, so it was shared with your parent/guardian for help.", "warning")
+        elif assistant_result and assistant_result.get("ok") and _wants_json_response():
+            return jsonify(
+                {
+                    "ok": True,
+                    "guardian_alerted": False,
+                    "turn": {
+                        "user": assistant_prompt,
+                        "assistant": assistant_message,
+                        "risk_level": assistant_result.get("risk_level"),
+                        "label_title": assistant_result.get("label_title"),
+                    },
+                    "assistant": assistant_result,
+                }
+            )
     context = _child_data()
     return render_template(
         "child_page.html",
@@ -229,7 +293,12 @@ def submit_message():
         return redirect(url_for("child.report"))
 
     try:
-        prediction = predict_message(message_text, family_id=current_user.family_id)
+        prediction = predict_message(
+            message_text,
+            family_id=current_user.family_id,
+            source_platform=source_platform,
+            sender_handle=sender_handle,
+        )
     except PredictionUnavailable as exc:
         flash(str(exc), "danger")
         return redirect(url_for("child.report"))

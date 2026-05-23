@@ -81,18 +81,16 @@
         <span>{{ t(page_title) }}</span>
       </div>
     </div>
-    <section class="panel child-hero">
-      <div>
-        <p class="eyebrow">{{ t(page_title) }}</p>
-        <h2>{{ current_user.name }}</h2>
-        <p class="muted">{{ t("Safety Check") }}</p>
+    <section class="child-command-hero">
+      <div class="child-hero-copy">
+        <p class="eyebrow">Cyber Mzazi Child Space</p>
+        <h2>Hi {{ current_user.name }}!</h2>
+        <p>Here is how your online safety space is doing right now.</p>
       </div>
-      <div class="transparency-badge">
-        <span>&#128269;</span>
-        <div>
-          <strong>{{ t("My Safety") }}</strong>
-          <p>{{ t("Incoming third-party messages and links") }}</p>
-        </div>
+      <div class="child-hero-status">
+        <span class="status-dot online"></span>
+        <strong>{{ child_summary.logout_status }}</strong>
+        <span>{{ child_summary.checks_count }} safety check(s)</span>
       </div>
     </section>
 
@@ -112,25 +110,45 @@
 
     <div class="child-content-grid">
     {% if page_key == "home" %}
-      <section class="panel">
-        <p class="eyebrow">{{ t("Home") }}</p>
-        <h3>Tips</h3>
-        <div class="tip-carousel">
-          <article class="tip-card">
-            <strong>Think before you share a photo</strong>
-            <p>Private things should stay with people you trust.</p>
-          </article>
-          <article class="tip-card">
-            <strong>Stranger asking for info? Tell a grown-up</strong>
-            <p>If anything feels weird, you do not need to handle it alone.</p>
-          </article>
-          <article class="tip-card">
-            <strong>Use Safety Check if a message feels strange</strong>
-            <p>You can flag harmful messages quickly so your family dashboard is updated.</p>
-          </article>
-        </div>
+      <section class="child-dashboard-grid">
+        <article class="child-stat-card">
+          <span>&#128269;</span>
+          <p>Safety checks</p>
+          <strong>{{ child_summary.checks_count }}</strong>
+        </article>
+        <article class="child-stat-card warning">
+          <span>&#9888;</span>
+          <p>Needs grown-up help</p>
+          <strong>{{ child_summary.high_risk_count }}</strong>
+        </article>
+        <article class="child-stat-card">
+          <span>&#128218;</span>
+          <p>Helpful resources</p>
+          <strong>{{ child_summary.resources_count }}</strong>
+        </article>
+      </section>
 
-        <div class="child-quick-actions">
+      <section class="panel child-focus-panel">
+        <div>
+          <p class="eyebrow">Latest safety signal</p>
+          <h3>{{ child_summary.latest_label }}</h3>
+          {% if child_summary.latest_message %}
+            <p class="muted">{{ child_summary.latest_message.source_platform }} / {{ child_summary.latest_message.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
+          {% else %}
+            <p class="muted">Use Safety Check when a message, link, or online request feels confusing.</p>
+          {% endif %}
+        </div>
+        <a class="button accent small" href="{{ url_for('child.ai_assistant') }}">Ask AI</a>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">{{ t("Home") }}</p>
+            <h3>What do you need?</h3>
+          </div>
+        </div>
+        <div class="child-quick-actions rich">
           <a class="action-card alert" href="{{ url_for('child.report') }}">
             <span>&#128680;</span>
             <div>
@@ -161,10 +179,37 @@
           </a>
         </div>
       </section>
-    {% elif page_key == "report" %}
       <section class="panel">
-        <p class="eyebrow">{{ t("Safety Check") }}</p>
-        <h3>{{ t("Safety Check") }}</h3>
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Recent checks</p>
+            <h3>Your latest safety reviews</h3>
+          </div>
+          <a class="button ghost small" href="{{ url_for('child.report') }}">New check</a>
+        </div>
+        <div class="child-feed-list">
+          {% for message in messages[:4] %}
+            <article class="child-feed-card tone-{{ label_tone(message.predicted_label) }}">
+              <div>
+                <strong>{{ label_title(message.predicted_label) }}</strong>
+                <p>{{ message.message_text }}</p>
+              </div>
+              <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+            </article>
+          {% else %}
+            <p class="muted">No safety checks yet. When you ask Cyber Mzazi to check something, it will appear here.</p>
+          {% endfor %}
+        </div>
+      </section>
+    {% elif page_key == "report" %}
+      <section class="panel child-form-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">{{ t("Safety Check") }}</p>
+            <h3>Check a message before you respond</h3>
+          </div>
+          <span class="child-soft-icon">&#128737;</span>
+        </div>
         <form method="post" action="{{ url_for('child.submit_message') }}">
           <label>
             {{ t("Which app was it on?") }}
@@ -207,7 +252,7 @@
           {% for message in messages %}
             <article class="message-card compact">
               <div class="message-topline">
-                <strong>{{ message.predicted_label }}</strong>
+                <strong>{{ label_title(message.predicted_label) }}</strong>
                 <span>{{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
               </div>
               <p>{{ message.message_text }}</p>
@@ -222,11 +267,11 @@
         </div>
       </section>
     {% elif page_key == "my_safety" %}
-      <section class="panel">
+      <section class="panel child-safety-panel">
         <p class="eyebrow">{{ t("My Safety") }}</p>
-        <h3>{{ t("My Safety") }}</h3>
+        <h3>What Cyber Mzazi does for you</h3>
         <div class="safety-columns">
-          <div>
+          <div class="safety-column-card">
             <strong>What it does</strong>
             <ul class="simple-list">
               <li>I check messages sent by other people for unkind or risky words</li>
@@ -234,7 +279,7 @@
               <li>I let your grown-up know if you might need help</li>
             </ul>
           </div>
-          <div>
+          <div class="safety-column-card calm">
             <strong>What it does not do</strong>
             <ul class="simple-list">
               <li>I do not read your private diary or photos</li>
@@ -245,12 +290,22 @@
         </div>
       </section>
     {% elif page_key == "ai_assistant" %}
-      <section class="panel">
-        <p class="eyebrow">AI Safety Assistant</p>
-        <h3>Ask before you reply</h3>
-        <p class="muted">Say hello, ask for help, paste a message, or explain what happened. If it looks serious, Cyber Mzazi will ask your parent/guardian to help.</p>
+      <section class="panel child-ai-panel">
+        <div class="child-ai-heading">
+          <span>&#129302;</span>
+          <div>
+            <p class="eyebrow">AI Safety Assistant</p>
+            <h3>Ask before you reply</h3>
+            <p class="muted">Say hello, ask for help, paste a message, or explain what happened. If it looks serious, Cyber Mzazi will ask your parent/guardian to help.</p>
+          </div>
+        </div>
+        <div class="quick-prompt-row">
+          <button type="button" data-prompt="Someone online is asking for my private photos. What should I do?">Private photos</button>
+          <button type="button" data-prompt="A stranger sent me a link and says I won a prize. Is it safe?">Strange link</button>
+          <button type="button" data-prompt="Someone is being mean to me in a chat. How do I handle it?">Mean message</button>
+        </div>
+          <div class="assistant-thread" id="assistant-thread" aria-live="polite">
         {% if assistant_history %}
-          <div class="assistant-thread">
             {% for turn in assistant_history %}
               <article class="assistant-turn user-turn">
                 <strong>You</strong>
@@ -261,14 +316,14 @@
                 <p>{{ turn.assistant }}</p>
               </article>
             {% endfor %}
-          </div>
         {% endif %}
-        <form method="post" action="{{ url_for('child.ai_assistant') }}">
+          </div>
+        <form class="assistant-chat-form child-chat-form" method="post" action="{{ url_for('child.ai_assistant') }}">
           <label>
             Message or question
             <textarea name="assistant_prompt" rows="5" placeholder="Example: Hi, someone online is asking for my private photos..." required></textarea>
           </label>
-          <button class="button accent" type="submit">Ask assistant</button>
+          <button class="button accent" type="submit" data-default-label="Ask assistant">Ask assistant</button>
         </form>
         {% if assistant_result and assistant_result.ok %}
           <article class="assistant-card tone-{{ assistant_result.tone }}">
@@ -289,10 +344,10 @@
     {% elif page_key == "resources" %}
       <section class="panel">
         <p class="eyebrow">Safety Resources</p>
-        <h3>Helpful links</h3>
-        <div class="stack">
+        <h3>Helpful links approved for your family</h3>
+        <div class="resource-card-grid">
           {% for link in safety_links %}
-            <article class="mini-panel resource-item">
+            <article class="mini-panel resource-item child-resource-card">
               <strong>{{ link.title }}</strong>
               <p class="muted">{{ link.topic }}</p>
               {% if link.summary %}
@@ -306,9 +361,9 @@
         </div>
       </section>
     {% elif page_key == "settings" %}
-      <section class="panel">
+      <section class="panel child-settings-panel">
         <p class="eyebrow">{{ t("Settings") }}</p>
-        <h3>{{ t("Settings") }}</h3>
+        <h3>Account and sign-out controls</h3>
         <div class="detail-list">
           <div><span>Notifications</span><strong>{{ t("Friendly reminders") }}</strong></div>
           <div><span>{{ t("Language") }}</span><strong>{{ t("English") }} / {{ t("Swahili") }}</strong></div>
@@ -383,6 +438,90 @@
         const delay = Number.parseInt(banner.dataset.autoDismiss || "15000", 10);
         dismissAfterDelay(banner, Number.isFinite(delay) ? delay : 15000);
       });
+
+      const escapeHtml = (value) => {
+        const div = document.createElement("div");
+        div.textContent = value || "";
+        return div.innerHTML;
+      };
+
+      const showInlineNotice = (message) => {
+        const contentGrid = document.querySelector(".child-content-grid");
+        if (!contentGrid) return;
+        const notice = document.createElement("section");
+        notice.className = "panel info-banner";
+        notice.textContent = message;
+        contentGrid.prepend(notice);
+        dismissAfterDelay(notice, 8000);
+      };
+
+      const assistantForm = document.querySelector(".assistant-chat-form");
+      const assistantThread = document.getElementById("assistant-thread");
+      const appendAssistantTurn = (turn) => {
+        if (!assistantThread) return;
+        const label = turn.label_title ? ` / ${turn.label_title}` : "";
+        assistantThread.insertAdjacentHTML(
+          "beforeend",
+          `
+            <article class="assistant-turn user-turn">
+              <strong>You</strong>
+              <p>${escapeHtml(turn.user)}</p>
+            </article>
+            <article class="assistant-turn assistant-turn">
+              <strong>Cyber Mzazi${escapeHtml(label)}</strong>
+              <p>${escapeHtml(turn.assistant)}</p>
+            </article>
+          `
+        );
+        assistantThread.scrollTo({ top: assistantThread.scrollHeight, behavior: "smooth" });
+      };
+
+      if (assistantForm) {
+        document.querySelectorAll("[data-prompt]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const textarea = assistantForm.querySelector("textarea[name='assistant_prompt']");
+            if (!textarea) return;
+            textarea.value = button.dataset.prompt || "";
+            textarea.focus();
+          });
+        });
+
+        assistantForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const textarea = assistantForm.querySelector("textarea[name='assistant_prompt']");
+          const button = assistantForm.querySelector("button[type='submit']");
+          const prompt = textarea?.value.trim() || "";
+          if (!prompt) return;
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Thinking...";
+          }
+          try {
+            const response = await fetch(assistantForm.action, {
+              method: "POST",
+              headers: { "X-Requested-With": "XMLHttpRequest" },
+              credentials: "same-origin",
+              body: new FormData(assistantForm),
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.ok) {
+              throw new Error(payload.error || "Assistant could not reply right now.");
+            }
+            appendAssistantTurn(payload.turn);
+            textarea.value = "";
+            if (payload.guardian_alerted) {
+              showInlineNotice("This looks serious, so it was shared with your parent/guardian for help.");
+            }
+          } catch (error) {
+            showInlineNotice(error.message || "Assistant could not reply right now.");
+          } finally {
+            if (button) {
+              button.disabled = false;
+              button.textContent = button.dataset.defaultLabel || "Ask assistant";
+            }
+          }
+        });
+      }
 
       document.querySelectorAll("[data-summary-toggle]").forEach((toggle) => {
         const targetId = toggle.getAttribute("aria-controls");

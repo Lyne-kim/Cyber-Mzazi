@@ -1040,7 +1040,45 @@ def assistant_chat():
     )
     if not result.get("ok"):
         return _error(result.get("error", "Assistant could not analyse that yet."), 400)
-    return jsonify({"ok": True, "assistant": result})
+    guardian_alerted = False
+    if current_user.role == "child" and result.get("should_alert_guardian"):
+        record = MessageRecord(
+            family_id=current_user.family_id,
+            submitted_by_id=current_user.id,
+            source_platform="AI Safety Assistant",
+            sender_handle="Child question",
+            message_text=prompt,
+            review_signature=build_review_signature(prompt),
+            capture_method="assistant_chat",
+            predicted_label=result["label"],
+            predicted_confidence=result["confidence"],
+            risk_indicators=result["indicators"],
+            verification_status="assistant_review",
+            verification_label=result["label"],
+            verification_confidence=result["confidence"],
+            verification_notes=result["guidance"],
+        )
+        db.session.add(record)
+        parent_user = current_user.family.users.filter_by(role="parent").first()
+        email_alert_sent, _email_alert_message = send_high_risk_message_alert(parent_user, current_user, record)
+        log_event(
+            current_user.family_id,
+            current_user.id,
+            "assistant_high_risk_alert",
+            "Child AI assistant API conversation created a parent dashboard alert.",
+            subject_user_id=current_user.id,
+        )
+        if email_alert_sent and parent_user:
+            log_event(
+                current_user.family_id,
+                parent_user.id,
+                "parent_alert_emailed",
+                f"Parent alert email sent for assistant message {record.id}.",
+                subject_user_id=current_user.id,
+            )
+        db.session.commit()
+        guardian_alerted = True
+    return jsonify({"ok": True, "assistant": result, "guardian_alerted": guardian_alerted})
 
 
 @api_bp.get("/safety-resources/links")
@@ -1730,7 +1768,14 @@ def ingest_android_notification():
         return _error("message_text or notification_text is required.")
 
     try:
-        prediction = predict_message(message_text, family_id=device.family_id)
+        prediction = predict_message(
+            message_text,
+            family_id=device.family_id,
+            source_platform=source_platform,
+            sender_handle=sender_handle,
+            app_package=app_package,
+            notification_title=notification_title,
+        )
     except PredictionUnavailable as exc:
         return _error(str(exc), 503)
     verification = verify_message(message_text, prediction.label)
@@ -1864,7 +1909,12 @@ def submit_message():
         return _error("Message text is required.")
 
     try:
-        prediction = predict_message(message_text, family_id=current_user.family_id)
+        prediction = predict_message(
+            message_text,
+            family_id=current_user.family_id,
+            source_platform=source_platform,
+            sender_handle=sender_handle,
+        )
     except PredictionUnavailable as exc:
         return _error(str(exc), 503)
     verification = verify_message(message_text, prediction.label)

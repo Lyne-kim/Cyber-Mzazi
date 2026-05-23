@@ -7,6 +7,7 @@ from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 
 from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, normalize_label
+from ml.safe_overrides import safe_message_override
 
 from .ml_service import get_classifier
 from .review_feedback import find_review_feedback
@@ -121,7 +122,30 @@ def prediction_backend_status() -> dict:
     }
 
 
-def predict_message(text: str, family_id: int | None = None) -> PredictionResult:
+def predict_message(
+    text: str,
+    family_id: int | None = None,
+    *,
+    source_platform: str | None = None,
+    sender_handle: str | None = None,
+    app_package: str | None = None,
+    notification_title: str | None = None,
+) -> PredictionResult:
+    safe_override = safe_message_override(
+        text,
+        source_platform=source_platform,
+        sender_handle=sender_handle,
+        app_package=app_package,
+        notification_title=notification_title,
+    )
+    if safe_override is not None:
+        return PredictionResult(
+            label=SAFE_LABEL,
+            confidence=float(safe_override["confidence"]),
+            risk_indicators=str(safe_override["risk_indicators"]),
+            provider="safe_override",
+        )
+
     try:
         review_feedback = find_review_feedback(text, family_id=family_id)
     except SQLAlchemyError as exc:
@@ -159,7 +183,13 @@ def predict_message(text: str, family_id: int | None = None) -> PredictionResult
         try:
             response = requests.post(
                 model_api_url,
-                json={"text": text},
+                json={
+                    "text": text,
+                    "source_platform": source_platform,
+                    "sender_handle": sender_handle,
+                    "app_package": app_package,
+                    "notification_title": notification_title,
+                },
                 headers=headers,
                 timeout=20,
             )
