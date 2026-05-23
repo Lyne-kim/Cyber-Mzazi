@@ -1654,6 +1654,16 @@ body.parent-theme .status-dot.online {
   box-shadow: 0 0 0 5px rgba(0, 208, 132, 0.12);
 }
 
+body.parent-theme .status-dot.pending {
+  background: #f7b500;
+  box-shadow: 0 0 0 5px rgba(247, 181, 0, 0.12);
+}
+
+body.parent-theme .status-dot.offline {
+  background: #ff3d5a;
+  box-shadow: 0 0 0 5px rgba(255, 61, 90, 0.12);
+}
+
 body.parent-theme .sidebar-link {
   min-height: 42px;
   border-radius: 15px;

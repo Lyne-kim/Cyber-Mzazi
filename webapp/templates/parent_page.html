@@ -24,8 +24,8 @@
         <strong>{{ selected_child.name if selected_child else "No child selected" }}</strong>
         <p class="muted">{{ current_user.family.family_name }}</p>
         <div class="connection-pill">
-          <span class="status-dot online"></span>
-          <span>{{ t("Online") }} - device synced</span>
+          <span class="status-dot {{ device_sync.tone }}"></span>
+          <span>{{ device_sync.label }}</span>
         </div>
       </div>
     </div>

@@ -214,6 +214,25 @@ def require_parent():
     return None
 
 
+def _device_sync_summary(devices: list[NotificationIngestionDevice]) -> dict[str, str]:
+    active_devices = [device for device in devices if device.status == "active"]
+    if not active_devices:
+        return {"label": "No device linked", "tone": "offline"}
+
+    latest_device = max(
+        active_devices,
+        key=lambda device: device.last_ingested_at or device.last_seen_at or device.created_at,
+    )
+    latest_contact = latest_device.last_ingested_at or latest_device.last_seen_at
+    if latest_contact:
+        return {
+            "label": f"Device synced {latest_contact.strftime('%Y-%m-%d %H:%M')}",
+            "tone": "online",
+        }
+
+    return {"label": "Device linked - waiting for sync", "tone": "pending"}
+
+
 def _parent_data() -> dict:
     selected_child, children = get_selected_child(current_user.family_id)
     linked_devices = (
@@ -367,6 +386,7 @@ def _parent_data() -> dict:
         "linked_devices": linked_devices,
         "pending_android_link": pending_android_link,
         "android_download": android_download,
+        "device_sync": _device_sync_summary(linked_devices),
         "messages": messages,
         "active_messages": active_messages,
         "logout_requests": logout_requests,
