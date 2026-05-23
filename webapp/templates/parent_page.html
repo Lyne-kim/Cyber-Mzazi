@@ -12,12 +12,21 @@
   <aside class="sidebar parent-sidebar" id="parent-sidebar">
     <button class="sidebar-close" type="button" aria-label="Close navigation">&times;</button>
     <div class="sidebar-top">
-      <p class="eyebrow">{{ t("Parent Dashboard") }}</p>
-      <h2>{{ current_user.family.family_name }}</h2>
-      <p class="muted">{{ selected_child.name if selected_child else "No child selected" }}</p>
-      <div class="connection-pill">
-        <span class="status-dot online"></span>
-        <span>{{ t("Online") }}</span>
+      <div class="sidebar-brand-block">
+        <span class="sidebar-brand-mark" aria-hidden="true"></span>
+        <div>
+          <p class="eyebrow">Parent Console</p>
+          <h2>Cyber Mzazi</h2>
+        </div>
+      </div>
+      <div class="sidebar-monitor-card">
+        <p class="eyebrow">Monitoring</p>
+        <strong>{{ selected_child.name if selected_child else "No child selected" }}</strong>
+        <p class="muted">{{ current_user.family.family_name }}</p>
+        <div class="connection-pill">
+          <span class="status-dot online"></span>
+          <span>{{ t("Online") }} - device synced</span>
+        </div>
       </div>
     </div>
 
@@ -105,11 +114,25 @@
         <span>{{ selected_child.name if selected_child else "No child selected" }}</span>
       </div>
     </div>
+    <header class="parent-console-bar">
+      <p class="eyebrow">Family Safety Console</p>
+      <div class="parent-console-account">
+        <span class="eyebrow">Signed in as</span>
+        <strong>Parent - {{ current_user.name }}</strong>
+        <span class="parent-avatar">{{ (current_user.name[:1] if current_user.name else "P")|upper }}</span>
+        <a class="button ghost small" href="{{ url_for('auth.logout') }}">Sign out</a>
+      </div>
+    </header>
     <section class="panel hero-panel">
       <div>
         <p class="eyebrow">{{ t(page_title) }}</p>
-        <h3>{{ selected_child.name if selected_child else "No child selected" }}</h3>
-        <p class="muted">{{ t("Current child") }}</p>
+        {% if page_key == "alerts" %}
+          <h3>{{ selected_child.name if selected_child else "No child selected" }} has <span>{{ alert_count }}</span> things that need your attention.</h3>
+          <p class="muted">Scores, flags and approvals across messaging, browser and social apps. Triage the highest-risk items first.</p>
+        {% else %}
+          <h3>{{ t(page_title) }}</h3>
+          <p class="muted">{{ selected_child.name if selected_child else "No child selected" }} - {{ t("Current child") }}</p>
+        {% endif %}
       </div>
       <div class="stats-grid">
         <article class="stat-card emphasis">
@@ -185,6 +208,7 @@
           <div class="label-summary-grid">
             {% for item in message_label_breakdown %}
               <article class="label-summary-card tone-{{ item.tone }}">
+                <span class="summary-icon" aria-hidden="true">&#9888;</span>
                 <span class="label-chip tone-{{ item.tone }}">{{ item.title }}</span>
                 <strong>{{ item.count }}</strong>
               </article>
@@ -209,40 +233,45 @@
           </article>
         {% endfor %}
         {% for message in active_messages %}
-          <article class="message-card selectable-alert-card">
+          <article class="message-card selectable-alert-card tone-{{ label_tone(message.predicted_label) }}">
             <label class="alert-select-control" hidden>
               <input type="checkbox" name="message_ids" value="{{ message.id }}" form="bulk-delete-form">
               <span>Select alert</span>
             </label>
-            <div class="message-topline">
-              <strong>{{ message.source_platform|title }}</strong>
-              <span>{{ message.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
-            </div>
-            <p>{{ message.message_text }}</p>
-            <p class="meta">From third-party account: {{ message.sender_handle or "Unknown handle" }}</p>
-            <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
-            {% if message.source_app_package %}
-              <p class="meta">App package: {{ message.source_app_package }}</p>
-            {% endif %}
-            <p class="meta">Model: <span class="label-chip tone-{{ label_tone(message.predicted_label) }}">{{ label_title(message.predicted_label) }}</span> ({{ "%.0f"|format(message.predicted_confidence * 100) }}%)</p>
-            <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / <span class="label-chip tone-{{ label_tone(message.verification_label) }}">{{ label_title(message.verification_label) }}</span>{% endif %}</p>
-            <p class="meta">Indicators: {{ message.risk_indicators }}</p>
-            {% if message.verification_notes %}
-              <p class="meta">Notes: {{ message.verification_notes }}</p>
-            {% endif %}
-            <div class="message-actions">
-              <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
-                <select name="reviewed_label">
-                  <option value="">Review label</option>
-                  {% for label in review_labels %}
-                    <option value="{{ label }}">{{ label }}</option>
-                  {% endfor %}
-                </select>
-                <button class="button small" type="submit">Save review</button>
-              </form>
-              <form class="inline-form" method="post" action="{{ url_for('parent.delete_message', message_id=message.id) }}">
-                <button class="button ghost small" type="submit">Delete alert</button>
-              </form>
+            <div class="alert-severity-ring" aria-hidden="true">&#9888;</div>
+            <div class="alert-card-body">
+              <div class="message-topline">
+                <div>
+                  <strong>{{ message.source_platform|title }}</strong>
+                  <span class="label-chip tone-{{ label_tone(message.predicted_label) }}">{{ label_title(message.predicted_label) }} - {{ "%.0f"|format(message.predicted_confidence * 100) }}%</span>
+                </div>
+                <span>{{ message.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+              </div>
+              <p>{{ message.message_text }}</p>
+              <p class="meta">From third-party account: {{ message.sender_handle or "Unknown handle" }}</p>
+              <p class="meta">Capture: {{ message.capture_method|replace('_', ' ') }}{% if message.notification_title %} / {{ message.notification_title }}{% endif %}</p>
+              {% if message.source_app_package %}
+                <p class="meta">App package: {{ message.source_app_package }}</p>
+              {% endif %}
+              <p class="meta">Verification: {{ message.verification_status }}{% if message.verification_label %} / <span class="label-chip tone-{{ label_tone(message.verification_label) }}">{{ label_title(message.verification_label) }}</span>{% endif %}</p>
+              <p class="meta">Indicators: {{ message.risk_indicators }}</p>
+              {% if message.verification_notes %}
+                <p class="meta">Notes: {{ message.verification_notes }}</p>
+              {% endif %}
+              <div class="message-actions">
+                <form class="inline-form" method="post" action="{{ url_for('parent.review_message', message_id=message.id) }}">
+                  <select name="reviewed_label">
+                    <option value="">Review label</option>
+                    {% for label in review_labels %}
+                      <option value="{{ label }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="button small" type="submit">Save review</button>
+                </form>
+                <form class="inline-form" method="post" action="{{ url_for('parent.delete_message', message_id=message.id) }}">
+                  <button class="button ghost small icon-button" type="submit" aria-label="Delete alert">&#128465;</button>
+                </form>
+              </div>
             </div>
           </article>
         {% else %}
