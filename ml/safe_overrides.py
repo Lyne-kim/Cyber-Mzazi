@@ -87,6 +87,12 @@ TRUSTED_SOURCE_PATTERNS = (
 )
 
 
+def split_config_list(raw_value: object) -> tuple[str, ...]:
+    raw = str(raw_value or "").replace("\r\n", "\n").replace("\r", "\n")
+    parts = re.split(r"[\n;,]+", raw)
+    return tuple(part.strip() for part in parts if part.strip())
+
+
 def _normalize_text(value: object) -> str:
     return " ".join(str(value or "").strip().lower().split())
 
@@ -111,18 +117,34 @@ def safe_message_override(
     sender_handle: object = None,
     app_package: object = None,
     notification_title: object = None,
+    extra_prefixes: tuple[str, ...] = (),
+    extra_source_patterns: tuple[str, ...] = (),
 ) -> dict | None:
     """Return a safe prediction for known low-risk service notifications."""
     normalized_text = _normalize_text(text)
-    if any(normalized_text.startswith(prefix) for prefix in SAFE_SERVICE_PREFIXES):
+    safe_prefixes = SAFE_SERVICE_PREFIXES + tuple(_normalize_text(prefix) for prefix in extra_prefixes)
+    if any(prefix and normalized_text.startswith(prefix) for prefix in safe_prefixes):
         return _safe_result("service_callback_message")
 
     context = _context_blob(source_platform, sender_handle, app_package, notification_title)
     if not context:
         return None
 
-    for pattern in TRUSTED_SOURCE_PATTERNS:
+    for pattern in TRUSTED_SOURCE_PATTERNS + extra_source_patterns:
         if re.search(pattern, context):
             return _safe_result("trusted_service_sender")
 
     return None
+
+
+def safe_override_policy_summary(
+    *,
+    extra_prefixes: tuple[str, ...] = (),
+    extra_source_patterns: tuple[str, ...] = (),
+) -> dict:
+    return {
+        "default_prefixes": len(SAFE_SERVICE_PREFIXES),
+        "default_source_patterns": len(TRUSTED_SOURCE_PATTERNS),
+        "extra_prefixes": list(extra_prefixes),
+        "extra_source_patterns": list(extra_source_patterns),
+    }

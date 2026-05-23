@@ -7,7 +7,7 @@ from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 
 from ml.labels import LABEL_HINTS, RISK_TERMS, SAFE_LABEL, normalize_label
-from ml.safe_overrides import safe_message_override
+from ml.safe_overrides import safe_message_override, split_config_list
 
 from .ml_service import get_classifier
 from .review_feedback import find_review_feedback
@@ -137,6 +137,8 @@ def predict_message(
         sender_handle=sender_handle,
         app_package=app_package,
         notification_title=notification_title,
+        extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
+        extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
     )
     if safe_override is not None:
         return PredictionResult(

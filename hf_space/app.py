@@ -25,6 +25,8 @@ DEFAULT_MODEL_ARTIFACT_URL = (
 ARTIFACT_DIR = Path(os.getenv("MODEL_ARTIFACT_PATH", "/tmp/message_model_stage3"))
 MODEL_ARTIFACT_URL = os.getenv("MODEL_ARTIFACT_URL", DEFAULT_MODEL_ARTIFACT_URL).strip()
 MODEL_INFERENCE_TOKEN = os.getenv("MODEL_INFERENCE_TOKEN", "").strip()
+SAFE_MESSAGE_PREFIXES = os.getenv("SAFE_MESSAGE_PREFIXES", "").strip()
+SAFE_SENDER_PATTERNS = os.getenv("SAFE_SENDER_PATTERNS", "").strip()
 
 LABEL_HINTS = {
     "grooming": ["don't tell", "secret", "trust me", "parents don't understand", "sleep over"],
@@ -149,6 +151,12 @@ def normalize_text(value: object) -> str:
     return " ".join(str(value or "").strip().lower().split())
 
 
+def split_config_list(raw_value: object) -> tuple[str, ...]:
+    raw = str(raw_value or "").replace("\r\n", "\n").replace("\r", "\n")
+    parts = re.split(r"[\n;,]+", raw)
+    return tuple(part.strip() for part in parts if part.strip())
+
+
 def safe_message_override(
     text: object,
     *,
@@ -158,7 +166,10 @@ def safe_message_override(
     notification_title: object = None,
 ) -> dict | None:
     normalized_text = normalize_text(text)
-    if any(normalized_text.startswith(prefix) for prefix in SAFE_SERVICE_PREFIXES):
+    safe_prefixes = SAFE_SERVICE_PREFIXES + tuple(
+        normalize_text(prefix) for prefix in split_config_list(SAFE_MESSAGE_PREFIXES)
+    )
+    if any(prefix and normalized_text.startswith(prefix) for prefix in safe_prefixes):
         return {"label": "safe", "confidence": 0.99, "risk_indicators": "service_callback_message"}
 
     context = " ".join(
@@ -170,7 +181,7 @@ def safe_message_override(
     if not context:
         return None
 
-    for pattern in TRUSTED_SOURCE_PATTERNS:
+    for pattern in TRUSTED_SOURCE_PATTERNS + split_config_list(SAFE_SENDER_PATTERNS):
         if re.search(pattern, context):
             return {"label": "safe", "confidence": 0.99, "risk_indicators": "trusted_service_sender"}
 

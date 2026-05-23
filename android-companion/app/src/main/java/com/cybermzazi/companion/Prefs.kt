@@ -21,6 +21,35 @@ object Prefs {
     private const val KEY_LANGUAGE = "language"
     private const val KEY_IN_APP_SOUNDS = "in_app_sounds"
 
+    private val DEFAULT_BLOCKED_PACKAGES = listOf(
+        "com.safaricom.mysafaricom",
+        "com.safaricom.mpesa.lifestyle",
+        "com.safaricom.mpesa",
+        "ke.co.safaricom",
+        "com.kcbgroup.android",
+        "ke.co.equitybank.equitymobile",
+        "com.equitel",
+        "com.barclays.ke.mobile.android",
+        "com.absa.mobile",
+        "com.coopbank",
+        "com.nic.mobile",
+        "com.ncbagroup.loop",
+        "com.standardchartered.mobile",
+        "com.stanbicibtc.mobile",
+        "net.kilimall.shop",
+        "com.jumia.android",
+        "com.alibaba.aliexpresshd",
+        "com.zzkko",
+        "com.temu",
+        "com.dstvmobile.android",
+        "com.multichoice.dstv",
+        "com.gotvafrica",
+        "com.zuku",
+        "com.glovo",
+        "com.ubercab.eats",
+        "food.bolt",
+    ).joinToString("\n")
+
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -60,7 +89,13 @@ object Prefs {
     }
 
     fun getBlockedPackages(context: Context): String =
-        prefs(context).getString(KEY_BLOCKED_PACKAGES, "").orEmpty()
+        prefs(context).let { store ->
+            if (store.contains(KEY_BLOCKED_PACKAGES)) {
+                store.getString(KEY_BLOCKED_PACKAGES, "").orEmpty()
+            } else {
+                DEFAULT_BLOCKED_PACKAGES
+            }
+        }
 
     fun setBlockedPackages(context: Context, value: String) {
         prefs(context).edit().putString(KEY_BLOCKED_PACKAGES, value).apply()

@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ml.labels import SUPPORTED_LABELS, label_summary_rows, label_title, label_tone
+from ml.safe_overrides import safe_override_policy_summary, split_config_list
 
 from .extensions import db
 from .models import (
@@ -39,6 +40,7 @@ from .services.notification_devices import (
     touch_ingestion_device,
     verify_ingestion_token,
 )
+from .services.notification_grouping import split_notification_messages
 from .services.parent_alerts import (
     send_high_risk_message_alert,
     send_logout_request_alert,
@@ -74,6 +76,7 @@ PUBLIC_API_ENDPOINTS = {
     "api.developer_update_resource_request",
     "api.developer_delete_resource_document",
     "api.developer_delete_resource_link",
+    "api.developer_safe_overrides",
     "api.register_family",
     "api.login",
     "api.logout",
@@ -503,6 +506,90 @@ def _database_status() -> dict:
     return {"configured": True, "reachable": True, "message": "Database connection is healthy."}
 
 
+SAFE_OVERRIDE_INDICATORS = ("trusted_service_sender", "service_callback_message")
+
+
+def _safe_override_query():
+    return MessageRecord.query.filter(
+        MessageRecord.predicted_label == "safe",
+        MessageRecord.risk_indicators.in_(SAFE_OVERRIDE_INDICATORS),
+    )
+
+
+def _safe_override_diagnostics() -> dict:
+    try:
+        total = _safe_override_query().count()
+        by_reason = {
+            reason: MessageRecord.query.filter_by(
+                predicted_label="safe",
+                risk_indicators=reason,
+            ).count()
+            for reason in SAFE_OVERRIDE_INDICATORS
+        }
+        recent = (
+            _safe_override_query()
+            .order_by(MessageRecord.created_at.desc())
+            .limit(12)
+            .all()
+        )
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        return {
+            "total": 0,
+            "by_reason": {},
+            "policy": safe_override_policy_summary(
+                extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
+                extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
+            ),
+            "recent": [],
+            "error": str(exc),
+        }
+    return {
+        "total": total,
+        "by_reason": by_reason,
+        "policy": safe_override_policy_summary(
+            extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
+            extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
+        ),
+        "recent": [_message_payload(message) for message in recent],
+    }
+
+
+def _recent_failure_diagnostics() -> list[dict]:
+    failure_terms = (
+        "%failed%",
+        "%error%",
+        "%could not%",
+        "%timed out%",
+        "%timeout%",
+        "%denied%",
+    )
+    try:
+        query = ActivityLog.query.filter(
+            or_(
+                ActivityLog.event_type.ilike("%failed%"),
+                ActivityLog.event_type.ilike("%error%"),
+                *[ActivityLog.details.ilike(term) for term in failure_terms],
+            )
+        )
+        logs = query.order_by(ActivityLog.created_at.desc()).limit(20).all()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return []
+    return [
+        {
+            "id": item.id,
+            "family_id": item.family_id,
+            "event_type": item.event_type,
+            "details": item.details,
+            "actor_id": item.actor_id,
+            "subject_user_id": item.subject_user_id,
+            "created_at": item.created_at.isoformat(),
+        }
+        for item in logs
+    ]
+
+
 @api_bp.get("/developer/status")
 def developer_status():
     if not _developer_status_authorized():
@@ -551,8 +638,17 @@ def developer_status():
                 },
                 "app_base_url_configured": bool(current_app.config.get("APP_BASE_URL")),
             },
+            "safe_overrides": _safe_override_diagnostics(),
+            "recent_failures": _recent_failure_diagnostics(),
         }
     )
+
+
+@api_bp.get("/developer/safe-overrides")
+def developer_safe_overrides():
+    if not _developer_status_authorized():
+        return _error("Not found.", 404)
+    return jsonify({"ok": True, **_safe_override_diagnostics()})
 
 
 @api_bp.get("/developer/safety-resources")
@@ -1767,70 +1863,107 @@ def ingest_android_notification():
     if not message_text:
         return _error("message_text or notification_text is required.")
 
-    try:
-        prediction = predict_message(
-            message_text,
-            family_id=device.family_id,
-            source_platform=source_platform,
-            sender_handle=sender_handle,
-            app_package=app_package,
-            notification_title=notification_title,
-        )
-    except PredictionUnavailable as exc:
-        return _error(str(exc), 503)
-    verification = verify_message(message_text, prediction.label)
-
-    record = MessageRecord(
-        family_id=device.family_id,
-        submitted_by_id=device.child_user_id,
-        source_platform=source_platform,
-        source_app_package=app_package,
+    notification_messages = split_notification_messages(
+        message_text,
         sender_handle=sender_handle,
-        browser_origin=browser_origin,
         notification_title=notification_title,
-        message_text=message_text,
-        review_signature=build_review_signature(message_text),
-        capture_method="android_notification",
-        predicted_label=prediction.label,
-        predicted_confidence=prediction.confidence,
-        risk_indicators=prediction.risk_indicators,
-        verification_status=verification["status"],
-        verification_label=verification["label"],
-        verification_confidence=verification["confidence"],
-        verification_notes=verification["notes"],
     )
-    db.session.add(record)
+    if not notification_messages:
+        touch_ingestion_device(device, source_platform=source_platform)
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "message": "Grouped notification summary ignored because it did not contain individual message text.",
+                    "messages": [],
+                    "ingested_count": 0,
+                    "device": _notification_device_payload(device),
+                    "parent_alert_email_sent": False,
+                }
+            ),
+            202,
+        )
+
+    records: list[MessageRecord] = []
+    try:
+        for notification_message in notification_messages:
+            prediction = predict_message(
+                notification_message.text,
+                family_id=device.family_id,
+                source_platform=source_platform,
+                sender_handle=notification_message.sender_handle,
+                app_package=app_package,
+                notification_title=notification_message.notification_title,
+            )
+            verification = verify_message(notification_message.text, prediction.label)
+            record = MessageRecord(
+                family_id=device.family_id,
+                submitted_by_id=device.child_user_id,
+                source_platform=source_platform,
+                source_app_package=app_package,
+                sender_handle=notification_message.sender_handle,
+                browser_origin=browser_origin,
+                notification_title=notification_message.notification_title,
+                message_text=notification_message.text,
+                review_signature=build_review_signature(notification_message.text),
+                capture_method="android_notification",
+                predicted_label=prediction.label,
+                predicted_confidence=prediction.confidence,
+                risk_indicators=prediction.risk_indicators,
+                verification_status=verification["status"],
+                verification_label=verification["label"],
+                verification_confidence=verification["confidence"],
+                verification_notes=verification["notes"],
+            )
+            db.session.add(record)
+            records.append(record)
+    except PredictionUnavailable as exc:
+        db.session.rollback()
+        return _error(str(exc), 503)
+
     touch_ingestion_device(device, source_platform=source_platform)
     log_event(
         device.family_id,
         None,
         "android_notification_ingested",
         (
-            f"Android notification ingested from {source_platform}"
+            f"Android notification ingested {len(records)} message(s) from {source_platform}"
             f"{f' ({device.device_name})' if device.device_name else ''}."
         ),
         subject_user_id=device.child_user_id,
     )
     parent_user = User.query.filter_by(family_id=device.family_id, role="parent").first()
     child_user = User.query.filter_by(id=device.child_user_id, role="child").first()
-    email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, child_user, record)
-    if email_alert_sent and parent_user:
-        log_event(
-            device.family_id,
-            parent_user.id,
-            "parent_alert_emailed",
-            f"Parent alert email sent for message {record.id}.",
-            subject_user_id=device.child_user_id,
+    parent_alerts = []
+    for record in records:
+        email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, child_user, record)
+        if email_alert_sent and parent_user:
+            log_event(
+                device.family_id,
+                parent_user.id,
+                "parent_alert_emailed",
+                f"Parent alert email sent for message {record.id}.",
+                subject_user_id=device.child_user_id,
+            )
+        parent_alerts.append(
+            {
+                "message_id": record.id,
+                "email_sent": email_alert_sent,
+                "email_message": email_alert_message,
+            }
         )
     db.session.commit()
     return (
         jsonify(
             {
                 "ok": True,
-                "message": _message_payload(record),
+                "message": _message_payload(records[0]),
+                "messages": [_message_payload(record) for record in records],
+                "ingested_count": len(records),
                 "device": _notification_device_payload(device),
-                "parent_alert_email_sent": email_alert_sent,
-                "parent_alert_email_message": email_alert_message,
+                "parent_alert_email_sent": any(item["email_sent"] for item in parent_alerts),
+                "parent_alerts": parent_alerts,
             }
         ),
         201,
