@@ -9,6 +9,7 @@ from ml.labels import SUPPORTED_LABELS, label_title, label_tone
 from .api import api_bp
 from .auth import auth_bp
 from .child import child_bp
+from .developer import developer_bp
 from .extensions import db, login_manager
 from .models import MessageRecord
 from .parent import parent_bp
@@ -31,6 +32,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(api_bp)
     app.register_blueprint(parent_bp)
     app.register_blueprint(child_bp)
+    app.register_blueprint(developer_bp)
 
     @app.get("/healthz")
     def healthz() -> tuple[dict[str, str], int]:

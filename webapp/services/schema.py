@@ -192,6 +192,56 @@ def ensure_runtime_schema() -> None:
                 text("ALTER TABLE safety_resource_link ADD COLUMN status VARCHAR(30) DEFAULT 'approved'")
             )
 
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+    if "deleted_message_signature" not in table_names:
+        if dialect_name == "mysql":
+            db.session.execute(
+                text(
+                    "CREATE TABLE deleted_message_signature ("
+                    "id INTEGER NOT NULL AUTO_INCREMENT, "
+                    "family_id INTEGER NOT NULL, "
+                    "child_user_id INTEGER NOT NULL, "
+                    "deleted_by_id INTEGER NULL, "
+                    "review_signature VARCHAR(512) NOT NULL, "
+                    "source_platform VARCHAR(60) NULL, "
+                    "source_app_package VARCHAR(255) NULL, "
+                    "sender_handle VARCHAR(120) NULL, "
+                    "notification_title VARCHAR(255) NULL, "
+                    "message_excerpt TEXT NULL, "
+                    "created_at DATETIME NOT NULL, "
+                    "updated_at DATETIME NOT NULL, "
+                    "PRIMARY KEY (id), "
+                    "INDEX ix_deleted_message_signature_review_signature (review_signature)"
+                    ")"
+                )
+            )
+        else:
+            db.session.execute(
+                text(
+                    "CREATE TABLE deleted_message_signature ("
+                    "id INTEGER NOT NULL PRIMARY KEY, "
+                    "family_id INTEGER NOT NULL, "
+                    "child_user_id INTEGER NOT NULL, "
+                    "deleted_by_id INTEGER, "
+                    "review_signature VARCHAR(512) NOT NULL, "
+                    "source_platform VARCHAR(60), "
+                    "source_app_package VARCHAR(255), "
+                    "sender_handle VARCHAR(120), "
+                    "notification_title VARCHAR(255), "
+                    "message_excerpt TEXT, "
+                    "created_at DATETIME NOT NULL, "
+                    "updated_at DATETIME NOT NULL"
+                    ")"
+                )
+            )
+            db.session.execute(
+                text(
+                    "CREATE INDEX ix_deleted_message_signature_review_signature "
+                    "ON deleted_message_signature (review_signature)"
+                )
+            )
+
     db.session.execute(
         text(
             "UPDATE `user` SET preferred_language = 'en' "

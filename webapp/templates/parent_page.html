@@ -198,6 +198,9 @@
             <a class="button ghost small" href="{{ url_for('parent.ai_assistant') }}">&#128681; Flag content</a>
             {% if active_messages %}
               <button class="button ghost small" type="button" id="toggle-alert-selection">Select alerts</button>
+              <button class="button ghost small selection-alert-action" type="button" id="select-all-alerts" hidden>Select all</button>
+              <button class="button ghost small selection-alert-action" type="button" id="invert-alert-selection" hidden>Invert selection</button>
+              <button class="button ghost small selection-alert-action" type="button" id="copy-selected-alerts" hidden>Copy selected</button>
               <button class="button danger small bulk-alert-action" type="submit" form="bulk-delete-form" hidden>Delete selected</button>
             {% endif %}
           </div>
@@ -698,6 +701,10 @@
     const alertBadge = document.querySelector(".alert-badge");
     const selectionToggle = document.getElementById("toggle-alert-selection");
     const bulkAlertAction = document.querySelector(".bulk-alert-action");
+    const selectionAlertActions = Array.from(document.querySelectorAll(".selection-alert-action"));
+    const selectAllAlertsButton = document.getElementById("select-all-alerts");
+    const invertAlertSelectionButton = document.getElementById("invert-alert-selection");
+    const copySelectedAlertsButton = document.getElementById("copy-selected-alerts");
     const alertSelectControls = Array.from(document.querySelectorAll(".alert-select-control"));
     const alertCheckboxes = Array.from(document.querySelectorAll(".alert-select-control input[type='checkbox']"));
     const soundStorageKey = `cyber-mzazi:alert-sound:${familyId}`;
@@ -901,19 +908,27 @@
     }
 
     const refreshBulkDeleteState = () => {
-      if (!bulkAlertAction) return;
       const selectedCount = alertCheckboxes.filter((checkbox) => checkbox.checked).length;
-      bulkAlertAction.textContent = selectedCount ? `Delete selected (${selectedCount})` : "Delete selected";
-      bulkAlertAction.disabled = selectedCount === 0;
+      if (bulkAlertAction) {
+        bulkAlertAction.textContent = selectedCount ? `Delete selected (${selectedCount})` : "Delete selected";
+        bulkAlertAction.disabled = selectedCount === 0;
+      }
+      if (copySelectedAlertsButton) {
+        copySelectedAlertsButton.textContent = selectedCount ? `Copy selected (${selectedCount})` : "Copy selected";
+        copySelectedAlertsButton.disabled = selectedCount === 0;
+      }
     };
 
     if (selectionToggle) {
-      selectionToggle.addEventListener("click", () => {
-        alertSelectionEnabled = !alertSelectionEnabled;
-        selectionToggle.textContent = alertSelectionEnabled ? "Cancel selection" : "Select alerts";
+      const setSelectionMode = (enabled) => {
+        alertSelectionEnabled = enabled;
+        selectionToggle.textContent = alertSelectionEnabled ? "Done selecting" : "Select alerts";
         if (bulkAlertAction) {
           bulkAlertAction.hidden = !alertSelectionEnabled;
         }
+        selectionAlertActions.forEach((button) => {
+          button.hidden = !alertSelectionEnabled;
+        });
         alertSelectControls.forEach((control) => {
           control.hidden = !alertSelectionEnabled;
         });
@@ -923,6 +938,47 @@
           });
         }
         refreshBulkDeleteState();
+      };
+      selectionToggle.addEventListener("click", () => {
+        setSelectionMode(!alertSelectionEnabled);
+      });
+      selectAllAlertsButton?.addEventListener("click", () => {
+        alertCheckboxes.forEach((checkbox) => {
+          checkbox.checked = true;
+        });
+        refreshBulkDeleteState();
+      });
+      invertAlertSelectionButton?.addEventListener("click", () => {
+        alertCheckboxes.forEach((checkbox) => {
+          checkbox.checked = !checkbox.checked;
+        });
+        refreshBulkDeleteState();
+      });
+      copySelectedAlertsButton?.addEventListener("click", async () => {
+        const selectedCards = alertCheckboxes
+          .filter((checkbox) => checkbox.checked)
+          .map((checkbox) => checkbox.closest(".selectable-alert-card"))
+          .filter(Boolean);
+        if (!selectedCards.length) return;
+        const text = selectedCards
+          .map((card) => card.innerText.replace(/\n{3,}/g, "\n\n").trim())
+          .join("\n\n---\n\n");
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast({
+            title: "Copied",
+            body: `${selectedCards.length} selected alert(s) copied.`,
+            created_at_label: "Now",
+            severity: "success",
+          });
+        } catch (error) {
+          showToast({
+            title: "Copy failed",
+            body: "Your browser blocked clipboard access. Open the alert and copy manually.",
+            created_at_label: "Now",
+            severity: "warning",
+          });
+        }
       });
       alertCheckboxes.forEach((checkbox) => {
         checkbox.addEventListener("change", refreshBulkDeleteState);

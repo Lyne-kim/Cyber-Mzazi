@@ -29,12 +29,14 @@ from .models import (
 )
 from .services.audit import log_event
 from .services.cooldowns import resend_wait_seconds
+from .services.developer_notifications import notify_developer_resource_request
 from .services.email_verification import (
     send_verification_email,
     verify_email_token,
 )
 from .services.mail_delivery import is_mail_delivery_configured, send_email
 from .services.family_context import get_selected_child, set_selected_child
+from .services.message_suppression import is_message_suppressed, suppress_message
 from .services.notification_devices import (
     issue_ingestion_token,
     touch_ingestion_device,
@@ -1137,7 +1139,15 @@ def assistant_chat():
     if not result.get("ok"):
         return _error(result.get("error", "Assistant could not analyse that yet."), 400)
     guardian_alerted = False
-    if current_user.role == "child" and result.get("should_alert_guardian"):
+    if (
+        current_user.role == "child"
+        and result.get("should_alert_guardian")
+        and not is_message_suppressed(
+            family_id=current_user.family_id,
+            child_user_id=current_user.id,
+            message_text=prompt,
+        )
+    ):
         record = MessageRecord(
             family_id=current_user.family_id,
             submitted_by_id=current_user.id,
@@ -1523,7 +1533,17 @@ def parent_request_resource():
         f"Requested safety resource via API: {title}",
     )
     db.session.commit()
-    return jsonify({"ok": True, "resource_request": _resource_request_payload(resource_request)}), 201
+    developer_notified, developer_notice = notify_developer_resource_request(resource_request, current_user)
+    if not developer_notified:
+        current_app.logger.info("Developer resource request notification skipped: %s", developer_notice)
+    return jsonify(
+        {
+            "ok": True,
+            "resource_request": _resource_request_payload(resource_request),
+            "developer_notified": developer_notified,
+            "developer_notice": developer_notice,
+        }
+    ), 201
 
 
 @api_bp.get("/parent/help-support")
@@ -1629,6 +1649,7 @@ def delete_message(message_id: int):
         return _error("Message not found.", 404)
 
     subject_user_id = record.submitted_by_id
+    suppress_message(record, current_user.id)
     db.session.delete(record)
     log_event(
         current_user.family_id,
@@ -1886,8 +1907,16 @@ def ingest_android_notification():
         )
 
     records: list[MessageRecord] = []
+    skipped_suppressed = 0
     try:
         for notification_message in notification_messages:
+            if is_message_suppressed(
+                family_id=device.family_id,
+                child_user_id=device.child_user_id,
+                message_text=notification_message.text,
+            ):
+                skipped_suppressed += 1
+                continue
             prediction = predict_message(
                 notification_message.text,
                 family_id=device.family_id,
@@ -1923,6 +1952,33 @@ def ingest_android_notification():
         return _error(str(exc), 503)
 
     touch_ingestion_device(device, source_platform=source_platform)
+    if not records:
+        log_event(
+            device.family_id,
+            None,
+            "android_notification_suppressed",
+            (
+                f"Android notification upload skipped {skipped_suppressed} deleted "
+                f"message(s) from {source_platform}."
+            ),
+            subject_user_id=device.child_user_id,
+        )
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "message": "Previously deleted message(s) were ignored.",
+                    "messages": [],
+                    "ingested_count": 0,
+                    "skipped_suppressed_count": skipped_suppressed,
+                    "device": _notification_device_payload(device),
+                    "parent_alert_email_sent": False,
+                    "parent_alerts": [],
+                }
+            ),
+            202,
+        )
     log_event(
         device.family_id,
         None,
@@ -1961,6 +2017,7 @@ def ingest_android_notification():
                 "message": _message_payload(records[0]),
                 "messages": [_message_payload(record) for record in records],
                 "ingested_count": len(records),
+                "skipped_suppressed_count": skipped_suppressed,
                 "device": _notification_device_payload(device),
                 "parent_alert_email_sent": any(item["email_sent"] for item in parent_alerts),
                 "parent_alerts": parent_alerts,
@@ -2040,6 +2097,18 @@ def submit_message():
 
     if not message_text:
         return _error("Message text is required.")
+    if is_message_suppressed(
+        family_id=current_user.family_id,
+        child_user_id=current_user.id,
+        message_text=message_text,
+    ):
+        return jsonify(
+            {
+                "ok": True,
+                "ignored": True,
+                "message": "This message was already removed by the parent/guardian.",
+            }
+        ), 202
 
     try:
         prediction = predict_message(

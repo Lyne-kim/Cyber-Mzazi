@@ -8,6 +8,7 @@ from .extensions import db
 from .models import LogoutRequest, MessageRecord, SafetyResourceLink, User
 from .services.audit import log_event
 from .services.parent_alerts import send_high_risk_message_alert
+from .services.message_suppression import is_message_suppressed
 from .services.prediction_service import PredictionUnavailable, predict_message
 from .services.review_feedback import build_review_signature
 from .services.safety_assistant import build_safety_assistant_response
@@ -167,7 +168,15 @@ def ai_assistant():
                 }
             )
             session["child_assistant_history"] = assistant_history[-8:]
-        if assistant_result and assistant_result.get("should_alert_guardian"):
+        if (
+            assistant_result
+            and assistant_result.get("should_alert_guardian")
+            and not is_message_suppressed(
+                family_id=current_user.family_id,
+                child_user_id=current_user.id,
+                message_text=assistant_prompt,
+            )
+        ):
             record = MessageRecord(
                 family_id=current_user.family_id,
                 submitted_by_id=current_user.id,
@@ -290,6 +299,13 @@ def submit_message():
 
     if not message_text:
         flash("Enter a message before submitting.", "warning")
+        return redirect(url_for("child.report"))
+    if is_message_suppressed(
+        family_id=current_user.family_id,
+        child_user_id=current_user.id,
+        message_text=message_text,
+    ):
+        flash("That message was already removed by your parent/guardian.", "info")
         return redirect(url_for("child.report"))
 
     try:

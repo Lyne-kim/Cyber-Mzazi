@@ -71,6 +71,7 @@ class Config:
     MODEL_INFERENCE_TOKEN = os.getenv("MODEL_INFERENCE_TOKEN", "").strip()
     MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "auto").strip().lower()
     DEVELOPER_STATUS_TOKEN = os.getenv("DEVELOPER_STATUS_TOKEN", "").strip()
+    DEVELOPER_NOTIFICATION_EMAIL = os.getenv("DEVELOPER_NOTIFICATION_EMAIL", "").strip()
     SAFE_MESSAGE_PREFIXES = os.getenv("SAFE_MESSAGE_PREFIXES", "").strip()
     SAFE_SENDER_PATTERNS = os.getenv("SAFE_SENDER_PATTERNS", "").strip()
     ENABLE_HEURISTIC_FALLBACK = os.getenv(

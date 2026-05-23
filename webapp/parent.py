@@ -21,8 +21,10 @@ from .models import (
     User,
 )
 from .services.audit import log_event
+from .services.developer_notifications import notify_developer_resource_request
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import issue_ingestion_token
+from .services.message_suppression import suppress_message
 from .services.review_feedback import build_review_signature
 from .services.safety_assistant import build_safety_assistant_response
 from .ui_text import SUPPORTED_LANGUAGES
@@ -721,7 +723,12 @@ def request_resource():
         f"Requested safety resource: {title}",
     )
     db.session.commit()
-    flash("Resource request sent to the developer.", "success")
+    notified, notice = notify_developer_resource_request(resource_request, current_user)
+    if notified:
+        flash("Resource request sent to the developer and email notification delivered.", "success")
+    else:
+        current_app.logger.info("Developer resource request notification skipped: %s", notice)
+        flash("Resource request sent to the developer.", "success")
     return redirect(url_for("parent.safety_resources"))
 
 
@@ -851,6 +858,7 @@ def delete_message(message_id: int):
         family_id=current_user.family_id,
     ).first_or_404()
     subject_user_id = record.submitted_by_id
+    suppress_message(record, current_user.id)
     db.session.delete(record)
     log_event(
         current_user.family_id,
@@ -888,6 +896,7 @@ def bulk_delete_messages():
     deleted_count = len(records)
     subject_ids = {record.submitted_by_id for record in records if record.submitted_by_id}
     for record in records:
+        suppress_message(record, current_user.id)
         db.session.delete(record)
     log_event(
         current_user.family_id,

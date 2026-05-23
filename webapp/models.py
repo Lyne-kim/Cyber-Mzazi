@@ -45,6 +45,9 @@ class Family(TimestampMixin, db.Model):
     notification_devices = db.relationship(
         "NotificationIngestionDevice", back_populates="family", lazy="dynamic"
     )
+    deleted_message_signatures = db.relationship(
+        "DeletedMessageSignature", back_populates="family", lazy="dynamic"
+    )
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -139,6 +142,23 @@ class MessageRecord(TimestampMixin, db.Model):
         back_populates="submitted_messages",
         foreign_keys=[submitted_by_id],
     )
+
+
+class DeletedMessageSignature(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
+    child_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    deleted_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    review_signature = db.Column(db.String(512), nullable=False, index=True)
+    source_platform = db.Column(db.String(60))
+    source_app_package = db.Column(db.String(255))
+    sender_handle = db.Column(db.String(120))
+    notification_title = db.Column(db.String(255))
+    message_excerpt = db.Column(db.Text)
+
+    family = db.relationship("Family", back_populates="deleted_message_signatures")
+    child_user = db.relationship("User", foreign_keys=[child_user_id])
+    deleted_by = db.relationship("User", foreign_keys=[deleted_by_id])
 
 
 class ActivityLog(TimestampMixin, db.Model):
