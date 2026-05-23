@@ -5,6 +5,7 @@ import re
 from ml.labels import SAFE_LABEL, label_title, label_tone, normalize_label
 
 from .prediction_service import PredictionUnavailable, predict_message
+from .resource_library import search_resource_chunks
 
 
 HIGH_RISK_LABELS = {
@@ -319,6 +320,28 @@ def _response(
     }
 
 
+def _with_resource_context(result: dict, resource_matches: list[dict]) -> dict:
+    if not resource_matches or not result.get("ok"):
+        result["resource_matches"] = []
+        return result
+
+    context_lines = []
+    for match in resource_matches:
+        excerpt = " ".join(str(match["text"]).split())[:420]
+        context_lines.append(f"{match['title']}: {excerpt}")
+
+    result["resource_matches"] = resource_matches
+    result["assistant_message"] = (
+        f"{result.get('assistant_message', '')} "
+        "I also found related guidance in the Cyber Mzazi resource library: "
+        + " ".join(context_lines)
+    ).strip()
+    next_steps = list(result.get("next_steps") or [])
+    next_steps.append("Open the Safety Resources page to read or download the matched resource.")
+    result["next_steps"] = next_steps
+    return result
+
+
 def _intro_message(audience_key: str) -> str:
     if audience_key == "child":
         return (
@@ -588,10 +611,20 @@ def build_safety_assistant_response(prompt: str, *, audience: str, family_id: in
             response_type="conversation",
         )
 
+    resource_matches = search_resource_chunks(cleaned_prompt, audience=audience_key)
     if intent == "education":
-        return _education_response(cleaned_prompt, audience_key)
+        return _with_resource_context(
+            _education_response(cleaned_prompt, audience_key),
+            resource_matches,
+        )
 
     if intent == "advice":
-        return _advice_response(cleaned_prompt, audience_key)
+        return _with_resource_context(
+            _advice_response(cleaned_prompt, audience_key),
+            resource_matches,
+        )
 
-    return _classification_response(cleaned_prompt, audience_key, family_id)
+    return _with_resource_context(
+        _classification_response(cleaned_prompt, audience_key, family_id),
+        resource_matches,
+    )

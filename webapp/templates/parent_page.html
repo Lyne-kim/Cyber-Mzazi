@@ -453,16 +453,17 @@
       <section class="panel">
         <p class="eyebrow">{{ t("Safety Resources") }}</p>
         <h3>{{ t("Safety Resources") }}</h3>
-        <p class="muted">Save trusted web resources for your family, then upload local documents only when a link is not enough.</p>
-        <form class="stack upload-zone" method="post" action="{{ url_for('parent.add_resource_link') }}">
+        <p class="muted">Read approved Cyber Mzazi books and links. The AI assistant also uses uploaded book text to answer online safety questions.</p>
+        <form class="stack upload-zone" method="post" action="{{ url_for('parent.request_resource') }}">
+          <p class="eyebrow">Request a book or resource</p>
           <div class="auth-form-grid">
             <label>
-              Resource title
-              <input type="text" name="title" placeholder="Online safety guide" required>
+              Book/resource title or topic
+              <input type="text" name="title" placeholder="Cyberbullying guide, grooming handbook..." required>
             </label>
             <label>
-              Web link
-              <input type="url" name="url" placeholder="https://..." required>
+              Suggested web link
+              <input type="url" name="url" placeholder="https://...">
             </label>
             <label>
               Topic
@@ -478,11 +479,22 @@
             </label>
           </div>
           <label>
-            Short note
-            <textarea name="summary" rows="3" placeholder="Why this resource is useful"></textarea>
+            Note for developer
+            <textarea name="summary" rows="3" placeholder="Why this would help your family"></textarea>
           </label>
-          <button class="button small" type="submit">Add web resource</button>
+          <button class="button small" type="submit">Send request</button>
         </form>
+        {% if safety_resource_requests %}
+          <div class="subpanel-grid">
+            {% for item in safety_resource_requests %}
+              <article class="mini-panel resource-item">
+                <strong>{{ item.title }}</strong>
+                <p class="muted">{{ item.topic }} / {{ item.audience|title }}</p>
+                <p class="meta">Status: {{ item.status|title }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
         <div class="stack">
           {% for link in safety_links %}
             <article class="mini-panel resource-item">
@@ -493,34 +505,27 @@
               {% endif %}
               <div class="button-row">
                 <a class="button ghost small" href="{{ link.url }}" target="_blank" rel="noopener">Open link</a>
-                <form method="post" action="{{ url_for('parent.delete_resource_link', link_id=link.id) }}">
-                  <button class="button ghost small" type="submit">Remove</button>
-                </form>
               </div>
             </article>
           {% else %}
             <div class="mini-panel">
-              <strong>Start with curated links</strong>
-              <p class="muted">Add trusted pages from a child protection agency, school, platform safety center, or local support service.</p>
+              <strong>No approved links yet</strong>
+              <p class="muted">Use the request form above to ask the developer to add a trusted resource.</p>
             </div>
           {% endfor %}
         </div>
-        <form class="stack upload-zone" method="post" action="{{ url_for('parent.attach_resource_documents') }}" enctype="multipart/form-data">
-          <label>
-            {{ t("Upload documents") }}
-            <input type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
-          </label>
-          <button class="button small" type="submit">{{ t("Upload documents") }}</button>
-        </form>
         <div class="stack">
           {% for document in safety_documents %}
             <article class="mini-panel resource-item">
-              <strong>{{ document.filename }}</strong>
-              <p class="muted">{{ document.file_size }} bytes</p>
+              <strong>{{ document.title or document.filename }}</strong>
+              <p class="muted">{{ document.topic }} / {{ document.audience|title }} / {{ document.file_size }} bytes</p>
+              {% if document.summary %}
+                <p>{{ document.summary }}</p>
+              {% endif %}
               <a class="button ghost small" href="{{ url_for('parent.download_resource_document', document_id=document.id) }}">Download</a>
             </article>
           {% else %}
-            <p class="muted">No documents uploaded yet.</p>
+            <p class="muted">No approved books uploaded yet.</p>
           {% endfor %}
         </div>
       </section>

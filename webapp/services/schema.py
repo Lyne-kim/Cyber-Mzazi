@@ -117,6 +117,13 @@ def ensure_runtime_schema() -> None:
 
     inspector = inspect(db.engine)
     if "safety_resource_document" in table_names:
+        if dialect_name == "mysql":
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document MODIFY COLUMN family_id INTEGER NULL")
+            )
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document MODIFY COLUMN uploaded_by_id INTEGER NULL")
+            )
         if not _column_exists(inspector, "safety_resource_document", "uploaded_by_id"):
             db.session.execute(
                 text("ALTER TABLE safety_resource_document ADD COLUMN uploaded_by_id INTEGER")
@@ -144,6 +151,45 @@ def ensure_runtime_schema() -> None:
         elif dialect_name == "mysql":
             db.session.execute(
                 text("ALTER TABLE safety_resource_document MODIFY COLUMN binary_data MEDIUMBLOB NOT NULL")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "title"):
+            db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN title VARCHAR(180)"))
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "topic"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN topic VARCHAR(80) DEFAULT 'Digital safety'")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "audience"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN audience VARCHAR(20) DEFAULT 'all'")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "summary"):
+            db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN summary TEXT"))
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "status"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_document ADD COLUMN status VARCHAR(30) DEFAULT 'approved'")
+            )
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "source_url"):
+            db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN source_url VARCHAR(500)"))
+
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+    if "safety_resource_link" in table_names:
+        if dialect_name == "mysql":
+            db.session.execute(
+                text("ALTER TABLE safety_resource_link MODIFY COLUMN family_id INTEGER NULL")
+            )
+            db.session.execute(
+                text("ALTER TABLE safety_resource_link MODIFY COLUMN created_by_id INTEGER NULL")
+            )
+        if not _column_exists(inspector, "safety_resource_link", "status"):
+            db.session.execute(
+                text("ALTER TABLE safety_resource_link ADD COLUMN status VARCHAR(30) DEFAULT 'approved'")
             )
 
     db.session.execute(
@@ -189,6 +235,37 @@ def ensure_runtime_schema() -> None:
             text(
                 "UPDATE safety_resource_document SET file_size = 0 "
                 "WHERE file_size IS NULL"
+            )
+        )
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_document SET title = filename "
+                "WHERE title IS NULL OR title = ''"
+            )
+        )
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_document SET topic = 'Digital safety' "
+                "WHERE topic IS NULL OR topic = ''"
+            )
+        )
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_document SET audience = 'all' "
+                "WHERE audience IS NULL OR audience = ''"
+            )
+        )
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_document SET status = 'approved' "
+                "WHERE status IS NULL OR status = ''"
+            )
+        )
+    if "safety_resource_link" in table_names:
+        db.session.execute(
+            text(
+                "UPDATE safety_resource_link SET status = 'approved' "
+                "WHERE status IS NULL OR status = ''"
             )
         )
     if "message_record" in table_names:

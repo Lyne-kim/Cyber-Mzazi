@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, logout_user
+from sqlalchemy import or_
 
 from .extensions import db
 from .models import LogoutRequest, MessageRecord, SafetyResourceLink, User
@@ -55,8 +56,14 @@ def _child_data() -> dict:
         .first()
     )
     resource_links = (
-        SafetyResourceLink.query.filter_by(family_id=current_user.family_id)
-        .filter(SafetyResourceLink.audience.in_(["all", "child"]))
+        SafetyResourceLink.query.filter(
+            SafetyResourceLink.status == "approved",
+            or_(
+                SafetyResourceLink.family_id == current_user.family_id,
+                SafetyResourceLink.family_id.is_(None),
+            ),
+            SafetyResourceLink.audience.in_(["all", "child"]),
+        )
         .order_by(SafetyResourceLink.created_at.desc())
         .all()
     )

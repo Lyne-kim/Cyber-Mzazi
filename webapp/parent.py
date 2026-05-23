@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
-from sqlalchemy.exc import SQLAlchemyError
 
 from ml.labels import RISK_TERMS, SAFE_LABEL, SUPPORTED_LABELS, label_summary_rows, label_title, normalize_label
 
@@ -18,6 +17,7 @@ from .models import (
     NotificationIngestionDevice,
     SafetyResourceDocument,
     SafetyResourceLink,
+    SafetyResourceRequest,
     User,
 )
 from .services.audit import log_event
@@ -29,9 +29,6 @@ from .ui_text import SUPPORTED_LANGUAGES
 
 
 parent_bp = Blueprint("parent", __name__, url_prefix="/parent")
-
-MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
-
 
 PARENT_NAV_ITEMS = [
     {"endpoint": "parent.alerts", "icon": "&#128681;", "label": "Alerts", "key": "alerts"},
@@ -284,13 +281,31 @@ def _parent_data() -> dict:
         .all()
     )
     safety_documents = (
-        SafetyResourceDocument.query.filter_by(family_id=current_user.family_id)
+        SafetyResourceDocument.query.filter(
+            SafetyResourceDocument.status == "approved",
+            or_(
+                SafetyResourceDocument.family_id == current_user.family_id,
+                SafetyResourceDocument.family_id.is_(None),
+            ),
+        )
         .order_by(SafetyResourceDocument.created_at.desc())
         .all()
     )
     safety_links = (
-        SafetyResourceLink.query.filter_by(family_id=current_user.family_id)
+        SafetyResourceLink.query.filter(
+            SafetyResourceLink.status == "approved",
+            or_(
+                SafetyResourceLink.family_id == current_user.family_id,
+                SafetyResourceLink.family_id.is_(None),
+            ),
+        )
         .order_by(SafetyResourceLink.created_at.desc())
+        .all()
+    )
+    safety_resource_requests = (
+        SafetyResourceRequest.query.filter_by(family_id=current_user.family_id)
+        .order_by(SafetyResourceRequest.created_at.desc())
+        .limit(8)
         .all()
     )
     logout_request_logs = (
@@ -396,6 +411,7 @@ def _parent_data() -> dict:
         "approval_history": approval_history,
         "safety_documents": safety_documents,
         "safety_links": safety_links,
+        "safety_resource_requests": safety_resource_requests,
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
@@ -640,104 +656,58 @@ def set_language():
 
 @parent_bp.post("/safety-resources/attachments")
 def attach_resource_documents():
-    uploads = [upload for upload in request.files.getlist("attachments") if upload and upload.filename]
-    if not uploads:
-        flash("Choose one or more documents first.", "warning")
-        return redirect(url_for("parent.safety_resources"))
-
-    saved_names = []
-    try:
-        for upload in uploads:
-            binary_data = upload.read()
-            if len(binary_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
-                flash(
-                    f"{upload.filename} is too large. Upload files up to 8 MB each.",
-                    "warning",
-                )
-                db.session.rollback()
-                return redirect(url_for("parent.safety_resources"))
-            document = SafetyResourceDocument(
-                family_id=current_user.family_id,
-                uploaded_by_id=current_user.id,
-                filename=upload.filename,
-                content_type=upload.mimetype,
-                file_size=len(binary_data),
-                binary_data=binary_data,
-            )
-            db.session.add(document)
-            saved_names.append(upload.filename)
-
-        log_event(
-            current_user.family_id,
-            current_user.id,
-            "resource_attachment_added",
-            f"Uploaded safety resource documents: {', '.join(saved_names)}",
-        )
-        db.session.commit()
-    except SQLAlchemyError:
-        db.session.rollback()
-        current_app.logger.exception("Failed to save safety resource documents")
-        flash(
-            "Documents could not be uploaded right now. Try a smaller file or retry in a moment.",
-            "danger",
-        )
-        return redirect(url_for("parent.safety_resources"))
-
-    flash("Safety resource documents uploaded.", "success")
+    flash("Safety resources are managed by the developer. Use the request form to suggest a book or topic.", "warning")
     return redirect(url_for("parent.safety_resources"))
 
 
 @parent_bp.post("/safety-resources/links")
 def add_resource_link():
+    return request_resource()
+
+
+@parent_bp.post("/safety-resources/request")
+def request_resource():
     title = request.form.get("title", "").strip()
-    url = request.form.get("url", "").strip()
+    suggested_url = request.form.get("url", "").strip()
     topic = request.form.get("topic", "").strip() or "Digital safety"
     audience = request.form.get("audience", "all").strip().lower()
-    summary = request.form.get("summary", "").strip()
+    note = request.form.get("summary", "").strip()
 
-    parsed = urlparse(url)
-    if not title or parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        flash("Enter a title and a valid https:// resource link.", "warning")
+    if not title:
+        flash("Enter the book/resource title or topic you want added.", "warning")
         return redirect(url_for("parent.safety_resources"))
+    if suggested_url:
+        parsed = urlparse(suggested_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            flash("Enter a valid https:// suggestion link, or leave the link empty.", "warning")
+            return redirect(url_for("parent.safety_resources"))
     if audience not in {"all", "parent", "child"}:
         audience = "all"
 
-    resource_link = SafetyResourceLink(
+    resource_request = SafetyResourceRequest(
         family_id=current_user.family_id,
-        created_by_id=current_user.id,
+        requested_by_id=current_user.id,
         title=title,
-        url=url,
         topic=topic,
         audience=audience,
-        summary=summary,
+        note=note,
+        suggested_url=suggested_url or None,
     )
-    db.session.add(resource_link)
+    db.session.add(resource_request)
     log_event(
         current_user.family_id,
         current_user.id,
-        "resource_link_added",
-        f"Added safety resource link: {title}",
+        "resource_request_added",
+        f"Requested safety resource: {title}",
     )
     db.session.commit()
-    flash("Safety resource link added.", "success")
+    flash("Resource request sent to the developer.", "success")
     return redirect(url_for("parent.safety_resources"))
 
 
 @parent_bp.post("/safety-resources/links/<int:link_id>/delete")
 def delete_resource_link(link_id: int):
-    resource_link = SafetyResourceLink.query.filter_by(
-        id=link_id,
-        family_id=current_user.family_id,
-    ).first_or_404()
-    db.session.delete(resource_link)
-    log_event(
-        current_user.family_id,
-        current_user.id,
-        "resource_link_deleted",
-        f"Deleted safety resource link: {resource_link.title}",
-    )
-    db.session.commit()
-    flash("Safety resource link removed.", "success")
+    flash("Only the developer can remove approved safety resources.", "warning")
     return redirect(url_for("parent.safety_resources"))
 
 
@@ -810,8 +780,13 @@ def disable_android_device(device_id: int):
 
 @parent_bp.get("/safety-resources/documents/<int:document_id>")
 def download_resource_document(document_id: int):
-    document = SafetyResourceDocument.query.filter_by(
-        id=document_id, family_id=current_user.family_id
+    document = SafetyResourceDocument.query.filter(
+        SafetyResourceDocument.id == document_id,
+        SafetyResourceDocument.status == "approved",
+        or_(
+            SafetyResourceDocument.family_id == current_user.family_id,
+            SafetyResourceDocument.family_id.is_(None),
+        ),
     ).first_or_404()
     return send_file(
         BytesIO(document.binary_data),
