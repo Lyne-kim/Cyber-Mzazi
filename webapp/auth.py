@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from .extensions import db, login_manager
 from .models import Family, LogoutRequest, User
@@ -163,6 +163,11 @@ def register():
             db.session.rollback()
             flash("That parent contact is already in use.", "danger")
             return render_template("register.html")
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("Family registration failed during database flush.")
+            flash("Family account could not be created right now. Check the details and try again.", "danger")
+            return render_template("register.html")
         log_event(
             family.id,
             parent_user.id,
@@ -207,6 +212,11 @@ def register():
         except IntegrityError:
             db.session.rollback()
             flash("That parent contact is already in use.", "danger")
+            return render_template("register.html")
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("Family registration failed during database commit.")
+            flash("Family account could not be saved right now. Please try again.", "danger")
             return render_template("register.html")
 
         if parent_user.requires_email_verification:

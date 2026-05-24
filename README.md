@@ -6,11 +6,11 @@ It currently includes:
 
 - A Flask web platform with separate `Parent/Guardian` and `Child` experiences
 - Family registration, role-based login, and parent email verification
-- Parent alerts, logout approval or denial, activity logs, safety-resource requests, and curated developer-managed safety resources
+- Parent alerts, logout approval or denial, activity logs, family management, and AI safety guidance
 - Child-side message safety checks and guided reporting flows
 - AI Safety Assistant pages for parents and children using the Cyber Mzazi classifier
 - Child-only Android companion infrastructure, branding, QR/device-link flows, and signed APK release setup
-- Developer console for uploading safety books, adding trusted links, reviewing parent resource requests, and checking operational diagnostics
+- Developer console for checking operational diagnostics, model status, device ingestion, and alert hygiene
 - Expanded safety classification labels with a lightweight production-safe heuristic mode
 - Optional Hugging Face Space integration for DistilBERT-based inference experiments
 
@@ -24,7 +24,7 @@ Implemented:
 - Parent/guardian login and child login
 - Family account registration
 - Parent email verification and resend flow
-- Parent dashboard, alerts, settings, logs, safety resources, and family hub
+- Parent dashboard, alerts, settings, logs, and family hub
 - Parent AI Assistant for interpreting suspicious messages, slang, links, and incidents
 - Child dashboard, `My Safety`, settings, and safety-check reporting
 - Child AI Safety Assistant that can alert the parent dashboard when risk is high
@@ -38,11 +38,6 @@ Implemented:
 Implemented:
 
 - token-protected developer website at `/developer`
-- document/book upload for the safety-resource library
-- optional book cover image upload and book-card display in parent Safety Resources
-- resource visibility choice: all parents or only the selected requesting family
-- trusted web-resource link management
-- parent resource request review and status updates
 - model, device, message, and deleted-alert suppression diagnostics
 
 The developer console is separate from parent and child accounts. It is not linked from the parent or child dashboards.
@@ -218,13 +213,6 @@ https://cyber-mzazi.onrender.com/developer
 
 Login uses the value of `DEVELOPER_STATUS_TOKEN`.
 
-Parent safety-resource requests reach the developer in two ways:
-
-- every request is stored in the database and appears in the developer console
-- if mail is configured and `DEVELOPER_NOTIFICATION_EMAIL` is set, the developer also receives an email notification
-
-When the developer uploads a requested book, the upload form can publish it to all parents or restrict it to the family that made the selected request.
-
 ### 4. Run the web app locally
 
 ```powershell
@@ -327,7 +315,6 @@ Useful production variables:
 - `SESSION_COOKIE_SAMESITE=Lax`
 - `ANDROID_COMPANION_DOWNLOAD_URL=<release apk url>`
 - `DEVELOPER_STATUS_TOKEN=<long private developer token>`
-- `DEVELOPER_NOTIFICATION_EMAIL=<developer inbox for parent resource requests>`
 
 ## Gmail email verification setup
 

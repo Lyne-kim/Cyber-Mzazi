@@ -1,9 +1,7 @@
 from datetime import datetime
-from io import BytesIO
 from types import SimpleNamespace
 from urllib.parse import quote
-from urllib.parse import urlparse
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, logout_user
 from sqlalchemy import or_
 
@@ -15,13 +13,9 @@ from .models import (
     LogoutRequest,
     MessageRecord,
     NotificationIngestionDevice,
-    SafetyResourceDocument,
-    SafetyResourceLink,
-    SafetyResourceRequest,
     User,
 )
 from .services.audit import log_event
-from .services.developer_notifications import notify_developer_resource_request
 from .services.family_context import get_selected_child, set_selected_child
 from .services.notification_devices import issue_ingestion_token
 from .services.message_suppression import suppress_message
@@ -42,10 +36,7 @@ PARENT_NAV_ITEMS = [
 
 PARENT_SUPPORT_ITEMS = [
     {"endpoint": "parent.family_hub", "icon": "&#128106;", "label": "Family Hub", "key": "family_hub"},
-    {"endpoint": "parent.safety_resources", "icon": "&#128218;", "label": "Safety Resources", "key": "safety_resources"},
     {"endpoint": "parent.ai_assistant", "icon": "&#129302;", "label": "AI Assistant", "key": "ai_assistant"},
-    {"endpoint": "parent.help_support", "icon": "&#10067;", "label": "Help & Support", "key": "help_support"},
-    {"endpoint": "parent.privacy_center", "icon": "&#128196;", "label": "Privacy Center", "key": "privacy_center"},
     {"endpoint": "parent.system_status", "icon": "&#128257;", "label": "System Status", "key": "system_status"},
 ]
 
@@ -312,34 +303,6 @@ def _parent_data() -> dict:
         .limit(12)
         .all()
     )
-    safety_documents = (
-        SafetyResourceDocument.query.filter(
-            SafetyResourceDocument.status == "approved",
-            or_(
-                SafetyResourceDocument.family_id == current_user.family_id,
-                SafetyResourceDocument.family_id.is_(None),
-            ),
-        )
-        .order_by(SafetyResourceDocument.created_at.desc())
-        .all()
-    )
-    safety_links = (
-        SafetyResourceLink.query.filter(
-            SafetyResourceLink.status == "approved",
-            or_(
-                SafetyResourceLink.family_id == current_user.family_id,
-                SafetyResourceLink.family_id.is_(None),
-            ),
-        )
-        .order_by(SafetyResourceLink.created_at.desc())
-        .all()
-    )
-    safety_resource_requests = (
-        SafetyResourceRequest.query.filter_by(family_id=current_user.family_id)
-        .order_by(SafetyResourceRequest.created_at.desc())
-        .limit(8)
-        .all()
-    )
     logout_request_logs = (
         ActivityLog.query.filter_by(
             family_id=current_user.family_id,
@@ -441,9 +404,6 @@ def _parent_data() -> dict:
         "selected_logout_request": logout_request_cards[0] if logout_request_cards else None,
         "activity_logs": activity_logs,
         "approval_history": approval_history,
-        "safety_documents": safety_documents,
-        "safety_links": safety_links,
-        "safety_resource_requests": safety_resource_requests,
         "high_risk_count": high_risk_count,
         "reviewed_count": reviewed_count,
         "alert_count": alert_count,
@@ -530,11 +490,6 @@ def family_hub():
     return _render_parent_page("family_hub", "Family Hub")
 
 
-@parent_bp.route("/safety-resources")
-def safety_resources():
-    return _render_parent_page("safety_resources", "Safety Resources")
-
-
 @parent_bp.route("/ai-assistant", methods=["GET", "POST"])
 def ai_assistant():
     assistant_result = None
@@ -590,16 +545,6 @@ def ai_assistant():
         assistant_history=assistant_history,
         **context,
     )
-
-
-@parent_bp.route("/help-support")
-def help_support():
-    return _render_parent_page("help_support", "Help & Support")
-
-
-@parent_bp.route("/privacy-center")
-def privacy_center():
-    return _render_parent_page("privacy_center", "Privacy Center")
 
 
 @parent_bp.route("/system-status")
@@ -702,68 +647,6 @@ def set_language():
     return redirect(request.form.get("next") or url_for("parent.language_settings"))
 
 
-@parent_bp.post("/safety-resources/attachments")
-def attach_resource_documents():
-    flash("Safety resources are managed by the developer. Use the request form to suggest a book or topic.", "warning")
-    return redirect(url_for("parent.safety_resources"))
-
-
-@parent_bp.post("/safety-resources/links")
-def add_resource_link():
-    return request_resource()
-
-
-@parent_bp.post("/safety-resources/request")
-def request_resource():
-    title = request.form.get("title", "").strip()
-    suggested_url = request.form.get("url", "").strip()
-    topic = request.form.get("topic", "").strip() or "Digital safety"
-    audience = request.form.get("audience", "all").strip().lower()
-    note = request.form.get("summary", "").strip()
-
-    if not title:
-        flash("Enter the book/resource title or topic you want added.", "warning")
-        return redirect(url_for("parent.safety_resources"))
-    if suggested_url:
-        parsed = urlparse(suggested_url)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            flash("Enter a valid https:// suggestion link, or leave the link empty.", "warning")
-            return redirect(url_for("parent.safety_resources"))
-    if audience not in {"all", "parent", "child"}:
-        audience = "all"
-
-    resource_request = SafetyResourceRequest(
-        family_id=current_user.family_id,
-        requested_by_id=current_user.id,
-        title=title,
-        topic=topic,
-        audience=audience,
-        note=note,
-        suggested_url=suggested_url or None,
-    )
-    db.session.add(resource_request)
-    log_event(
-        current_user.family_id,
-        current_user.id,
-        "resource_request_added",
-        f"Requested safety resource: {title}",
-    )
-    db.session.commit()
-    notified, notice = notify_developer_resource_request(resource_request, current_user)
-    if notified:
-        flash("Resource request sent to the developer and email notification delivered.", "success")
-    else:
-        current_app.logger.info("Developer resource request notification skipped: %s", notice)
-        flash("Resource request sent to the developer.", "success")
-    return redirect(url_for("parent.safety_resources"))
-
-
-@parent_bp.post("/safety-resources/links/<int:link_id>/delete")
-def delete_resource_link(link_id: int):
-    flash("Only the developer can remove approved safety resources.", "warning")
-    return redirect(url_for("parent.safety_resources"))
-
-
 @parent_bp.post("/android-devices")
 def create_android_device():
     selected_child, _children = get_selected_child(current_user.family_id)
@@ -829,43 +712,6 @@ def disable_android_device(device_id: int):
     db.session.commit()
     flash("Android notification link disabled.", "success")
     return redirect(request.form.get("next") or url_for("parent.child_profile"))
-
-
-@parent_bp.get("/safety-resources/documents/<int:document_id>")
-def download_resource_document(document_id: int):
-    document = SafetyResourceDocument.query.filter(
-        SafetyResourceDocument.id == document_id,
-        SafetyResourceDocument.status == "approved",
-        or_(
-            SafetyResourceDocument.family_id == current_user.family_id,
-            SafetyResourceDocument.family_id.is_(None),
-        ),
-    ).first_or_404()
-    return send_file(
-        BytesIO(document.binary_data),
-        mimetype=document.content_type or "application/octet-stream",
-        as_attachment=True,
-        download_name=document.filename,
-    )
-
-
-@parent_bp.get("/safety-resources/documents/<int:document_id>/cover")
-def resource_document_cover(document_id: int):
-    document = SafetyResourceDocument.query.filter(
-        SafetyResourceDocument.id == document_id,
-        SafetyResourceDocument.status == "approved",
-        or_(
-            SafetyResourceDocument.family_id == current_user.family_id,
-            SafetyResourceDocument.family_id.is_(None),
-        ),
-    ).first_or_404()
-    if not document.cover_binary_data:
-        return "", 404
-    return send_file(
-        BytesIO(document.cover_binary_data),
-        mimetype=document.cover_content_type or "image/png",
-        download_name=document.cover_filename or f"resource-{document.id}-cover",
-    )
 
 
 @parent_bp.post("/messages/<int:message_id>/review")

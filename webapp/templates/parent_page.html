@@ -451,95 +451,6 @@
           <button class="button small" type="submit">Add child</button>
         </form>
       </section>
-    {% elif page_key == "safety_resources" %}
-      <section class="panel">
-        <p class="eyebrow">{{ t("Safety Resources") }}</p>
-        <h3>{{ t("Safety Resources") }}</h3>
-        <p class="muted">Read approved Cyber Mzazi books and links. The AI assistant also uses uploaded book text to answer online safety questions.</p>
-        <form class="stack upload-zone" method="post" action="{{ url_for('parent.request_resource') }}">
-          <p class="eyebrow">Request a book or resource</p>
-          <div class="auth-form-grid">
-            <label>
-              Book/resource title or topic
-              <input type="text" name="title" placeholder="Cyberbullying guide, grooming handbook..." required>
-            </label>
-            <label>
-              Suggested web link
-              <input type="url" name="url" placeholder="https://...">
-            </label>
-            <label>
-              Topic
-              <input type="text" name="topic" placeholder="Grooming, scams, privacy">
-            </label>
-            <label>
-              Audience
-              <select name="audience">
-                <option value="all">Parent and child</option>
-                <option value="parent">Parent only</option>
-                <option value="child">Child only</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Note for developer
-            <textarea name="summary" rows="3" placeholder="Why this would help your family"></textarea>
-          </label>
-          <button class="button small" type="submit">Send request</button>
-        </form>
-        {% if safety_resource_requests %}
-          <div class="subpanel-grid">
-            {% for item in safety_resource_requests %}
-              <article class="mini-panel resource-item">
-                <strong>{{ item.title }}</strong>
-                <p class="muted">{{ item.topic }} / {{ item.audience|title }}</p>
-                <p class="meta">Status: {{ item.status|title }}</p>
-              </article>
-            {% endfor %}
-          </div>
-        {% endif %}
-        <div class="stack">
-          {% for link in safety_links %}
-            <article class="mini-panel resource-item">
-              <strong>{{ link.title }}</strong>
-              <p class="muted">{{ link.topic }} / {{ link.audience|title }}</p>
-              {% if link.summary %}
-                <p>{{ link.summary }}</p>
-              {% endif %}
-              <div class="button-row">
-                <a class="button ghost small" href="{{ link.url }}" target="_blank" rel="noopener">Open link</a>
-              </div>
-            </article>
-          {% else %}
-            <div class="mini-panel">
-              <strong>No approved links yet</strong>
-              <p class="muted">Use the request form above to ask the developer to add a trusted resource.</p>
-            </div>
-          {% endfor %}
-        </div>
-        <div class="stack">
-          {% for document in safety_documents %}
-            <article class="mini-panel resource-item resource-book-card">
-              <div class="resource-cover">
-                {% if document.cover_binary_data %}
-                  <img src="{{ url_for('parent.resource_document_cover', document_id=document.id) }}" alt="Cover for {{ document.title or document.filename }}">
-                {% else %}
-                  <span>{{ (document.title or document.filename)[:1]|upper }}</span>
-                {% endif %}
-              </div>
-              <div class="resource-book-copy">
-                <strong>{{ document.title or document.filename }}</strong>
-                <p class="muted">{{ document.topic }} / {{ document.audience|title }} / {{ "All families" if not document.family_id else "Your family" }}</p>
-                {% if document.summary %}
-                  <p>{{ document.summary }}</p>
-                {% endif %}
-                <a class="button ghost small" href="{{ url_for('parent.download_resource_document', document_id=document.id) }}">Download</a>
-              </div>
-            </article>
-          {% else %}
-            <p class="muted">No approved books uploaded yet.</p>
-          {% endfor %}
-        </div>
-      </section>
     {% elif page_key == "ai_assistant" %}
       <section class="panel">
         <p class="eyebrow">AI Safety Assistant</p>
@@ -581,26 +492,6 @@
             </ul>
           </article>
         {% endif %}
-      </section>
-    {% elif page_key == "help_support" %}
-      <section class="panel">
-        <p class="eyebrow">{{ t("Help & Support") }}</p>
-        <h3>{{ t("Help & Support") }}</h3>
-        <ul class="simple-list">
-          <li>FAQ</li>
-          <li>Tutorial</li>
-          <li>Contact</li>
-        </ul>
-      </section>
-    {% elif page_key == "privacy_center" %}
-      <section class="panel">
-        <p class="eyebrow">{{ t("Privacy Center") }}</p>
-        <h3>{{ t("Privacy Center") }}</h3>
-        <ul class="simple-list">
-          <li>Stored data</li>
-          <li>Export</li>
-          <li>Delete</li>
-        </ul>
       </section>
     {% elif page_key == "system_status" %}
       <section class="panel">

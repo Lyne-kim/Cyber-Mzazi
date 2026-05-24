@@ -8,7 +8,7 @@
     <div class="developer-login-card">
       <p class="eyebrow">Developer Console</p>
       <h1>Cyber Mzazi</h1>
-      <p class="muted">Enter the private developer token to manage safety resources and project diagnostics.</p>
+      <p class="muted">Enter the private developer token to view project diagnostics and alert hygiene.</p>
       <form class="stack" method="post" action="{{ url_for('developer.login') }}">
         <input type="hidden" name="next" value="{{ request.args.get('next', url_for('developer.dashboard')) }}">
         <label>
@@ -23,7 +23,7 @@
       <div>
         <p class="eyebrow">Developer Console</p>
         <h1>Cyber Mzazi Operations</h1>
-        <p class="muted">Manage safety books, trusted links, parent requests, model status, and alert hygiene.</p>
+        <p class="muted">Monitor model status, Android ingestion, deleted alert suppressions, and alert labels.</p>
       </div>
       <form method="post" action="{{ url_for('developer.logout') }}">
         <button class="button ghost small" type="submit">Lock console</button>
@@ -39,171 +39,9 @@
         <span>{{ status.suppressed_count }}</span>
         <p>Deleted alert suppressions</p>
       </article>
-      <article class="developer-stat">
-        <span>{{ documents|length }}</span>
-        <p>Resource documents</p>
-      </article>
-      <article class="developer-stat">
-        <span>{{ requests|selectattr("status", "equalto", "pending")|list|length }}</span>
-        <p>Pending parent requests</p>
-      </article>
     </div>
 
     <div class="developer-grid">
-      <section class="developer-panel">
-        <p class="eyebrow">Safety Library</p>
-        <h2>Upload books and documents</h2>
-        <form class="stack" method="post" enctype="multipart/form-data" action="{{ url_for('developer.upload_documents') }}">
-          <label>
-            Title override
-            <input type="text" name="title" placeholder="Leave blank to use file name">
-          </label>
-          <div class="form-grid">
-            <label>
-              Topic
-              <input type="text" name="topic" value="Digital safety">
-            </label>
-            <label>
-              Audience
-              <select name="audience">
-                <option value="all">All</option>
-                <option value="parent">Parent</option>
-                <option value="child">Child</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Source URL
-            <input type="url" name="source_url" placeholder="https://example.org/resource">
-          </label>
-          <div class="form-grid">
-            <label>
-              Visibility
-              <select name="visibility">
-                <option value="all">All parents</option>
-                <option value="request_family">Only the selected requesting family</option>
-              </select>
-            </label>
-            <label>
-              Parent request to fulfill
-              <select name="request_id">
-                <option value="">No specific request</option>
-                {% for item in requests %}
-                  <option value="{{ item.id }}">{{ item.title }} / family {{ item.family_id }} / {{ item.status|title }}</option>
-                {% endfor %}
-              </select>
-            </label>
-          </div>
-          <label>
-            Book cover image
-            <input type="file" name="cover_image" accept="image/*">
-          </label>
-          <label>
-            Summary
-            <textarea name="summary" rows="3"></textarea>
-          </label>
-          <label>
-            Files
-            <input type="file" name="attachments" multiple required>
-          </label>
-          <button class="button" type="submit">Upload resource documents</button>
-        </form>
-      </section>
-
-      <section class="developer-panel">
-        <p class="eyebrow">Trusted Links</p>
-        <h2>Add online resource</h2>
-        <form class="stack" method="post" action="{{ url_for('developer.add_link') }}">
-          <label>
-            Title
-            <input type="text" name="title" required>
-          </label>
-          <label>
-            URL
-            <input type="url" name="url" required>
-          </label>
-          <div class="form-grid">
-            <label>
-              Topic
-              <input type="text" name="topic" value="Digital safety">
-            </label>
-            <label>
-              Audience
-              <select name="audience">
-                <option value="all">All</option>
-                <option value="parent">Parent</option>
-                <option value="child">Child</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Summary
-            <textarea name="summary" rows="3"></textarea>
-          </label>
-          <button class="button" type="submit">Add trusted link</button>
-        </form>
-      </section>
-    </div>
-
-    <section class="developer-panel">
-      <div class="panel-header">
-        <div>
-          <p class="eyebrow">Parent Requests</p>
-          <h2>Requested books and topics</h2>
-        </div>
-        <p class="muted">Parents submit requests from Safety Resources. They appear here immediately.</p>
-      </div>
-      <div class="developer-table">
-        {% for item in requests %}
-          <article class="developer-row">
-            <div>
-              <strong>{{ item.title }}</strong>
-              <p>{{ item.topic }} / {{ item.audience|title }} / {{ item.status|title }}</p>
-              {% if item.note %}<p class="meta">{{ item.note }}</p>{% endif %}
-              {% if item.suggested_url %}<a href="{{ item.suggested_url }}" target="_blank" rel="noopener">{{ item.suggested_url }}</a>{% endif %}
-            </div>
-            <form class="inline-form" method="post" action="{{ url_for('developer.update_request_status', request_id=item.id) }}">
-              <select name="status">
-                {% for state in ["pending", "approved", "fulfilled", "rejected"] %}
-                  <option value="{{ state }}"{% if item.status == state %} selected{% endif %}>{{ state|title }}</option>
-                {% endfor %}
-              </select>
-              <button class="button small" type="submit">Update</button>
-            </form>
-          </article>
-        {% else %}
-          <p class="muted">No parent requests yet.</p>
-        {% endfor %}
-      </div>
-    </section>
-
-    <div class="developer-grid">
-      <section class="developer-panel">
-        <p class="eyebrow">Documents</p>
-        <h2>Uploaded books</h2>
-        {% for document in documents %}
-          <article class="developer-row">
-            <div class="resource-cover">
-              {% if document.cover_binary_data %}
-                <img src="{{ url_for('developer.document_cover', document_id=document.id) }}" alt="Cover for {{ document.title or document.filename }}">
-              {% else %}
-                <span>{{ (document.title or document.filename)[:1]|upper }}</span>
-              {% endif %}
-            </div>
-            <div>
-              <strong>{{ document.title or document.filename }}</strong>
-              <p>{{ document.topic }} / {{ document.audience|title }} / {{ "All parents" if not document.family_id else "Family " ~ document.family_id }} / {{ document.file_size }} bytes</p>
-              <p class="meta">{{ document.text_chunks.count() }} AI-search chunks</p>
-            </div>
-            <form method="post" action="{{ url_for('developer.delete_document', document_id=document.id) }}">
-              <button class="button danger small" type="submit">Delete</button>
-            </form>
-          </article>
-        {% else %}
-          <p class="muted">No books uploaded yet.</p>
-        {% endfor %}
-      </section>
-
       <section class="developer-panel">
         <p class="eyebrow">Diagnostics</p>
         <h2>System status</h2>
@@ -222,25 +60,6 @@
         {% endif %}
       </section>
     </div>
-
-    <section class="developer-panel">
-      <p class="eyebrow">Links</p>
-      <h2>Trusted online resources</h2>
-      {% for link in links %}
-        <article class="developer-row">
-          <div>
-            <strong>{{ link.title }}</strong>
-            <p>{{ link.topic }} / {{ link.audience|title }}</p>
-            <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.url }}</a>
-          </div>
-          <form method="post" action="{{ url_for('developer.delete_link', link_id=link.id) }}">
-            <button class="button danger small" type="submit">Delete</button>
-          </form>
-        </article>
-      {% else %}
-        <p class="muted">No trusted links added yet.</p>
-      {% endfor %}
-    </section>
   {% endif %}
 </section>
 {% endblock %}

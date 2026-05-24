@@ -1,11 +1,10 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, logout_user
-from sqlalchemy import or_
 
 from ml.labels import label_title, label_tone
 
 from .extensions import db
-from .models import LogoutRequest, MessageRecord, SafetyResourceLink, User
+from .models import LogoutRequest, MessageRecord, User
 from .services.audit import log_event
 from .services.parent_alerts import send_high_risk_message_alert
 from .services.message_suppression import is_message_suppressed
@@ -23,7 +22,6 @@ CHILD_NAV_ITEMS = [
     {"endpoint": "child.dashboard", "icon": "&#127968;", "label": "Home", "key": "home"},
     {"endpoint": "child.my_safety", "icon": "&#128737;", "label": "My Safety", "key": "my_safety"},
     {"endpoint": "child.ai_assistant", "icon": "&#129302;", "label": "Ask AI", "key": "ai_assistant"},
-    {"endpoint": "child.resources", "icon": "&#128218;", "label": "Resources", "key": "resources"},
     {"endpoint": "child.settings", "icon": "&#9881;", "label": "Settings", "key": "settings"},
 ]
 
@@ -65,18 +63,6 @@ def _child_data() -> dict:
         .order_by(LogoutRequest.updated_at.desc())
         .first()
     )
-    resource_links = (
-        SafetyResourceLink.query.filter(
-            SafetyResourceLink.status == "approved",
-            or_(
-                SafetyResourceLink.family_id == current_user.family_id,
-                SafetyResourceLink.family_id.is_(None),
-            ),
-            SafetyResourceLink.audience.in_(["all", "child"]),
-        )
-        .order_by(SafetyResourceLink.created_at.desc())
-        .all()
-    )
     high_risk_count = sum(
         1
         for message in messages
@@ -93,13 +79,11 @@ def _child_data() -> dict:
     return {
         "messages": messages,
         "pending_logout": pending_logout,
-        "safety_links": resource_links,
         "label_title": label_title,
         "label_tone": label_tone,
         "child_summary": {
             "checks_count": len(messages),
             "high_risk_count": high_risk_count,
-            "resources_count": len(resource_links),
             "logout_status": pending_logout_label,
             "latest_message": latest_message,
             "latest_label": label_title(latest_message.predicted_label) if latest_message else "No checks yet",
@@ -136,7 +120,7 @@ def talk():
 
 @child_bp.route("/help")
 def help_questions():
-    return redirect(url_for("child.resources"))
+    return redirect(url_for("child.ai_assistant"))
 
 
 @child_bp.route("/assistant", methods=["GET", "POST"])
@@ -252,11 +236,6 @@ def ai_assistant():
         assistant_history=assistant_history,
         **context,
     )
-
-
-@child_bp.route("/resources")
-def resources():
-    return _render_child_page("resources", "Safety Resources")
 
 
 @child_bp.route("/settings")

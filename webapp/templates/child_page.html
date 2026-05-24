@@ -122,9 +122,9 @@
           <strong>{{ child_summary.high_risk_count }}</strong>
         </article>
         <article class="child-stat-card">
-          <span>&#128218;</span>
-          <p>Helpful resources</p>
-          <strong>{{ child_summary.resources_count }}</strong>
+          <span>&#129302;</span>
+          <p>AI safety help</p>
+          <strong>Ready</strong>
         </article>
       </section>
 
@@ -340,25 +340,6 @@
             </ul>
           </article>
         {% endif %}
-      </section>
-    {% elif page_key == "resources" %}
-      <section class="panel">
-        <p class="eyebrow">Safety Resources</p>
-        <h3>Helpful links approved for your family</h3>
-        <div class="resource-card-grid">
-          {% for link in safety_links %}
-            <article class="mini-panel resource-item child-resource-card">
-              <strong>{{ link.title }}</strong>
-              <p class="muted">{{ link.topic }}</p>
-              {% if link.summary %}
-                <p>{{ link.summary }}</p>
-              {% endif %}
-              <a class="button ghost small" href="{{ link.url }}" target="_blank" rel="noopener">Open link</a>
-            </article>
-          {% else %}
-            <p class="muted">Your parent/guardian has not added safety links yet.</p>
-          {% endfor %}
-        </div>
       </section>
     {% elif page_key == "settings" %}
       <section class="panel child-settings-panel">

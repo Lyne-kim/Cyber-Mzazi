@@ -33,15 +33,6 @@ class Family(TimestampMixin, db.Model):
     logout_requests = db.relationship(
         "LogoutRequest", back_populates="family", lazy="dynamic"
     )
-    safety_resource_documents = db.relationship(
-        "SafetyResourceDocument", back_populates="family", lazy="dynamic"
-    )
-    safety_resource_links = db.relationship(
-        "SafetyResourceLink", back_populates="family", lazy="dynamic"
-    )
-    safety_resource_requests = db.relationship(
-        "SafetyResourceRequest", back_populates="family", lazy="dynamic"
-    )
     notification_devices = db.relationship(
         "NotificationIngestionDevice", back_populates="family", lazy="dynamic"
     )
@@ -196,78 +187,6 @@ class LogoutRequest(TimestampMixin, db.Model):
     family = db.relationship("Family", back_populates="logout_requests")
     child_user = db.relationship("User", foreign_keys=[child_user_id])
     resolved_by = db.relationship("User", foreign_keys=[resolved_by_id])
-
-
-class SafetyResourceDocument(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    family_id = db.Column(db.Integer, db.ForeignKey("family.id"))
-    uploaded_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    filename = db.Column(db.String(255), nullable=False)
-    content_type = db.Column(db.String(120))
-    file_size = db.Column(db.Integer, nullable=False, default=0)
-    binary_data = db.Column(db.LargeBinary(length=16_777_215), nullable=False)
-    title = db.Column(db.String(180))
-    topic = db.Column(db.String(80), nullable=False, default="Digital safety")
-    audience = db.Column(db.String(20), nullable=False, default="all")
-    summary = db.Column(db.Text)
-    status = db.Column(db.String(30), nullable=False, default="approved")
-    source_url = db.Column(db.String(500))
-    cover_filename = db.Column(db.String(255))
-    cover_content_type = db.Column(db.String(120))
-    cover_binary_data = db.Column(db.LargeBinary(length=16_777_215))
-
-    family = db.relationship("Family", back_populates="safety_resource_documents")
-    uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])
-    text_chunks = db.relationship(
-        "SafetyResourceTextChunk",
-        back_populates="document",
-        cascade="all, delete-orphan",
-        lazy="dynamic",
-    )
-
-
-class SafetyResourceLink(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    family_id = db.Column(db.Integer, db.ForeignKey("family.id"))
-    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    title = db.Column(db.String(160), nullable=False)
-    url = db.Column(db.String(500), nullable=False)
-    topic = db.Column(db.String(80), nullable=False, default="Digital safety")
-    audience = db.Column(db.String(20), nullable=False, default="all")
-    summary = db.Column(db.Text)
-    status = db.Column(db.String(30), nullable=False, default="approved")
-
-    family = db.relationship("Family", back_populates="safety_resource_links")
-    created_by = db.relationship("User", foreign_keys=[created_by_id])
-
-
-class SafetyResourceTextChunk(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    document_id = db.Column(
-        db.Integer, db.ForeignKey("safety_resource_document.id"), nullable=False
-    )
-    chunk_index = db.Column(db.Integer, nullable=False, default=0)
-    title = db.Column(db.String(180), nullable=False)
-    topic = db.Column(db.String(80), nullable=False, default="Digital safety")
-    audience = db.Column(db.String(20), nullable=False, default="all")
-    text = db.Column(db.Text, nullable=False)
-
-    document = db.relationship("SafetyResourceDocument", back_populates="text_chunks")
-
-
-class SafetyResourceRequest(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
-    requested_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    title = db.Column(db.String(180), nullable=False)
-    topic = db.Column(db.String(80), nullable=False, default="Digital safety")
-    audience = db.Column(db.String(20), nullable=False, default="all")
-    note = db.Column(db.Text)
-    suggested_url = db.Column(db.String(500))
-    status = db.Column(db.String(30), nullable=False, default="pending")
-
-    family = db.relationship("Family", back_populates="safety_resource_requests")
-    requested_by = db.relationship("User", foreign_keys=[requested_by_id])
 
 
 class NotificationIngestionDevice(TimestampMixin, db.Model):

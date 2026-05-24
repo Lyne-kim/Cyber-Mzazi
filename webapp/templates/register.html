@@ -4,10 +4,17 @@
 {% block page_header %}{% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block content %}
-<section class="auth-view">
+<section class="auth-view auth-view-cyber">
   <div class="auth-card-shell auth-card-shell-wide">
-    <form class="auth-card auth-card-wide" method="post">
-      <p class="auth-brand">Cyber Mzazi</p>
+    <div class="auth-masthead">
+      <img class="auth-masthead-logo" src="{{ url_for('static', filename='cyber_mzazi_logo.png') }}" alt="Cyber Mzazi logo">
+      <div class="auth-masthead-copy">
+        <p class="auth-brand">Cyber Mzazi</p>
+        <p class="auth-tagline">Protecting families online</p>
+      </div>
+    </div>
+
+    <form class="auth-card auth-card-cyber auth-card-wide" method="post">
       <h2>Create Family Workspace</h2>
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -20,40 +27,70 @@
       {% endwith %}
 
       <div class="form-grid auth-form-grid">
-        <label>
-          Family name
-          <input type="text" name="family_name" placeholder="Mwangi family" value="{{ request.form.get('family_name', '') }}" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Family name</span>
+          <div class="auth-input-shell">
+            <input type="text" name="family_name" placeholder="Mwangi family" value="{{ request.form.get('family_name', '') }}" required>
+          </div>
         </label>
-        <label>
-          Parent/Guardian full name
-          <input type="text" name="parent_name" placeholder="Jane Mwangi" value="{{ request.form.get('parent_name', '') }}" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian full name</span>
+          <div class="auth-input-shell">
+            <input type="text" name="parent_name" placeholder="Jane Mwangi" value="{{ request.form.get('parent_name', '') }}" required>
+          </div>
         </label>
-        <label>
-          Parent/Guardian email or phone
-          <input type="text" name="parent_contact" placeholder="jane@example.com or 0712345678" value="{{ request.form.get('parent_contact', '') }}" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian email or phone</span>
+          <div class="auth-input-shell">
+            <input type="text" name="parent_contact" placeholder="jane@example.com or 0712345678" value="{{ request.form.get('parent_contact', '') }}" required>
+          </div>
         </label>
-        <label>
-          Parent/Guardian password
-          <input type="password" name="parent_password" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Parent/Guardian password</span>
+          <div class="password-field auth-input-shell">
+            <input id="register-parent-password" type="password" name="parent_password" required>
+            <button class="password-toggle" type="button" data-target="register-parent-password" aria-label="Show password">Show</button>
+          </div>
         </label>
-        <label>
-          Child display name
-          <input type="text" name="child_name" placeholder="Kevin" value="{{ request.form.get('child_name', '') }}" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Child display name</span>
+          <div class="auth-input-shell">
+            <input type="text" name="child_name" placeholder="Kevin" value="{{ request.form.get('child_name', '') }}" required>
+          </div>
         </label>
-        <label>
-          Child username
-          <input type="text" name="child_username" placeholder="kevin-home" value="{{ request.form.get('child_username', '') }}" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Child username</span>
+          <div class="auth-input-shell">
+            <input type="text" name="child_username" placeholder="kevin-home" value="{{ request.form.get('child_username', '') }}" required>
+          </div>
         </label>
-        <label>
-          Child password
-          <input type="password" name="child_password" required>
+        <label class="auth-field">
+          <span class="auth-field-label">Child password</span>
+          <div class="password-field auth-input-shell">
+            <input id="register-child-password" type="password" name="child_password" required>
+            <button class="password-toggle" type="button" data-target="register-child-password" aria-label="Show password">Show</button>
+          </div>
         </label>
       </div>
 
-      <p class="auth-footnote">Parent/guardian email accounts require an email verification link. Phone accounts require a one-time SMS code before first sign-in.</p>
-      <button class="button auth-submit" type="submit">Create Family Workspace</button>
-      <p class="auth-footnote">Already registered? <a href="{{ url_for('auth.parent_login') }}">Open parent/guardian login</a>.</p>
+      <p class="auth-footnote auth-footnote-cyber">Parent/guardian email accounts require an email verification link. Phone accounts require a one-time SMS code before first sign-in.</p>
+      <button class="button auth-submit auth-submit-cyber" type="submit">Create Family Workspace</button>
+      <p class="auth-footnote auth-footnote-cyber">Already registered? <a class="auth-inline-link-button" href="{{ url_for('auth.parent_login') }}">Open parent/guardian login</a></p>
     </form>
   </div>
 </section>
+{% endblock %}
+{% block page_scripts %}
+<script>
+  document.querySelectorAll(".password-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.target);
+      if (!input) return;
+      const nextType = input.type === "password" ? "text" : "password";
+      input.type = nextType;
+      button.textContent = nextType === "password" ? "Show" : "Hide";
+      button.setAttribute("aria-label", nextType === "password" ? "Show password" : "Hide password");
+    });
+  });
+</script>
 {% endblock %}

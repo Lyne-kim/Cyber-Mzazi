@@ -22,14 +22,10 @@ from .models import (
     LogoutRequest,
     MessageRecord,
     NotificationIngestionDevice,
-    SafetyResourceDocument,
-    SafetyResourceLink,
-    SafetyResourceRequest,
     User,
 )
 from .services.audit import log_event
 from .services.cooldowns import resend_wait_seconds
-from .services.developer_notifications import notify_developer_resource_request
 from .services.email_verification import (
     send_verification_email,
     verify_email_token,
@@ -59,7 +55,6 @@ from .services.prediction_service import (
     prediction_backend_status,
 )
 from .services.review_feedback import build_review_signature
-from .services.resource_library import rebuild_document_chunks
 from .services.safety_assistant import build_safety_assistant_response
 from .services.verification import verify_message
 from .ui_text import SUPPORTED_LANGUAGES, get_language
@@ -67,17 +62,9 @@ from .ui_text import SUPPORTED_LANGUAGES, get_language
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
-MAX_RESOURCE_ATTACHMENT_BYTES = 8 * 1024 * 1024
-
 PUBLIC_API_ENDPOINTS = {
     "api.health",
     "api.developer_status",
-    "api.developer_safety_resources",
-    "api.developer_add_resource_link",
-    "api.developer_upload_resource_documents",
-    "api.developer_update_resource_request",
-    "api.developer_delete_resource_document",
-    "api.developer_delete_resource_link",
     "api.developer_safe_overrides",
     "api.register_family",
     "api.login",
@@ -225,55 +212,6 @@ def _log_payload(log: ActivityLog) -> dict:
     }
 
 
-def _document_payload(document: SafetyResourceDocument) -> dict:
-    return {
-        "id": document.id,
-        "title": document.title or document.filename,
-        "filename": document.filename,
-        "content_type": document.content_type,
-        "file_size": document.file_size,
-        "topic": document.topic,
-        "audience": document.audience,
-        "summary": document.summary,
-        "status": document.status,
-        "source_url": document.source_url,
-        "has_cover": bool(document.cover_binary_data),
-        "cover_url": f"/parent/safety-resources/documents/{document.id}/cover" if document.cover_binary_data else None,
-        "chunk_count": document.text_chunks.count(),
-        "created_at": document.created_at.isoformat(),
-        "uploaded_by_id": document.uploaded_by_id,
-        "download_url": f"/parent/safety-resources/documents/{document.id}",
-    }
-
-
-def _resource_link_payload(link: SafetyResourceLink) -> dict:
-    return {
-        "id": link.id,
-        "title": link.title,
-        "url": link.url,
-        "topic": link.topic,
-        "audience": link.audience,
-        "summary": link.summary,
-        "status": link.status,
-        "created_at": link.created_at.isoformat(),
-    }
-
-
-def _resource_request_payload(item: SafetyResourceRequest) -> dict:
-    return {
-        "id": item.id,
-        "family_id": item.family_id,
-        "requested_by_id": item.requested_by_id,
-        "title": item.title,
-        "topic": item.topic,
-        "audience": item.audience,
-        "note": item.note,
-        "suggested_url": item.suggested_url,
-        "status": item.status,
-        "created_at": item.created_at.isoformat(),
-    }
-
-
 def _logout_request_payload(item: LogoutRequest) -> dict:
     return {
         "id": item.id,
@@ -344,34 +282,6 @@ def _parent_page_payload() -> dict:
             .limit(20)
             .all()
         )
-    documents = (
-        SafetyResourceDocument.query.filter(
-            SafetyResourceDocument.status == "approved",
-            or_(
-                SafetyResourceDocument.family_id == current_user.family_id,
-                SafetyResourceDocument.family_id.is_(None),
-            ),
-        )
-        .order_by(SafetyResourceDocument.created_at.desc())
-        .all()
-    )
-    resource_links = (
-        SafetyResourceLink.query.filter(
-            SafetyResourceLink.status == "approved",
-            or_(
-                SafetyResourceLink.family_id == current_user.family_id,
-                SafetyResourceLink.family_id.is_(None),
-            ),
-        )
-        .order_by(SafetyResourceLink.created_at.desc())
-        .all()
-    )
-    resource_requests = (
-        SafetyResourceRequest.query.filter_by(family_id=current_user.family_id)
-        .order_by(SafetyResourceRequest.created_at.desc())
-        .limit(12)
-        .all()
-    )
     logout_request_cards = []
     for item in logout_requests:
         logout_request_cards.append(
@@ -403,9 +313,6 @@ def _parent_page_payload() -> dict:
         "activity_logs": [_log_payload(log) for log in activity_logs],
         "approval_history": [_logout_request_payload(item) for item in approval_history],
         "linked_devices": [_notification_device_payload(device) for device in linked_devices],
-        "safety_documents": [_document_payload(document) for document in documents],
-        "safety_links": [_resource_link_payload(link) for link in resource_links],
-        "safety_resource_requests": [_resource_request_payload(item) for item in resource_requests],
         "summary": {
             "alert_count": alert_count,
             "high_risk_count": high_risk_count,
@@ -657,144 +564,6 @@ def developer_safe_overrides():
     if not _developer_status_authorized():
         return _error("Not found.", 404)
     return jsonify({"ok": True, **_safe_override_diagnostics()})
-
-
-@api_bp.get("/developer/safety-resources")
-def developer_safety_resources():
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    documents = SafetyResourceDocument.query.order_by(
-        SafetyResourceDocument.created_at.desc()
-    ).all()
-    links = SafetyResourceLink.query.order_by(SafetyResourceLink.created_at.desc()).all()
-    requests = SafetyResourceRequest.query.order_by(
-        SafetyResourceRequest.created_at.desc()
-    ).all()
-    return jsonify(
-        {
-            "ok": True,
-            "documents": [_document_payload(document) for document in documents],
-            "links": [_resource_link_payload(link) for link in links],
-            "requests": [_resource_request_payload(item) for item in requests],
-        }
-    )
-
-
-@api_bp.post("/developer/safety-resources/links")
-def developer_add_resource_link():
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    payload = request.get_json(silent=True) or {}
-    title = str(payload.get("title", "")).strip()
-    url = str(payload.get("url", "")).strip()
-    topic = str(payload.get("topic", "")).strip() or "Digital safety"
-    audience = str(payload.get("audience", "all")).strip().lower()
-    summary = str(payload.get("summary", "")).strip()
-    if audience not in {"all", "parent", "child"}:
-        audience = "all"
-    if not title or not (url.startswith("https://") or url.startswith("http://")):
-        return _error("title and a valid web URL are required.")
-    link = SafetyResourceLink(
-        family_id=None,
-        created_by_id=None,
-        title=title,
-        url=url,
-        topic=topic,
-        audience=audience,
-        summary=summary,
-        status="approved",
-    )
-    db.session.add(link)
-    db.session.commit()
-    return jsonify({"ok": True, "resource_link": _resource_link_payload(link)}), 201
-
-
-@api_bp.post("/developer/safety-resources/documents")
-def developer_upload_resource_documents():
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    uploads = [upload for upload in request.files.getlist("attachments") if upload and upload.filename]
-    if not uploads:
-        return _error("Choose one or more documents first.")
-    title = request.form.get("title", "").strip()
-    topic = request.form.get("topic", "").strip() or "Digital safety"
-    audience = request.form.get("audience", "all").strip().lower()
-    summary = request.form.get("summary", "").strip()
-    source_url = request.form.get("source_url", "").strip()
-    cover_upload = request.files.get("cover_image")
-    cover_data = cover_upload.read() if cover_upload and cover_upload.filename else None
-    if cover_data and len(cover_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
-        return _error("Cover image is too large. Upload cover files up to 8 MB.")
-    if audience not in {"all", "parent", "child"}:
-        audience = "all"
-
-    documents = []
-    try:
-        for upload in uploads:
-            binary_data = upload.read()
-            if len(binary_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
-                return _error(f"{upload.filename} is too large. Upload files up to 8 MB each.")
-            document = SafetyResourceDocument(
-                family_id=None,
-                uploaded_by_id=None,
-                filename=upload.filename,
-                content_type=upload.mimetype,
-                file_size=len(binary_data),
-                binary_data=binary_data,
-                title=title or upload.filename,
-                topic=topic,
-                audience=audience,
-                summary=summary,
-                status="approved",
-                source_url=source_url or None,
-                cover_filename=cover_upload.filename if cover_data and cover_upload else None,
-                cover_content_type=cover_upload.mimetype if cover_data and cover_upload else None,
-                cover_binary_data=cover_data,
-            )
-            db.session.add(document)
-            db.session.flush()
-            rebuild_document_chunks(document)
-            documents.append(document)
-        db.session.commit()
-    except SQLAlchemyError:
-        db.session.rollback()
-        current_app.logger.exception("Developer safety resource upload failed")
-        return _error("Documents could not be uploaded right now.", 500)
-    return jsonify({"ok": True, "documents": [_document_payload(document) for document in documents]}), 201
-
-
-@api_bp.post("/developer/safety-resources/requests/<int:request_id>/status")
-def developer_update_resource_request(request_id: int):
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    payload = request.get_json(silent=True) or {}
-    status = str(payload.get("status", "")).strip().lower()
-    if status not in {"pending", "approved", "rejected", "fulfilled"}:
-        return _error("Choose pending, approved, rejected, or fulfilled.")
-    item = SafetyResourceRequest.query.get_or_404(request_id)
-    item.status = status
-    db.session.commit()
-    return jsonify({"ok": True, "resource_request": _resource_request_payload(item)})
-
-
-@api_bp.post("/developer/safety-resources/documents/<int:document_id>/delete")
-def developer_delete_resource_document(document_id: int):
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    document = SafetyResourceDocument.query.get_or_404(document_id)
-    db.session.delete(document)
-    db.session.commit()
-    return jsonify({"ok": True})
-
-
-@api_bp.post("/developer/safety-resources/links/<int:link_id>/delete")
-def developer_delete_resource_link(link_id: int):
-    if not _developer_status_authorized():
-        return _error("Not found.", 404)
-    link = SafetyResourceLink.query.get_or_404(link_id)
-    db.session.delete(link)
-    db.session.commit()
-    return jsonify({"ok": True})
 
 
 @api_bp.post("/auth/register")
@@ -1200,30 +969,6 @@ def assistant_chat():
     return jsonify({"ok": True, "assistant": result, "guardian_alerted": guardian_alerted})
 
 
-@api_bp.get("/safety-resources/links")
-@login_required
-def safety_resource_links():
-    audience = current_user.role if current_user.role in {"parent", "child"} else "all"
-    links = (
-        SafetyResourceLink.query.filter(
-            SafetyResourceLink.status == "approved",
-            or_(
-                SafetyResourceLink.family_id == current_user.family_id,
-                SafetyResourceLink.family_id.is_(None),
-            ),
-            SafetyResourceLink.audience.in_(["all", audience]),
-        )
-        .order_by(SafetyResourceLink.created_at.desc())
-        .all()
-    )
-    return jsonify(
-        {
-            "ok": True,
-            "resource_links": [_resource_link_payload(link) for link in links],
-        }
-    )
-
-
 @api_bp.post("/account/profile")
 @login_required
 def update_profile():
@@ -1498,83 +1243,6 @@ def parent_family_hub():
     return jsonify({"ok": True, "page": "family_hub", **_parent_page_payload()})
 
 
-@api_bp.get("/parent/safety-resources")
-@login_required
-def parent_safety_resources():
-    if current_user.role != "parent":
-        return _error("Parent access only.", 403)
-    return jsonify({"ok": True, "page": "safety_resources", **_parent_page_payload()})
-
-
-@api_bp.post("/parent/safety-resources/links")
-@login_required
-def parent_add_resource_link():
-    return parent_request_resource()
-
-
-@api_bp.post("/parent/safety-resources/request")
-@login_required
-def parent_request_resource():
-    if current_user.role != "parent":
-        return _error("Parent access only.", 403)
-    payload = request.get_json(silent=True) or {}
-    title = str(payload.get("title", "")).strip()
-    suggested_url = str(payload.get("url", "")).strip()
-    topic = str(payload.get("topic", "")).strip() or "Digital safety"
-    audience = str(payload.get("audience", "all")).strip().lower()
-    note = str(payload.get("summary", "") or payload.get("note", "")).strip()
-    if audience not in {"all", "parent", "child"}:
-        audience = "all"
-    if not title:
-        return _error("title is required.")
-    if suggested_url and not (suggested_url.startswith("https://") or suggested_url.startswith("http://")):
-        return _error("suggested URL must start with http:// or https://.")
-    resource_request = SafetyResourceRequest(
-        family_id=current_user.family_id,
-        requested_by_id=current_user.id,
-        title=title,
-        topic=topic,
-        audience=audience,
-        note=note,
-        suggested_url=suggested_url or None,
-    )
-    db.session.add(resource_request)
-    log_event(
-        current_user.family_id,
-        current_user.id,
-        "resource_request_added",
-        f"Requested safety resource via API: {title}",
-    )
-    db.session.commit()
-    developer_notified, developer_notice = notify_developer_resource_request(resource_request, current_user)
-    if not developer_notified:
-        current_app.logger.info("Developer resource request notification skipped: %s", developer_notice)
-    return jsonify(
-        {
-            "ok": True,
-            "resource_request": _resource_request_payload(resource_request),
-            "developer_notified": developer_notified,
-            "developer_notice": developer_notice,
-        }
-    ), 201
-
-
-@api_bp.get("/parent/help-support")
-@login_required
-def parent_help_support():
-    if current_user.role != "parent":
-        return _error("Parent access only.", 403)
-    return jsonify({"ok": True, "page": "help_support", **_parent_page_payload()})
-
-
-@api_bp.get("/parent/privacy-center")
-@login_required
-def parent_privacy_center():
-    if current_user.role != "parent":
-        return _error("Parent access only.", 403)
-    return jsonify({"ok": True, "page": "privacy_center", **_parent_page_payload()})
-
-
 @api_bp.get("/parent/system-status")
 @login_required
 def parent_system_status():
@@ -1777,14 +1445,6 @@ def parent_add_child():
     )
     db.session.commit()
     return jsonify({"ok": True, "child": _user_payload(child_user)}), 201
-
-
-@api_bp.post("/parent/safety-resources/documents")
-@login_required
-def parent_upload_resource_documents():
-    if current_user.role != "parent":
-        return _error("Parent access only.", 403)
-    return _error("Safety resource uploads are developer-managed. Submit a resource request instead.", 403)
 
 
 @api_bp.post("/parent/android-devices")
