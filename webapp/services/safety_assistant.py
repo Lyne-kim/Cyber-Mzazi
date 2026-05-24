@@ -132,6 +132,27 @@ CLASSIFICATION_PATTERNS = (
     "what category",
 )
 
+PRIZE_LINK_PATTERNS = (
+    "won a prize",
+    "win a prize",
+    "claim your prize",
+    "claim prize",
+    "free prize",
+    "congratulations",
+    "you have won",
+    "winner",
+    "giveaway",
+)
+
+UNKNOWN_CONTEXT_MARKERS = (
+    "someone tells me",
+    "someone told me",
+    "they told me",
+    "what does",
+    "what mean",
+    "meaning",
+)
+
 RESOURCE_SUMMARY_PATTERNS = (
     "summarize the book",
     "summarise the book",
@@ -398,6 +419,8 @@ def _detect_intent(text: str) -> str:
         return "advice"
     if _contains_any(lowered, CLASSIFICATION_PATTERNS):
         return "classification"
+    if _contains_any(lowered, PRIZE_LINK_PATTERNS) and ("link" in lowered or URL_RE.search(lowered)):
+        return "classification"
     if URL_RE.search(lowered) or PHONE_OR_CODE_RE.search(lowered):
         return "classification"
     if len(lowered.split()) >= 16:
@@ -460,11 +483,25 @@ def _resource_summary_response(prompt: str, audience_key: str, family_id: int | 
 def _education_response(prompt: str, audience_key: str) -> dict:
     topic_key, topic = _detect_topic(prompt)
     if not topic:
-        topics = ", ".join(topic.replace("_", " ") for topic in GENERAL_SAFETY_TOPICS)
-        message = (
-            "I can help with online safety topics such as "
-            f"{topics}. Ask me to explain one of these, or paste a message/link if you want me to check whether it is risky."
-        )
+        lowered = prompt.lower()
+        if "knowledge is power" in lowered:
+            message = (
+                "\"Knowledge is power\" means learning and understanding things can help you make better choices. "
+                "By itself, that sentence is safe and positive. Be careful only if someone uses it to pressure you into clicking a link, "
+                "sharing private information, keeping secrets, or doing something uncomfortable."
+            )
+        elif _contains_any(lowered, UNKNOWN_CONTEXT_MARKERS):
+            message = (
+                "I do not see a clear danger in that phrase by itself. Tell me the exact full message, who sent it, "
+                "and whether they asked for a link click, password, code, money, photos, secrecy, or a private chat. "
+                "Those details help me decide whether it is safe."
+            )
+        else:
+            topics = ", ".join(topic.replace("_", " ") for topic in GENERAL_SAFETY_TOPICS)
+            message = (
+                "I can help with online safety topics such as "
+                f"{topics}. Ask me to explain one of these, or paste a message/link if you want me to check whether it is risky."
+            )
         return _response(
             label=SAFE_LABEL,
             label_title_value="Online Safety",
@@ -581,6 +618,34 @@ def _solution_text(label: str, risk_level: str, audience_key: str, guidance: str
 
 
 def _classification_response(prompt: str, audience_key: str, family_id: int | None) -> dict:
+    lowered = prompt.lower()
+    if _contains_any(lowered, PRIZE_LINK_PATTERNS) and ("link" in lowered or URL_RE.search(lowered)):
+        label = "phishing"
+        title = label_title(label)
+        guidance = LABEL_GUIDANCE[label][audience_key]
+        message = (
+            "This sounds risky because prize messages with links are a common scam or phishing trick. "
+            "They often try to make you click quickly, enter a password, share a code, or give personal information."
+        )
+        return _response(
+            label=label,
+            label_title_value=title,
+            tone=label_tone(label),
+            confidence=0.9,
+            risk_level="high",
+            indicators="prize_offer,suspicious_link,urgency_manipulation",
+            explanation=message,
+            guidance=guidance,
+            assistant_message=f"{message} {guidance}",
+            next_steps=[
+                "Do not tap the link or enter any password, code, phone number, or payment details.",
+                "Show it to a parent/guardian before doing anything.",
+                "Block or report the sender if it came from an unknown account.",
+            ],
+            should_alert_guardian=audience_key == "child",
+            response_type="safety_analysis",
+        )
+
     try:
         prediction = predict_message(prompt, family_id=family_id)
         label = normalize_label(prediction.label)

@@ -1416,6 +1416,27 @@ select {
   gap: 1rem;
 }
 
+.child-ai-panel .assistant-thread {
+  width: 100%;
+  align-items: start;
+}
+
+.child-ai-panel .assistant-turn {
+  max-width: min(76%, 720px);
+}
+
+.child-ai-panel .assistant-turn.user-turn {
+  justify-self: end;
+  background: rgba(13, 127, 114, 0.14);
+  border-color: rgba(13, 127, 114, 0.28);
+}
+
+.child-ai-panel .assistant-turn.assistant-turn {
+  justify-self: start;
+  background: rgba(37, 99, 168, 0.1);
+  border-color: rgba(37, 99, 168, 0.2);
+}
+
 .child-ai-heading {
   display: flex;
   gap: 1rem;
@@ -1759,6 +1780,10 @@ select {
   .child-command-hero {
     padding: 1.35rem;
     border-radius: 24px;
+  }
+
+  .child-ai-panel .assistant-turn {
+    max-width: 88%;
   }
 
   .child-hero-status {
