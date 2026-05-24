@@ -202,6 +202,13 @@ def _notification_device_payload(device: NotificationIngestionDevice) -> dict:
     }
 
 
+def _truncate(value: object, limit: int) -> str | None:
+    cleaned = str(value or "").strip()
+    if not cleaned:
+        return None
+    return cleaned[:limit]
+
+
 def _trusted_contact_payload(contact: TrustedContact) -> dict:
     return {
         "id": contact.id,
@@ -685,6 +692,10 @@ def register_family():
     except IntegrityError:
         db.session.rollback()
         return _error("Parent email or phone is already in use.", 409)
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("API family registration failed during database commit.")
+        return _error("Family account could not be saved right now. Please try again.", 500)
 
     return (
         jsonify(
@@ -1619,11 +1630,15 @@ def ingest_android_notification():
 
     payload = request.get_json(silent=True) or {}
     message_text = str(payload.get("message_text") or payload.get("notification_text", "")).strip()
-    source_platform = str(payload.get("source_platform") or payload.get("app_name", "")).strip() or "social media"
-    app_package = str(payload.get("app_package", "")).strip() or None
-    sender_handle = str(payload.get("sender_handle", "")).strip() or None
-    browser_origin = str(payload.get("browser_origin") or payload.get("deep_link", "")).strip() or None
-    notification_title = str(payload.get("notification_title", "")).strip() or None
+    source_platform = _truncate(
+        str(payload.get("source_platform") or payload.get("app_name", "")).strip()
+        or "social media",
+        60,
+    )
+    app_package = _truncate(payload.get("app_package"), 255)
+    sender_handle = _truncate(payload.get("sender_handle"), 120)
+    browser_origin = _truncate(payload.get("browser_origin") or payload.get("deep_link"), 255)
+    notification_title = _truncate(payload.get("notification_title"), 255)
 
     if not message_text:
         return _error("message_text or notification_text is required.")
@@ -1669,15 +1684,24 @@ def ingest_android_notification():
                 app_package=app_package,
                 notification_title=notification_message.notification_title,
             )
-            verification = verify_message(notification_message.text, prediction.label)
+            try:
+                verification = verify_message(notification_message.text, prediction.label)
+            except Exception as exc:  # pragma: no cover - optional verifier failures are environment-dependent
+                current_app.logger.exception("Message verification failed during Android ingestion.")
+                verification = {
+                    "status": "error",
+                    "label": prediction.label,
+                    "confidence": 0.0,
+                    "notes": f"Verification failed: {exc}",
+                }
             record = MessageRecord(
                 family_id=device.family_id,
                 submitted_by_id=device.child_user_id,
-                source_platform=source_platform,
+                source_platform=source_platform or "social media",
                 source_app_package=app_package,
-                sender_handle=notification_message.sender_handle,
+                sender_handle=_truncate(notification_message.sender_handle, 120),
                 browser_origin=browser_origin,
-                notification_title=notification_message.notification_title,
+                notification_title=_truncate(notification_message.notification_title, 255),
                 message_text=notification_message.text,
                 review_signature=build_review_signature(notification_message.text),
                 capture_method="android_notification",
@@ -1733,11 +1757,23 @@ def ingest_android_notification():
         ),
         subject_user_id=device.child_user_id,
     )
+    try:
+        db.session.flush()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Android notification ingestion failed during database flush.")
+        return _error("Notification upload could not be saved right now.", 500)
+
     parent_user = User.query.filter_by(family_id=device.family_id, role="parent").first()
     child_user = User.query.filter_by(id=device.child_user_id, role="child").first()
     parent_alerts = []
     for record in records:
-        email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, child_user, record)
+        try:
+            email_alert_sent, email_alert_message = send_high_risk_message_alert(parent_user, child_user, record)
+        except Exception as exc:  # pragma: no cover - external mail provider dependent
+            current_app.logger.exception("Parent alert email failed during Android ingestion.")
+            email_alert_sent = False
+            email_alert_message = f"Parent alert email failed: {exc}"
         if email_alert_sent and parent_user:
             log_event(
                 device.family_id,
@@ -1753,7 +1789,12 @@ def ingest_android_notification():
                 "email_message": email_alert_message,
             }
         )
-    db.session.commit()
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Android notification ingestion failed during database commit.")
+        return _error("Notification upload could not be completed right now.", 500)
     return (
         jsonify(
             {

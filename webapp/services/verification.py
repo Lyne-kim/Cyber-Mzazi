@@ -30,7 +30,7 @@ def verify_message(text: str, predicted_label: str) -> dict:
                 "confidence": float(payload.get("confidence", 0.0)),
                 "notes": payload.get("notes", "Verified by external provider."),
             }
-        except requests.RequestException as exc:
+        except (requests.RequestException, ValueError, TypeError) as exc:
             return {
                 "status": "error",
                 "label": predicted_label,
