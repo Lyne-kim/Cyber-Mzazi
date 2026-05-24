@@ -605,20 +605,33 @@ p {
   margin-bottom: 1rem;
 }
 
+.flash {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
 .flash-success {
   border-left: 6px solid var(--primary);
+  background: #eefaf4;
+  color: #083f2c;
 }
 
 .flash-danger {
   border-left: 6px solid var(--danger);
+  background: #fff0ec;
+  color: #6f1f12;
 }
 
 .flash-warning {
   border-left: 6px solid #c88100;
+  background: #fff8df;
+  color: #5b3b00;
 }
 
 .flash-info {
   border-left: 6px solid var(--child);
+  background: #eef6ff;
+  color: #123657;
 }
 
 label {
@@ -636,6 +649,12 @@ select {
   border: 1px solid var(--line);
   background: white;
   color: var(--text);
+}
+
+option,
+optgroup {
+  background: #ffffff;
+  color: #10202a;
 }
 
 .hero-card,
@@ -2294,6 +2313,14 @@ body.parent-theme textarea {
   color: #fff;
 }
 
+body.parent-theme select option,
+body.parent-theme select optgroup,
+body.developer-theme select option,
+body.developer-theme select optgroup {
+  background: #0f122d;
+  color: #f8fbff;
+}
+
 body.parent-theme input::placeholder,
 body.parent-theme textarea::placeholder {
   color: rgba(224, 231, 255, 0.52);
@@ -2386,10 +2413,38 @@ body.parent-theme .label-summary-card.tone-safe {
   border-color: rgba(15, 213, 141, 0.2);
 }
 
-body.parent-theme .flash {
-  background: rgba(16, 16, 44, 0.96);
+body.parent-theme .flash,
+body.developer-theme .flash {
   border-color: rgba(190, 205, 255, 0.18);
-  color: #fff;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+body.parent-theme .flash-success,
+body.developer-theme .flash-success {
+  background: #0e3b2f;
+  color: #d6fff0;
+  border-color: rgba(45, 224, 157, 0.4);
+}
+
+body.parent-theme .flash-danger,
+body.developer-theme .flash-danger {
+  background: #3c121c;
+  color: #ffd9df;
+  border-color: rgba(255, 61, 90, 0.45);
+}
+
+body.parent-theme .flash-warning,
+body.developer-theme .flash-warning {
+  background: #3b2b08;
+  color: #ffe7a1;
+  border-color: rgba(255, 195, 63, 0.45);
+}
+
+body.parent-theme .flash-info,
+body.developer-theme .flash-info {
+  background: #10284a;
+  color: #dbeafe;
+  border-color: rgba(13, 139, 255, 0.45);
 }
 
 body.parent-theme code,
