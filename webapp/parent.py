@@ -13,6 +13,7 @@ from .models import (
     LogoutRequest,
     MessageRecord,
     NotificationIngestionDevice,
+    TrustedContact,
     User,
 )
 from .services.audit import log_event
@@ -263,6 +264,11 @@ def _parent_data() -> dict:
         .order_by(NotificationIngestionDevice.created_at.desc())
         .all()
     )
+    trusted_contacts = (
+        TrustedContact.query.filter_by(family_id=current_user.family_id)
+        .order_by(TrustedContact.created_at.desc())
+        .all()
+    )
     raw_messages = (
         MessageRecord.query.filter_by(
             family_id=current_user.family_id,
@@ -394,6 +400,7 @@ def _parent_data() -> dict:
         "children": children,
         "selected_child": selected_child,
         "linked_devices": linked_devices,
+        "trusted_contacts": trusted_contacts,
         "pending_android_link": pending_android_link,
         "android_download": android_download,
         "device_sync": _device_sync_summary(linked_devices),
@@ -516,6 +523,7 @@ def ai_assistant():
                     "assistant": assistant_message,
                     "risk_level": assistant_result.get("risk_level"),
                     "label_title": assistant_result.get("label_title"),
+                    "source_links": assistant_result.get("source_links", []),
                 }
             )
             session["parent_assistant_history"] = assistant_history[-8:]
@@ -528,6 +536,7 @@ def ai_assistant():
                             "assistant": assistant_message,
                             "risk_level": assistant_result.get("risk_level"),
                             "label_title": assistant_result.get("label_title"),
+                            "source_links": assistant_result.get("source_links", []),
                         },
                         "assistant": assistant_result,
                     }
@@ -570,6 +579,77 @@ def notification_log():
 @parent_bp.route("/trusted-contacts")
 def trusted_contacts():
     return _render_parent_page("trusted_contacts", "Trusted Contacts")
+
+
+@parent_bp.post("/trusted-contacts")
+def add_trusted_contact():
+    name = request.form.get("name", "").strip()
+    relationship = request.form.get("relationship", "").strip() or "Guardian"
+    contact_value = request.form.get("contact", "").strip()
+    alert_access = request.form.get("alert_access", "critical").strip().lower()
+    response_role = request.form.get("response_role", "backup").strip().lower()
+    notes = request.form.get("notes", "").strip()
+
+    if alert_access not in {"none", "critical", "all"}:
+        alert_access = "critical"
+    if response_role not in {"viewer", "backup", "responder"}:
+        response_role = "backup"
+    if not name or not contact_value:
+        flash("Add the guardian name and email or phone number.", "warning")
+        return redirect(url_for("parent.trusted_contacts"))
+
+    existing = TrustedContact.query.filter_by(
+        family_id=current_user.family_id,
+        contact=contact_value,
+    ).first()
+    if existing:
+        existing.name = name
+        existing.relationship = relationship
+        existing.alert_access = alert_access
+        existing.response_role = response_role
+        existing.notes = notes or None
+        existing.active = True
+        flash("Trusted contact updated.", "success")
+    else:
+        db.session.add(
+            TrustedContact(
+                family_id=current_user.family_id,
+                created_by_id=current_user.id,
+                name=name,
+                relationship=relationship,
+                contact=contact_value,
+                alert_access=alert_access,
+                response_role=response_role,
+                notes=notes or None,
+            )
+        )
+        flash("Trusted guardian added.", "success")
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "trusted_contact_saved",
+        f"Trusted contact saved: {name} ({alert_access}, {response_role})",
+    )
+    db.session.commit()
+    return redirect(url_for("parent.trusted_contacts"))
+
+
+@parent_bp.post("/trusted-contacts/<int:contact_id>/toggle")
+def toggle_trusted_contact(contact_id: int):
+    contact_item = TrustedContact.query.filter_by(
+        id=contact_id,
+        family_id=current_user.family_id,
+    ).first_or_404()
+    contact_item.active = not contact_item.active
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "trusted_contact_toggled",
+        f"Trusted contact {'activated' if contact_item.active else 'paused'}: {contact_item.name}",
+    )
+    db.session.commit()
+    flash("Trusted contact status updated.", "success")
+    return redirect(url_for("parent.trusted_contacts"))
 
 
 @parent_bp.post("/select-child")

@@ -26,8 +26,10 @@ Implemented:
 - Parent email verification and resend flow
 - Parent dashboard, alerts, settings, logs, and family hub
 - Parent AI Assistant for interpreting suspicious messages, slang, links, and incidents
+- Trusted Contacts for adding guardians, setting alert access, and assigning response roles
 - Child dashboard, `My Safety`, settings, and safety-check reporting
 - Child AI Safety Assistant that can alert the parent dashboard when risk is high
+- AI assistant responses include curated external safety references for topics such as phishing, sextortion, cyberbullying, scams, privacy, and violence
 - Parent approval-based child logout workflow
 - Popup, browser, sound, and email alert support for parents
 - Mobile sidebar toggle for parent and child dashboard pages

@@ -314,6 +314,13 @@
               <article class="assistant-turn assistant-turn">
                 <strong>Cyber Mzazi{% if turn.label_title %} / {{ turn.label_title }}{% endif %}</strong>
                 <p>{{ turn.assistant }}</p>
+                {% if turn.source_links %}
+                  <div class="assistant-sources">
+                    {% for source in turn.source_links %}
+                      <a href="{{ source.url }}" target="_blank" rel="noopener">{{ source.title }}</a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </article>
             {% endfor %}
         {% endif %}
@@ -332,6 +339,13 @@
               <span>{{ "%.0f"|format(assistant_result.confidence * 100) }}%</span>
             </div>
             <p>{{ assistant_result.assistant_message or assistant_result.explanation }}</p>
+            {% if assistant_result.source_links %}
+              <div class="assistant-sources">
+                {% for source in assistant_result.source_links %}
+                  <a href="{{ source.url }}" target="_blank" rel="noopener">{{ source.title }}</a>
+                {% endfor %}
+              </div>
+            {% endif %}
             <p><strong>What to do:</strong> {{ assistant_result.guidance }}</p>
             <ul class="simple-list">
               {% for step in assistant_result.next_steps %}
@@ -441,6 +455,11 @@
       const appendAssistantTurn = (turn) => {
         if (!assistantThread) return;
         const label = turn.label_title ? ` / ${turn.label_title}` : "";
+        const sourceLinks = Array.isArray(turn.source_links) && turn.source_links.length
+          ? `<div class="assistant-sources">${turn.source_links
+              .map((source) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener">${escapeHtml(source.title)}</a>`)
+              .join("")}</div>`
+          : "";
         assistantThread.insertAdjacentHTML(
           "beforeend",
           `
@@ -451,6 +470,7 @@
             <article class="assistant-turn assistant-turn">
               <strong>Cyber Mzazi${escapeHtml(label)}</strong>
               <p>${escapeHtml(turn.assistant)}</p>
+              ${sourceLinks}
             </article>
           `
         );

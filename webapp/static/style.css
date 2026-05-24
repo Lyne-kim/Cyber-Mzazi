@@ -1198,6 +1198,78 @@ optgroup {
   gap: 0.6rem;
 }
 
+.trusted-contact-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.trusted-contact-form label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.trusted-contact-form input,
+.trusted-contact-form select,
+.trusted-contact-form textarea {
+  width: 100%;
+}
+
+.trusted-contact-notes,
+.trusted-contact-form .button {
+  grid-column: 1 / -1;
+}
+
+.trusted-contact-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.trusted-contact-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.trusted-contact-card.is-paused {
+  opacity: 0.64;
+}
+
+.trusted-contact-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.assistant-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.assistant-sources a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(60, 155, 224, 0.28);
+  background: rgba(60, 155, 224, 0.1);
+  color: #0b6680;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
 .compact-panel {
   margin-bottom: 2rem;
 }
@@ -1754,9 +1826,19 @@ optgroup {
   .panel-header,
   .setting-row,
   .message-topline,
+  .trusted-contact-card,
   .child-focus-panel {
     flex-direction: column;
     align-items: start;
+  }
+
+  .trusted-contact-card,
+  .trusted-contact-form {
+    grid-template-columns: 1fr;
+  }
+
+  .trusted-contact-controls {
+    justify-content: flex-start;
   }
 }
 
@@ -2347,7 +2429,8 @@ body.parent-theme textarea::placeholder {
 body.parent-theme .detail-list div,
 body.parent-theme .setting-row,
 body.parent-theme .log-row,
-body.parent-theme .request-card {
+body.parent-theme .request-card,
+body.parent-theme .trusted-contact-card {
   border-color: rgba(190, 205, 255, 0.12);
 }
 
@@ -2399,6 +2482,20 @@ body.parent-theme .assistant-turn.user-turn {
 
 body.parent-theme .assistant-turn.assistant-turn {
   background: rgba(13, 139, 255, 0.12);
+}
+
+body.parent-theme .trusted-contact-card {
+  background: rgba(16, 16, 44, 0.9);
+}
+
+body.parent-theme .trusted-contact-card strong {
+  color: #fff;
+}
+
+body.parent-theme .assistant-sources a {
+  border-color: rgba(125, 135, 255, 0.28);
+  background: rgba(125, 135, 255, 0.13);
+  color: #dfe6ff;
 }
 
 body.parent-theme .resource-item,

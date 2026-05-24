@@ -39,6 +39,12 @@ class Family(TimestampMixin, db.Model):
     deleted_message_signatures = db.relationship(
         "DeletedMessageSignature", back_populates="family", lazy="dynamic"
     )
+    trusted_contacts = db.relationship(
+        "TrustedContact",
+        back_populates="family",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -150,6 +156,22 @@ class DeletedMessageSignature(TimestampMixin, db.Model):
     family = db.relationship("Family", back_populates="deleted_message_signatures")
     child_user = db.relationship("User", foreign_keys=[child_user_id])
     deleted_by = db.relationship("User", foreign_keys=[deleted_by_id])
+
+
+class TrustedContact(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("family.id"), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    relationship = db.Column(db.String(80), nullable=False, default="Guardian")
+    contact = db.Column(db.String(120), nullable=False)
+    alert_access = db.Column(db.String(40), nullable=False, default="critical")
+    response_role = db.Column(db.String(40), nullable=False, default="backup")
+    notes = db.Column(db.Text)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+
+    family = db.relationship("Family", back_populates="trusted_contacts")
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
 
 
 class ActivityLog(TimestampMixin, db.Model):

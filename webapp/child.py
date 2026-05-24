@@ -146,11 +146,12 @@ def ai_assistant():
             assistant_history.append(
                 {
                     "user": assistant_prompt,
-                    "assistant": assistant_message,
-                    "risk_level": assistant_result.get("risk_level"),
-                    "label_title": assistant_result.get("label_title"),
-                }
-            )
+                        "assistant": assistant_message,
+                        "risk_level": assistant_result.get("risk_level"),
+                        "label_title": assistant_result.get("label_title"),
+                        "source_links": assistant_result.get("source_links", []),
+                    }
+                )
             session["child_assistant_history"] = assistant_history[-8:]
         if (
             assistant_result
@@ -203,10 +204,11 @@ def ai_assistant():
                         "guardian_alerted": True,
                         "turn": {
                             "user": assistant_prompt,
-                            "assistant": assistant_message,
-                            "risk_level": assistant_result.get("risk_level"),
-                            "label_title": assistant_result.get("label_title"),
-                        },
+                                "assistant": assistant_message,
+                                "risk_level": assistant_result.get("risk_level"),
+                                "label_title": assistant_result.get("label_title"),
+                                "source_links": assistant_result.get("source_links", []),
+                            },
                         "assistant": assistant_result,
                     }
                 )

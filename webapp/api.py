@@ -22,6 +22,7 @@ from .models import (
     LogoutRequest,
     MessageRecord,
     NotificationIngestionDevice,
+    TrustedContact,
     User,
 )
 from .services.audit import log_event
@@ -201,6 +202,20 @@ def _notification_device_payload(device: NotificationIngestionDevice) -> dict:
     }
 
 
+def _trusted_contact_payload(contact: TrustedContact) -> dict:
+    return {
+        "id": contact.id,
+        "name": contact.name,
+        "relationship": contact.relationship,
+        "contact": contact.contact,
+        "alert_access": contact.alert_access,
+        "response_role": contact.response_role,
+        "notes": contact.notes,
+        "active": contact.active,
+        "created_at": contact.created_at.isoformat(),
+    }
+
+
 def _log_payload(log: ActivityLog) -> dict:
     return {
         "id": log.id,
@@ -235,6 +250,11 @@ def _parent_page_payload() -> dict:
             child_user_id=selected_child.id if selected_child else None,
         )
         .order_by(NotificationIngestionDevice.created_at.desc())
+        .all()
+    )
+    trusted_contacts = (
+        TrustedContact.query.filter_by(family_id=current_user.family_id)
+        .order_by(TrustedContact.created_at.desc())
         .all()
     )
     if selected_child is None:
@@ -313,6 +333,7 @@ def _parent_page_payload() -> dict:
         "activity_logs": [_log_payload(log) for log in activity_logs],
         "approval_history": [_logout_request_payload(item) for item in approval_history],
         "linked_devices": [_notification_device_payload(device) for device in linked_devices],
+        "trusted_contacts": [_trusted_contact_payload(contact) for contact in trusted_contacts],
         "summary": {
             "alert_count": alert_count,
             "high_risk_count": high_risk_count,
@@ -1281,6 +1302,56 @@ def parent_trusted_contacts():
     if current_user.role != "parent":
         return _error("Parent access only.", 403)
     return jsonify({"ok": True, "page": "trusted_contacts", **_parent_page_payload()})
+
+
+@api_bp.post("/parent/trusted-contacts")
+@login_required
+def parent_save_trusted_contact():
+    if current_user.role != "parent":
+        return _error("Parent access only.", 403)
+    payload = request.get_json(silent=True) or {}
+    contact_id = payload.get("id")
+    name = str(payload.get("name", "")).strip()
+    relationship = str(payload.get("relationship", "")).strip() or "Guardian"
+    contact_value = str(payload.get("contact", "")).strip()
+    alert_access = str(payload.get("alert_access", "critical")).strip().lower()
+    response_role = str(payload.get("response_role", "backup")).strip().lower()
+    notes = str(payload.get("notes", "")).strip()
+    active = bool(payload.get("active", True))
+    if alert_access not in {"none", "critical", "all"}:
+        return _error("Alert access must be none, critical, or all.")
+    if response_role not in {"viewer", "backup", "responder"}:
+        return _error("Response role must be viewer, backup, or responder.")
+    if not name or not contact_value:
+        return _error("Guardian name and contact are required.")
+    if contact_id:
+        contact_item = TrustedContact.query.filter_by(
+            id=int(contact_id),
+            family_id=current_user.family_id,
+        ).first()
+        if contact_item is None:
+            return _error("Trusted contact not found.", 404)
+    else:
+        contact_item = TrustedContact(
+            family_id=current_user.family_id,
+            created_by_id=current_user.id,
+        )
+        db.session.add(contact_item)
+    contact_item.name = name
+    contact_item.relationship = relationship
+    contact_item.contact = contact_value
+    contact_item.alert_access = alert_access
+    contact_item.response_role = response_role
+    contact_item.notes = notes or None
+    contact_item.active = active
+    log_event(
+        current_user.family_id,
+        current_user.id,
+        "trusted_contact_saved",
+        f"Trusted contact saved via API: {name} ({alert_access}, {response_role})",
+    )
+    db.session.commit()
+    return jsonify({"ok": True, "trusted_contact": _trusted_contact_payload(contact_item)})
 
 
 @api_bp.post("/parent/messages/<int:message_id>/review")

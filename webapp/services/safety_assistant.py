@@ -155,6 +155,44 @@ UNKNOWN_CONTEXT_MARKERS = (
 URL_RE = re.compile(r"https?://|www\.|bit\.ly|t\.co|tinyurl|wa\.me", re.I)
 PHONE_OR_CODE_RE = re.compile(r"\b(?:otp|pin|code|password|login|verify|account|mpesa|m-pesa)\b", re.I)
 
+VIOLENCE_THREAT_RE = re.compile(
+    r"\b(?:kill|beat|stab|shoot|hurt|harm|attack|rape|kidnap|chinja|ua|kuua|nitakuua|nitakuchinja)\b",
+    re.I,
+)
+MONEY_PRESSURE_RE = re.compile(
+    r"\b(?:tuma pesa|send money|nitakushitaki|nikushtaki|nitasema|blackmail|pay now|haraka|very fast|m-pesa|mpesa|okoa|loan|debt)\b",
+    re.I,
+)
+SEXUAL_PRESSURE_RE = re.compile(
+    r"\b(?:private photo|private photos|nude|nudes|pics|send pics|picha|sexy|video call|sext|leak|expose)\b",
+    re.I,
+)
+SECRECY_PRESSURE_RE = re.compile(
+    r"\b(?:don't tell|do not tell|secret|keep this between us|usiambie|private chat|dm me privately|come alone)\b",
+    re.I,
+)
+
+SOURCE_LINKS = {
+    "violence": [
+        {"title": "UNICEF - Keeping children safe online", "url": "https://www.unicef.org/protection/violence-against-children-online"},
+    ],
+    "sextortion": [
+        {"title": "NCMEC - Sextortion help", "url": "https://www.missingkids.org/theissues/sextortion"},
+    ],
+    "phishing": [
+        {"title": "CISA - Avoiding social engineering and phishing attacks", "url": "https://www.cisa.gov/news-events/news/avoiding-social-engineering-and-phishing-attacks"},
+    ],
+    "scam": [
+        {"title": "FTC - How to avoid a scam", "url": "https://consumer.ftc.gov/articles/how-avoid-scam"},
+    ],
+    "cyberbullying": [
+        {"title": "StopBullying.gov - Cyberbullying", "url": "https://www.stopbullying.gov/cyberbullying/what-is-it"},
+    ],
+    "privacy": [
+        {"title": "UNICEF - Online safety", "url": "https://www.unicef.org/parenting/child-care/keep-your-child-safe-online"},
+    ],
+}
+
 
 SAFETY_TOPICS = {
     "sextortion": {
@@ -219,6 +257,15 @@ SAFETY_TOPICS = {
         "child_advice": "Do not install unknown apps or open unexpected attachments. Ask a parent before downloading anything.",
         "parent_advice": "Remove suspicious apps/files, update the device, scan with trusted security tools, and change passwords if accounts may be exposed.",
         "signs": "Unknown APKs, unexpected attachments, fake updates, popups, battery drain, unusual permissions, or apps from outside trusted stores.",
+    },
+    "violence": {
+        "aliases": ("violence", "violent threat", "kill you", "i will kill", "hurt you", "beat you", "threat", "threaten", "nitakuua", "nitakuchinja"),
+        "label": "violence",
+        "risk": "high",
+        "definition": "Violence risk means a message contains a threat of physical harm, intimidation, coercion, or an instruction that could lead to someone being hurt.",
+        "child_advice": "Move away from the conversation, do not argue or meet the person, save the message if safe, and tell a parent, teacher, guardian, or emergency helper immediately.",
+        "parent_advice": "Treat direct harm threats seriously. Preserve evidence, check whether the sender knows the child's location, block/report the account, and escalate to school, guardians, platform safety tools, or emergency services if the threat may be real.",
+        "signs": "Threats to kill, beat, expose, follow, kidnap, assault, or punish someone; pressure to meet; repeated intimidation.",
     },
     "privacy": {
         "aliases": ("privacy", "personal information", "private information", "location", "address", "school", "phone number"),
@@ -290,6 +337,7 @@ GENERAL_SAFETY_TOPICS = (
     "digital_footprint",
     "screen_time",
     "reporting",
+    "violence",
 )
 
 
@@ -322,6 +370,7 @@ def _response(
     next_steps: list[str],
     response_type: str,
     should_alert_guardian: bool = False,
+    source_links: list[dict] | None = None,
 ) -> dict:
     return {
         "ok": True,
@@ -335,9 +384,20 @@ def _response(
         "guidance": guidance,
         "assistant_message": assistant_message,
         "next_steps": next_steps,
+        "source_links": source_links or [],
         "should_alert_guardian": should_alert_guardian,
         "response_type": response_type,
     }
+
+
+def _sources_for(label: str) -> list[dict]:
+    if label in SOURCE_LINKS:
+        return SOURCE_LINKS[label]
+    if label in {"grooming", "sexual_content"}:
+        return SOURCE_LINKS["sextortion"]
+    if label in {"safe", "misinformation"}:
+        return SOURCE_LINKS["privacy"]
+    return SOURCE_LINKS.get("privacy", [])
 
 
 def _intro_message(audience_key: str) -> str:
@@ -363,13 +423,35 @@ def _thanks_message(audience_key: str) -> str:
 def _detect_topic(text: str) -> tuple[str | None, dict | None]:
     lowered = text.lower()
     for key, topic in SAFETY_TOPICS.items():
-        if any(alias in lowered for alias in topic["aliases"]):
+        if any(_alias_matches(lowered, alias) for alias in topic["aliases"]):
             return key, topic
     return None, None
 
 
+def _alias_matches(lowered_text: str, alias: str) -> bool:
+    escaped = re.escape(alias.lower())
+    return bool(re.search(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])", lowered_text))
+
+
+def _direct_risk_label(text: str) -> str | None:
+    lowered = text.lower()
+    if VIOLENCE_THREAT_RE.search(lowered):
+        return "violence"
+    if SEXUAL_PRESSURE_RE.search(lowered) and ("pay" in lowered or "money" in lowered or "leak" in lowered or "expose" in lowered):
+        return "sextortion"
+    if SEXUAL_PRESSURE_RE.search(lowered) or SECRECY_PRESSURE_RE.search(lowered):
+        return "grooming"
+    if MONEY_PRESSURE_RE.search(lowered):
+        return "scam"
+    if URL_RE.search(lowered) or PHONE_OR_CODE_RE.search(lowered):
+        return "phishing"
+    return None
+
+
 def _detect_intent(text: str) -> str:
     lowered = text.lower().strip()
+    if _direct_risk_label(lowered):
+        return "classification"
     if _matches_any(lowered, GREETING_WORDS) or _matches_any(lowered, HELP_WORDS):
         return "greeting"
     if _matches_any(lowered, THANK_WORDS):
@@ -427,6 +509,7 @@ def _education_response(prompt: str, audience_key: str) -> dict:
                 "Tell me what happened if you need practical next steps.",
             ],
             response_type="education",
+            source_links=SOURCE_LINKS["privacy"],
         )
 
     advice_key = "child_advice" if audience_key == "child" else "parent_advice"
@@ -436,9 +519,10 @@ def _education_response(prompt: str, audience_key: str) -> dict:
     )
     label = str(topic["label"])
     risk = str(topic["risk"])
+    topic_title = topic_key.replace("_", " ").title()
     return _response(
         label=label,
-        label_title_value=label_title(label) if label != SAFE_LABEL else "Online Safety",
+        label_title_value=label_title(label) if label != SAFE_LABEL else topic_title,
         tone=label_tone(label),
         confidence=1.0,
         risk_level=risk,
@@ -453,6 +537,7 @@ def _education_response(prompt: str, audience_key: str) -> dict:
         ],
         should_alert_guardian=False,
         response_type="education",
+        source_links=_sources_for(label),
     )
 
 
@@ -499,6 +584,7 @@ def _advice_response(prompt: str, audience_key: str) -> dict:
         next_steps=next_steps,
         should_alert_guardian=audience_key == "child" and risk == "high",
         response_type="advice",
+        source_links=_sources_for(label),
     )
 
 
@@ -528,6 +614,57 @@ def _solution_text(label: str, risk_level: str, audience_key: str, guidance: str
 
 def _classification_response(prompt: str, audience_key: str, family_id: int | None) -> dict:
     lowered = prompt.lower()
+    direct_label = _direct_risk_label(lowered)
+    if direct_label:
+        topic = SAFETY_TOPICS.get(direct_label) or SAFETY_TOPICS.get("reporting")
+        guidance = LABEL_GUIDANCE.get(direct_label, {}).get(audience_key) or topic[f"{audience_key}_advice"]
+        if direct_label == "violence":
+            message = (
+                "This is a direct harm threat. It should not be treated as a normal argument or joke without context. "
+                "Prioritize safety, avoid meeting or escalating, preserve the message, and involve a trusted adult or emergency support if there is any real-world risk."
+            )
+            indicators = "direct_threat,physical_harm_language"
+        elif direct_label == "scam":
+            message = (
+                "This looks like money pressure or blackmail language. Phrases like asking for money quickly or threatening consequences are common coercion and scam signals."
+            )
+            indicators = "money_pressure,coercion,urgency"
+        elif direct_label == "grooming":
+            message = (
+                "This may involve sexual or secrecy pressure. Requests for private photos, secret chats, or private contact are warning signs that need adult support."
+            )
+            indicators = "sexual_pressure,secrecy_or_private_chat"
+        elif direct_label == "sextortion":
+            message = (
+                "This may be sextortion or image-based blackmail. Do not send money, more photos, or more messages; save evidence and get help quickly."
+            )
+            indicators = "image_pressure,blackmail,sexual_extortion"
+        else:
+            message = (
+                "This looks like a phishing or account-safety risk because it involves links, accounts, passwords, or verification details."
+            )
+            indicators = "link_or_account_request,credential_risk"
+        risk_level = "high" if direct_label in HIGH_RISK_LABELS else "medium"
+        return _response(
+            label=direct_label,
+            label_title_value=label_title(direct_label),
+            tone=label_tone(direct_label),
+            confidence=0.93,
+            risk_level=risk_level,
+            indicators=indicators,
+            explanation=message,
+            guidance=guidance,
+            assistant_message=f"{message} {guidance}",
+            next_steps=[
+                "Do not reply, meet, pay, click, or share codes/photos until a trusted adult has reviewed it.",
+                "Save screenshots, usernames, links, dates, phone numbers, and the full message.",
+                "Block/report the sender and escalate if there is a threat, blackmail, sexual pressure, or real-world danger.",
+            ],
+            should_alert_guardian=audience_key == "child" and risk_level == "high",
+            response_type="safety_analysis",
+            source_links=_sources_for(direct_label),
+        )
+
     if _contains_any(lowered, PRIZE_LINK_PATTERNS) and ("link" in lowered or URL_RE.search(lowered)):
         label = "phishing"
         title = label_title(label)
@@ -553,6 +690,7 @@ def _classification_response(prompt: str, audience_key: str, family_id: int | No
             ],
             should_alert_guardian=audience_key == "child",
             response_type="safety_analysis",
+            source_links=_sources_for(label),
         )
 
     try:
@@ -601,6 +739,7 @@ def _classification_response(prompt: str, audience_key: str, family_id: int | No
         next_steps=next_steps,
         should_alert_guardian=audience_key == "child" and risk_level == "high",
         response_type="safety_analysis",
+        source_links=_sources_for(label),
     )
 
 
