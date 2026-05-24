@@ -127,7 +127,7 @@
       <div>
         <p class="eyebrow">{{ t(page_title) }}</p>
         {% if page_key == "alerts" %}
-          <h3>{{ selected_child.name if selected_child else "No child selected" }} has <span>{{ alert_count }}</span> things that need your attention.</h3>
+          <h3>{{ selected_child.name if selected_child else "No child selected" }} has <span data-alert-stat="alert_count">{{ alert_count }}</span> things that need your attention.</h3>
           <p class="muted">Scores, flags and approvals across messaging, browser and social apps. Triage the highest-risk items first.</p>
         {% else %}
           <h3>{{ t(page_title) }}</h3>
@@ -136,15 +136,15 @@
       </div>
       <div class="stats-grid">
         <article class="stat-card emphasis">
-          <span>{{ alert_count }}</span>
+          <span data-alert-stat="alert_count">{{ alert_count }}</span>
           <p>{{ t("Open alerts") }}</p>
         </article>
         <article class="stat-card">
-          <span>{{ high_risk_count }}</span>
+          <span data-alert-stat="high_risk_count">{{ high_risk_count }}</span>
           <p>{{ t("High-risk items") }}</p>
         </article>
         <article class="stat-card">
-          <span>{{ reviewed_count }}</span>
+          <span data-alert-stat="reviewed_count">{{ reviewed_count }}</span>
           <p>{{ t("Reviewed checks") }}</p>
         </article>
       </div>
@@ -1001,7 +1001,16 @@
       return div.innerHTML;
     };
 
-    const removeDeletedAlerts = (deletedIds) => {
+    const updateDashboardStats = (counts) => {
+      if (!counts) return;
+      Object.entries(counts).forEach(([key, value]) => {
+        document.querySelectorAll(`[data-alert-stat="${key}"]`).forEach((node) => {
+          node.textContent = value;
+        });
+      });
+    };
+
+    const removeDeletedAlerts = (deletedIds, counts) => {
       deletedIds.forEach((id) => {
         alertCheckboxes
           .filter((checkbox) => checkbox.value === String(id))
@@ -1015,8 +1024,10 @@
       if (noAlertsMessage && remainingAlerts === 0) {
         noAlertsMessage.hidden = false;
       }
-      updateAlertBadge(isAlertsPage ? 0 : remainingAlerts);
-      updateTitle(isAlertsPage ? 0 : remainingAlerts);
+      updateDashboardStats(counts);
+      const openAlertCount = counts?.alert_count ?? remainingAlerts;
+      updateAlertBadge(isAlertsPage ? 0 : openAlertCount);
+      updateTitle(isAlertsPage ? 0 : openAlertCount);
       refreshBulkDeleteState();
     };
 
@@ -1035,7 +1046,7 @@
           if (!response.ok || !payload.ok) {
             throw new Error(payload.error || "Alert could not be deleted.");
           }
-          removeDeletedAlerts(payload.deleted_ids || []);
+          removeDeletedAlerts(payload.deleted_ids || [], payload.counts);
         } catch (error) {
           showToast({
             title: "Delete failed",
@@ -1067,7 +1078,7 @@
           if (!response.ok || !payload.ok) {
             throw new Error(payload.error || "Selected alerts could not be deleted.");
           }
-          removeDeletedAlerts(payload.deleted_ids || []);
+          removeDeletedAlerts(payload.deleted_ids || [], payload.counts);
           alertCheckboxes.forEach((checkbox) => {
             checkbox.checked = false;
           });

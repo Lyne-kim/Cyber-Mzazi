@@ -61,6 +61,32 @@ def _wants_json_response() -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
 
 
+def _alert_counts_for_child(child_user_id: int | None) -> dict[str, int]:
+    active_query = MessageRecord.query.filter(
+        MessageRecord.family_id == current_user.family_id,
+        MessageRecord.submitted_by_id == child_user_id,
+        MessageRecord.predicted_label != "safe",
+        or_(MessageRecord.reviewed_label.is_(None), MessageRecord.reviewed_label == ""),
+    )
+    high_risk_count = active_query.count()
+    reviewed_count = MessageRecord.query.filter(
+        MessageRecord.family_id == current_user.family_id,
+        MessageRecord.submitted_by_id == child_user_id,
+        MessageRecord.reviewed_label.isnot(None),
+        MessageRecord.reviewed_label != "",
+    ).count()
+    logout_count = LogoutRequest.query.filter_by(
+        family_id=current_user.family_id,
+        child_user_id=child_user_id,
+        status="pending",
+    ).count()
+    return {
+        "alert_count": high_risk_count + logout_count,
+        "high_risk_count": high_risk_count,
+        "reviewed_count": reviewed_count,
+    }
+
+
 def _alert_session_key(selected_child_id: int | None) -> str:
     child_key = selected_child_id if selected_child_id is not None else "all"
     return f"parent_alert_seen:{current_user.family_id}:{child_key}"
@@ -877,18 +903,38 @@ def delete_message(message_id: int):
         family_id=current_user.family_id,
     ).first_or_404()
     subject_user_id = record.submitted_by_id
+    signature = record.review_signature or build_review_signature(record.message_text)
     suppress_message(record, current_user.id)
-    db.session.delete(record)
+    matching_records = MessageRecord.query.filter(
+        MessageRecord.family_id == current_user.family_id,
+        MessageRecord.submitted_by_id == subject_user_id,
+        or_(
+            MessageRecord.review_signature == signature,
+            MessageRecord.message_text == record.message_text,
+        ),
+    ).all()
+    if not matching_records:
+        matching_records = [record]
+    deleted_ids = [matching_record.id for matching_record in matching_records]
+    for matching_record in matching_records:
+        db.session.delete(matching_record)
     log_event(
         current_user.family_id,
         current_user.id,
         "message_deleted",
-        f"Deleted alert/message {message_id}",
+        f"Deleted alert/message {message_id} and {len(deleted_ids) - 1} duplicate(s)",
         subject_user_id=subject_user_id,
     )
     db.session.commit()
     if _wants_json_response():
-        return jsonify({"ok": True, "deleted_ids": [message_id], "deleted_count": 1})
+        return jsonify(
+            {
+                "ok": True,
+                "deleted_ids": deleted_ids,
+                "deleted_count": len(deleted_ids),
+                "counts": _alert_counts_for_child(subject_user_id),
+            }
+        )
     flash("Alert deleted.", "success")
     return redirect(url_for("parent.alerts"))
 
@@ -912,10 +958,39 @@ def bulk_delete_messages():
         flash("No matching alerts were found.", "warning")
         return redirect(url_for("parent.alerts"))
 
-    deleted_count = len(records)
     subject_ids = {record.submitted_by_id for record in records if record.submitted_by_id}
+    signatures_by_child: dict[int, set[str]] = {}
+    texts_by_child: dict[int, set[str]] = {}
     for record in records:
+        signature = record.review_signature or build_review_signature(record.message_text)
+        if record.submitted_by_id:
+            signatures_by_child.setdefault(record.submitted_by_id, set()).add(signature)
+            texts_by_child.setdefault(record.submitted_by_id, set()).add(record.message_text)
         suppress_message(record, current_user.id)
+
+    records_to_delete: list[MessageRecord] = []
+    seen_delete_ids: set[int] = set()
+    for child_id, signatures in signatures_by_child.items():
+        matches = MessageRecord.query.filter(
+            MessageRecord.family_id == current_user.family_id,
+            MessageRecord.submitted_by_id == child_id,
+            or_(
+                MessageRecord.review_signature.in_(signatures),
+                MessageRecord.message_text.in_(texts_by_child.get(child_id, set())),
+            ),
+        ).all()
+        for match in matches:
+            if match.id not in seen_delete_ids:
+                records_to_delete.append(match)
+                seen_delete_ids.add(match.id)
+
+    if not records_to_delete:
+        records_to_delete = records
+        seen_delete_ids = {record.id for record in records}
+
+    deleted_ids = [record.id for record in records_to_delete]
+    deleted_count = len(deleted_ids)
+    for record in records_to_delete:
         db.session.delete(record)
     log_event(
         current_user.family_id,
@@ -926,11 +1001,13 @@ def bulk_delete_messages():
     )
     db.session.commit()
     if _wants_json_response():
+        selected_child_id = next(iter(subject_ids), None) if len(subject_ids) == 1 else None
         return jsonify(
             {
                 "ok": True,
-                "deleted_ids": [record.id for record in records],
+                "deleted_ids": deleted_ids,
                 "deleted_count": deleted_count,
+                "counts": _alert_counts_for_child(selected_child_id),
             }
         )
     flash(f"{deleted_count} alert(s) deleted.", "success")
