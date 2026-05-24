@@ -510,7 +510,11 @@ def _database_status() -> dict:
     return {"configured": True, "reachable": True, "message": "Database connection is healthy."}
 
 
-SAFE_OVERRIDE_INDICATORS = ("trusted_service_sender", "service_callback_message")
+SAFE_OVERRIDE_INDICATORS = (
+    "trusted_service_sender",
+    "service_callback_message",
+    "safe_educational_phrase",
+)
 
 
 def _safe_override_query():

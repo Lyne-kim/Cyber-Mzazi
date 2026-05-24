@@ -22,6 +22,19 @@ SAFE_SERVICE_PREFIXES = (
     "tafadhali nipigie",
 )
 
+SAFE_EDUCATIONAL_PHRASES = (
+    "education is key",
+    "education is the key",
+    "education is important",
+    "knowledge is power",
+    "knowledge gives power",
+    "learning is power",
+    "learning is important",
+    "school is important",
+    "study hard",
+    "read your books",
+)
+
 TRUSTED_SOURCE_PATTERNS = (
     # Safaricom, M-PESA, and common Safaricom services.
     r"\bsafaricom\b",
@@ -122,6 +135,9 @@ def safe_message_override(
 ) -> dict | None:
     """Return a safe prediction for known low-risk service notifications."""
     normalized_text = _normalize_text(text)
+    if any(phrase and phrase in normalized_text for phrase in SAFE_EDUCATIONAL_PHRASES):
+        return _safe_result("safe_educational_phrase")
+
     safe_prefixes = SAFE_SERVICE_PREFIXES + tuple(_normalize_text(prefix) for prefix in extra_prefixes)
     if any(prefix and normalized_text.startswith(prefix) for prefix in safe_prefixes):
         return _safe_result("service_callback_message")
