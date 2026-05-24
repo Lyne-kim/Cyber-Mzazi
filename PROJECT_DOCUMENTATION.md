@@ -583,10 +583,12 @@ Related guide:
 - `GET /api/parent/dashboard`
 - `GET /api/child/dashboard`
 - `GET /api/parent/alerts`
-- `DELETE /api/parent/alerts/<id>`
+- `POST /api/parent/messages/<id>/delete`
 - `POST /api/child/messages`
 - `POST /api/assistant/chat`
 - `GET /api/safety-resources/links`
+- `GET /api/developer/status`
+- `GET /api/developer/safety-resources`
 - `POST /api/parent/messages/<id>/review`
 - `POST /api/child/logout-request`
 - `POST /api/parent/logout-requests/<id>/approve`
@@ -730,7 +732,37 @@ This helper allows safer deployment evolution by:
 - adding new columns when needed
 - updating default values for older rows
 
-## 22. Security and Privacy Notes
+The runtime schema also creates the `deleted_message_signature` table used to remember alerts that a parent deleted. This prevents the same Android notification text from being recreated during later syncs.
+
+## 22. Developer Console
+
+Cyber Mzazi includes a developer-only website at:
+
+```text
+/developer
+```
+
+The console is protected by `DEVELOPER_STATUS_TOKEN` and is separate from parent and child sessions.
+
+Developer console responsibilities:
+
+- upload safety books and documents
+- add trusted online safety-resource links
+- review parent resource requests
+- update resource request status
+- delete developer-managed documents or links
+- inspect message counts, model status, Android device counts, and deleted-alert suppression counts
+
+Parent requests reach the developer through the database first. When a parent submits a book/topic request from the Safety Resources page, a `SafetyResourceRequest` row is created and shown in the developer console. If `DEVELOPER_NOTIFICATION_EMAIL` is configured and mail delivery is working, an email notification is also sent to the developer.
+
+Relevant environment variables:
+
+```text
+DEVELOPER_STATUS_TOKEN=<long private token>
+DEVELOPER_NOTIFICATION_EMAIL=<developer inbox>
+```
+
+## 23. Security and Privacy Notes
 
 Cyber Mzazi is designed around consent-based safety checks.
 
@@ -740,6 +772,8 @@ Cyber Mzazi is designed around consent-based safety checks.
 - family-managed sign-out approval
 - reviewed-label retraining
 - token-protected Android notification ingestion
+- developer-managed safety resources
+- parent request workflow for new books or topics
 - audit logs
 
 ### Not supported
@@ -754,7 +788,19 @@ Cyber Mzazi is designed around consent-based safety checks.
 
 This keeps the system more realistic, legally safer, and closer to platform policies.
 
-## 23. Known Limitations
+## 24. Alert Deletion and Suppression
+
+When a parent deletes an alert, Cyber Mzazi stores a deletion signature derived from the message text and child profile. Future Android uploads or child reports with the same signature are ignored. This solves the issue where a deleted alert could reappear after the child device synced the same notification again.
+
+Deletion suppression applies to:
+
+- individual parent alert deletion
+- bulk parent alert deletion
+- Android notification ingestion
+- manual child message reports
+- high-risk child AI assistant alerts
+
+## 25. Known Limitations
 
 - the ML model accuracy shown during training may overstate real-world performance
 - Android automatic capture depends on notification visibility
@@ -762,7 +808,7 @@ This keeps the system more realistic, legally safer, and closer to platform poli
 - the Android companion is child-only and focuses on paired notification ingestion rather than full device management
 - QR pairing currently relies on a generated QR image URL in the parent web view
 
-## 24. Suggested Future Improvements
+## 26. Suggested Future Improvements
 
 - signed Android release build pipeline
 - WorkManager-based background retries
@@ -772,8 +818,9 @@ This keeps the system more realistic, legally safer, and closer to platform poli
 - per-app risk sensitivity
 - richer analytics dashboards
 - more structured export features
+- richer developer audit trail for resource-library changes
 
-## 25. Conclusion
+## 27. Conclusion
 
 Cyber Mzazi currently stands as a full-stack family safety MVP with:
 
@@ -785,6 +832,7 @@ Cyber Mzazi currently stands as a full-stack family safety MVP with:
 - multi-child support
 - parent-controlled child sign-out
 - safety resource management
+- developer-managed resource uploads and parent resource request review
 - curated online safety-resource links
 - AI Safety Assistant support for children and parents
 - Android notification ingestion support

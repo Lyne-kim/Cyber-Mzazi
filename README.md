@@ -6,10 +6,11 @@ It currently includes:
 
 - A Flask web platform with separate `Parent/Guardian` and `Child` experiences
 - Family registration, role-based login, and parent email verification
-- Parent alerts, logout approval or denial, activity logs, safety-resource uploads, and curated safety-resource web links
+- Parent alerts, logout approval or denial, activity logs, safety-resource requests, and curated developer-managed safety resources
 - Child-side message safety checks and guided reporting flows
 - AI Safety Assistant pages for parents and children using the Cyber Mzazi classifier
 - Child-only Android companion infrastructure, branding, QR/device-link flows, and signed APK release setup
+- Developer console for uploading safety books, adding trusted links, reviewing parent resource requests, and checking operational diagnostics
 - Expanded safety classification labels with a lightweight production-safe heuristic mode
 - Optional Hugging Face Space integration for DistilBERT-based inference experiments
 
@@ -30,6 +31,19 @@ Implemented:
 - Parent approval-based child logout workflow
 - Popup, browser, sound, and email alert support for parents
 - Mobile sidebar toggle for parent and child dashboard pages
+- Persistent deleted-alert suppression so parent-deleted alerts are not recreated by later Android syncs
+
+### Developer console
+
+Implemented:
+
+- token-protected developer website at `/developer`
+- document/book upload for the safety-resource library
+- trusted web-resource link management
+- parent resource request review and status updates
+- model, device, message, and deleted-alert suppression diagnostics
+
+The developer console is separate from parent and child accounts. It is not linked from the parent or child dashboards.
 
 ### AI classification
 
@@ -152,6 +166,7 @@ Important variables commonly used in this project:
 - `MODEL_API_URL`
 - `MODEL_API_TOKEN`
 - `DEVELOPER_STATUS_TOKEN`
+- `DEVELOPER_NOTIFICATION_EMAIL`
 - `ENABLE_HEURISTIC_FALLBACK`
 - `FORCE_MODEL_RETRAIN`
 
@@ -184,6 +199,27 @@ curl -H "X-Developer-Token: <token>" http://localhost:5000/api/developer/status
 ```
 
 This route is not linked from parent or child pages.
+
+### Developer website
+
+Local:
+
+```text
+http://127.0.0.1:5000/developer
+```
+
+Production:
+
+```text
+https://cyber-mzazi.onrender.com/developer
+```
+
+Login uses the value of `DEVELOPER_STATUS_TOKEN`.
+
+Parent safety-resource requests reach the developer in two ways:
+
+- every request is stored in the database and appears in the developer console
+- if mail is configured and `DEVELOPER_NOTIFICATION_EMAIL` is set, the developer also receives an email notification
 
 ### 4. Run the web app locally
 
@@ -245,6 +281,7 @@ Cyber Mzazi supports Android-ready notification ingestion:
 - the backend classifies the content and stores it as a `MessageRecord`
 - grouped multiline notification text is split by the APK before upload so each message can be classified separately
 - uploads pause when the child is signed out
+- if a parent deletes an alert, the backend stores a deletion signature and later matching uploads are ignored instead of recreating the alert
 
 Typical payload fields:
 
@@ -285,6 +322,8 @@ Useful production variables:
 - `SESSION_COOKIE_SECURE=true`
 - `SESSION_COOKIE_SAMESITE=Lax`
 - `ANDROID_COMPANION_DOWNLOAD_URL=<release apk url>`
+- `DEVELOPER_STATUS_TOKEN=<long private developer token>`
+- `DEVELOPER_NOTIFICATION_EMAIL=<developer inbox for parent resource requests>`
 
 ## Gmail email verification setup
 
@@ -316,13 +355,8 @@ Publish helper:
 
 Main unfinished product work:
 
-- complete the **one Android app with role selection** experience
-- finish parent/guardian Android screens
-- finish child Android screens
-- apply role-based routing and permissions inside the Android app
 - do full end-to-end multi-device testing:
   - parent web
-  - parent phone
   - child phone
   - Android companion flow
 
@@ -331,6 +365,7 @@ Other remaining polish:
 - more mobile UX refinement across the web app
 - full production verification of all alert flows
 - final decision on long-term transformer inference strategy
+- developer workflow hardening, including richer resource tagging and audit filters
 
 ## License / usage note
 

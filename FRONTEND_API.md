@@ -97,6 +97,30 @@ fetch("https://your-backend-domain/api/me", {
 }
 ```
 
+### Delete a message
+
+`POST /parent/messages/:messageId/delete`
+
+Deletes the visible alert and creates a deleted-message suppression signature so the same message is not recreated by later child-device syncs.
+
+### Android notification ingestion
+
+`POST /device-ingest/android-notifications`
+
+Headers:
+
+```text
+Authorization: Bearer <device-ingestion-token>
+```
+
+or:
+
+```text
+X-Cyber-Mzazi-Device-Key: <device-ingestion-token>
+```
+
+The backend splits grouped notification text, classifies each message, and skips messages that match parent-deleted suppression signatures.
+
 ### Request child logout
 
 `POST /child/logout-request`
@@ -108,3 +132,28 @@ fetch("https://your-backend-domain/api/me", {
 ### Activity feed
 
 `GET /activity`
+
+## Developer endpoints
+
+Developer APIs require:
+
+```text
+X-Developer-Token: <DEVELOPER_STATUS_TOKEN>
+```
+
+Main developer endpoints:
+
+- `GET /api/developer/status`
+- `GET /api/developer/safety-resources`
+- `GET /api/developer/safe-overrides`
+- `POST /api/developer/safety-resources/documents`
+- `POST /api/developer/safety-resources/links`
+- `POST /api/developer/safety-resources/requests/:requestId/status`
+- `POST /api/developer/safety-resources/documents/:documentId/delete`
+- `POST /api/developer/safety-resources/links/:linkId/delete`
+
+The browser developer website is available outside `/api` at:
+
+```text
+/developer
+```

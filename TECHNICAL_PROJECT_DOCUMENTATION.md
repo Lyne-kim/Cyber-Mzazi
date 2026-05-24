@@ -830,6 +830,7 @@ Core tables:
 - family
 - user
 - message_record
+- deleted_message_signature
 - activity_log
 - logout_request
 - safety_resource_document
@@ -841,6 +842,14 @@ Android tokens are stored as hashes:
 ```text
 token_hash = SHA256(token)
 ```
+
+Deleted alert suppression uses deterministic review signatures:
+
+```text
+review_signature = SHA256(normalized_message_text)
+```
+
+When a parent deletes an alert, the signature is stored with the family and child identifiers. Future matching uploads are skipped so deleted messages do not reappear after Android sync.
 
 ### 4.5.3 Android Implementation
 
@@ -868,14 +877,33 @@ Important endpoints:
 - `POST /api/auth/logout`
 - `GET /api/parent/dashboard`
 - `GET /api/parent/alerts`
-- `DELETE /api/parent/alerts/<id>`
+- `POST /api/parent/messages/<id>/delete`
 - `POST /api/parent/android-devices`
 - `POST /api/device-ingest/android-notifications`
 - `POST /api/child/messages`
 - `POST /api/child/logout-request`
 - `POST /api/assistant/chat`
 - `GET /api/safety-resources/links`
+- `GET /api/developer/status`
+- `GET /api/developer/safety-resources`
+- `POST /api/developer/safety-resources/documents`
+- `POST /api/developer/safety-resources/links`
 - `GET /api/health`
+
+### 4.5.5 Developer Console
+
+The developer console is implemented as a token-protected Flask blueprint at `/developer`. It is not part of the parent or child account interface.
+
+Developer functions include:
+
+- uploading safety books and documents
+- adding trusted online safety links
+- viewing parent requests for new books or topics
+- updating request status
+- removing developer-managed resources
+- viewing basic model, device, message, and suppression diagnostics
+
+The login token comes from `DEVELOPER_STATUS_TOKEN`. Parent resource request notifications can also be emailed to `DEVELOPER_NOTIFICATION_EMAIL` when mail delivery is configured.
 
 ## 4.6 Testing and Evaluation
 

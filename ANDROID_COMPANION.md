@@ -1,6 +1,6 @@
 # Android Companion
 
-This folder contains the first Android companion app for Cyber Mzazi.
+This folder contains the child-only Android companion app for Cyber Mzazi.
 
 ## What it does
 
@@ -11,6 +11,7 @@ This folder contains the first Android companion app for Cyber Mzazi.
 - queues notifications locally if the network is down and retries later
 - lets you define allow/block package filters per app
 - shows a small recent log of captured notifications and upload status
+- pauses uploads while the child session is signed out
 - forwards notification payloads to:
 
 ```text
@@ -83,6 +84,7 @@ For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Re
    - open notification access and enable Cyber Mzazi
 6. Press `Send test payload` to confirm the backend receives data.
 7. Send a real message notification to the device from another account and confirm it appears in the parent dashboard.
+8. Delete that alert in the parent dashboard and confirm the same notification text does not reappear after the next sync. The backend stores a deleted-message suppression signature for this.
 
 ## Recommended install paths
 
@@ -100,6 +102,7 @@ For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Re
 - deep links are not resolved yet
 - pairing QR currently uses a generated web QR image
 - token rotation is still parent-managed from the dashboard
+- if a parent deletes an alert, future identical uploads are skipped by the backend
 
 ## Current refinements already included
 
@@ -107,6 +110,7 @@ For phone setup across Samsung, Pixel, Xiaomi/Redmi/POCO, Infinix/Tecno, Oppo/Re
 - offline queueing and retry
 - per-app allow and block filters
 - recent captured-notification log
+- child-only dashboard, AI assistant, settings, and parent approval-gated logout
 
 ## Signed release APK flow
 
