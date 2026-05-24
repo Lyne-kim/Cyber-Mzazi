@@ -47,6 +47,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             "review_labels": SUPPORTED_LABELS,
             "label_title": label_title,
             "label_tone": label_tone,
+            "static_asset_version": app.config["STATIC_ASSET_VERSION"],
         }
 
     @app.cli.command("train-models")

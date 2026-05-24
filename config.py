@@ -106,6 +106,10 @@ class Config:
     )
     APP_BASE_URL = os.getenv("APP_BASE_URL", "").rstrip("/")
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+    STATIC_ASSET_VERSION = os.getenv(
+        "STATIC_ASSET_VERSION",
+        os.getenv("RENDER_GIT_COMMIT", "local"),
+    )[:12]
     ANDROID_COMPANION_DOWNLOAD_URL = os.getenv("ANDROID_COMPANION_DOWNLOAD_URL", "")
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
