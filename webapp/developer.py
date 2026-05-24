@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import secrets
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from io import BytesIO
+
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, session, url_for
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 
@@ -119,8 +121,17 @@ def upload_documents():
     audience = request.form.get("audience", "all").strip().lower()
     summary = request.form.get("summary", "").strip()
     source_url = request.form.get("source_url", "").strip()
+    visibility = request.form.get("visibility", "all").strip().lower()
+    request_id = request.form.get("request_id", type=int)
+    related_request = SafetyResourceRequest.query.get(request_id) if request_id else None
+    family_id = related_request.family_id if visibility == "request_family" and related_request else None
+    cover_upload = request.files.get("cover_image")
+    cover_data = cover_upload.read() if cover_upload and cover_upload.filename else None
     if audience not in {"all", "parent", "child"}:
         audience = "all"
+    if cover_data and len(cover_data) > MAX_DEVELOPER_RESOURCE_BYTES:
+        flash("Cover image is too large. Maximum size is 8 MB.", "danger")
+        return redirect(url_for("developer.dashboard"))
 
     uploaded_count = 0
     for upload in uploads:
@@ -130,7 +141,7 @@ def upload_documents():
             flash(f"{filename} is too large. Maximum size is 8 MB.", "danger")
             continue
         document = SafetyResourceDocument(
-            family_id=None,
+            family_id=family_id,
             uploaded_by_id=None,
             filename=filename,
             content_type=upload.mimetype,
@@ -141,12 +152,17 @@ def upload_documents():
             audience=audience,
             summary=summary,
             source_url=source_url or None,
+            cover_filename=secure_filename(cover_upload.filename) if cover_data and cover_upload else None,
+            cover_content_type=cover_upload.mimetype if cover_data and cover_upload else None,
+            cover_binary_data=cover_data,
             status="approved",
         )
         db.session.add(document)
         db.session.flush()
         rebuild_document_chunks(document)
         uploaded_count += 1
+    if related_request and uploaded_count:
+        related_request.status = "fulfilled"
     db.session.commit()
     flash(f"{uploaded_count} resource document(s) uploaded.", "success")
     return redirect(url_for("developer.dashboard"))
@@ -213,6 +229,22 @@ def delete_document(document_id: int):
     db.session.commit()
     flash("Resource document deleted.", "success")
     return redirect(url_for("developer.dashboard"))
+
+
+@developer_bp.get("/safety-resources/documents/<int:document_id>/cover")
+def document_cover(document_id: int):
+    guard = _require_developer()
+    if guard:
+        return guard
+
+    document = SafetyResourceDocument.query.get_or_404(document_id)
+    if not document.cover_binary_data:
+        return "", 404
+    return send_file(
+        BytesIO(document.cover_binary_data),
+        mimetype=document.cover_content_type or "image/png",
+        download_name=document.cover_filename or f"resource-{document.id}-cover",
+    )
 
 
 @developer_bp.post("/safety-resources/links/<int:link_id>/delete")

@@ -237,6 +237,8 @@ def _document_payload(document: SafetyResourceDocument) -> dict:
         "summary": document.summary,
         "status": document.status,
         "source_url": document.source_url,
+        "has_cover": bool(document.cover_binary_data),
+        "cover_url": f"/parent/safety-resources/documents/{document.id}/cover" if document.cover_binary_data else None,
         "chunk_count": document.text_chunks.count(),
         "created_at": document.created_at.isoformat(),
         "uploaded_by_id": document.uploaded_by_id,
@@ -715,6 +717,10 @@ def developer_upload_resource_documents():
     audience = request.form.get("audience", "all").strip().lower()
     summary = request.form.get("summary", "").strip()
     source_url = request.form.get("source_url", "").strip()
+    cover_upload = request.files.get("cover_image")
+    cover_data = cover_upload.read() if cover_upload and cover_upload.filename else None
+    if cover_data and len(cover_data) > MAX_RESOURCE_ATTACHMENT_BYTES:
+        return _error("Cover image is too large. Upload cover files up to 8 MB.")
     if audience not in {"all", "parent", "child"}:
         audience = "all"
 
@@ -737,6 +743,9 @@ def developer_upload_resource_documents():
                 summary=summary,
                 status="approved",
                 source_url=source_url or None,
+                cover_filename=cover_upload.filename if cover_data and cover_upload else None,
+                cover_content_type=cover_upload.mimetype if cover_data and cover_upload else None,
+                cover_binary_data=cover_data,
             )
             db.session.add(document)
             db.session.flush()

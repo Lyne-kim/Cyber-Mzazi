@@ -747,6 +747,8 @@ The console is protected by `DEVELOPER_STATUS_TOKEN` and is separate from parent
 Developer console responsibilities:
 
 - upload safety books and documents
+- upload optional book cover images
+- choose whether a resource is visible to all parents or only the selected requesting family
 - add trusted online safety-resource links
 - review parent resource requests
 - update resource request status
@@ -754,6 +756,8 @@ Developer console responsibilities:
 - inspect message counts, model status, Android device counts, and deleted-alert suppression counts
 
 Parent requests reach the developer through the database first. When a parent submits a book/topic request from the Safety Resources page, a `SafetyResourceRequest` row is created and shown in the developer console. If `DEVELOPER_NOTIFICATION_EMAIL` is configured and mail delivery is working, an email notification is also sent to the developer.
+
+By default, developer-uploaded resources are global and appear for all parents. If the developer selects a specific request and chooses family-only visibility, the uploaded book appears only for that requesting family.
 
 Relevant environment variables:
 

@@ -176,6 +176,22 @@ def ensure_runtime_schema() -> None:
         inspector = inspect(db.engine)
         if not _column_exists(inspector, "safety_resource_document", "source_url"):
             db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN source_url VARCHAR(500)"))
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "cover_filename"):
+            db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN cover_filename VARCHAR(255)"))
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "cover_content_type"):
+            db.session.execute(text("ALTER TABLE safety_resource_document ADD COLUMN cover_content_type VARCHAR(120)"))
+        inspector = inspect(db.engine)
+        if not _column_exists(inspector, "safety_resource_document", "cover_binary_data"):
+            if dialect_name == "mysql":
+                db.session.execute(
+                    text("ALTER TABLE safety_resource_document ADD COLUMN cover_binary_data MEDIUMBLOB")
+                )
+            else:
+                db.session.execute(
+                    text("ALTER TABLE safety_resource_document ADD COLUMN cover_binary_data BLOB")
+                )
 
     inspector = inspect(db.engine)
     table_names = set(inspector.get_table_names())

@@ -851,6 +851,8 @@ review_signature = SHA256(normalized_message_text)
 
 When a parent deletes an alert, the signature is stored with the family and child identifiers. Future matching uploads are skipped so deleted messages do not reappear after Android sync.
 
+Safety resource documents can store optional cover image metadata and binary data. A document with `family_id = NULL` is global and visible to all families. A document with a specific `family_id` is visible only to that family.
+
 ### 4.5.3 Android Implementation
 
 The Android app is implemented in Kotlin as a child-only APK and supports:
@@ -897,6 +899,8 @@ The developer console is implemented as a token-protected Flask blueprint at `/d
 Developer functions include:
 
 - uploading safety books and documents
+- uploading optional book covers
+- publishing resources globally or only to the selected requesting family
 - adding trusted online safety links
 - viewing parent requests for new books or topics
 - updating request status

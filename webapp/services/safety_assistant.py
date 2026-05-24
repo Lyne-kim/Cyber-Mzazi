@@ -5,7 +5,7 @@ import re
 from ml.labels import SAFE_LABEL, label_title, label_tone, normalize_label
 
 from .prediction_service import PredictionUnavailable, predict_message
-from .resource_library import search_resource_chunks
+from .resource_library import search_resource_chunks, summarize_resource_library
 
 
 HIGH_RISK_LABELS = {
@@ -130,6 +130,20 @@ CLASSIFICATION_PATTERNS = (
     "check this link",
     "rate this",
     "what category",
+)
+
+RESOURCE_SUMMARY_PATTERNS = (
+    "summarize the book",
+    "summarise the book",
+    "summary of the book",
+    "summarize safety resources",
+    "summarise safety resources",
+    "summarize the resource",
+    "summarise the resource",
+    "what is in the book",
+    "what books are in safety resources",
+    "books in safety resources",
+    "resources uploaded",
 )
 
 URL_RE = re.compile(r"https?://|www\.|bit\.ly|t\.co|tinyurl|wa\.me", re.I)
@@ -376,6 +390,8 @@ def _detect_intent(text: str) -> str:
         return "greeting"
     if _matches_any(lowered, THANK_WORDS):
         return "thanks"
+    if _contains_any(lowered, RESOURCE_SUMMARY_PATTERNS):
+        return "resource_summary"
     if _contains_any(lowered, DEFINITION_PATTERNS):
         return "education"
     if _contains_any(lowered, ADVICE_PATTERNS):
@@ -387,6 +403,58 @@ def _detect_intent(text: str) -> str:
     if len(lowered.split()) >= 16:
         return "classification"
     return "education"
+
+
+def _resource_summary_response(prompt: str, audience_key: str, family_id: int | None) -> dict:
+    summary = summarize_resource_library(prompt, audience=audience_key, family_id=family_id)
+    if not summary:
+        message = (
+            "I do not see any approved books in the Safety Resources library yet. "
+            "Ask the developer to upload a book, or use the Safety Resources request form to suggest one."
+        )
+        return _response(
+            label=SAFE_LABEL,
+            label_title_value="Safety Resources",
+            tone="safe",
+            confidence=1.0,
+            risk_level="none",
+            indicators="resource_library_empty",
+            explanation=message,
+            guidance="Upload or request a safety resource first.",
+            assistant_message=message,
+            next_steps=[
+                "Open Safety Resources to see the current approved books.",
+                "Use the request form if you want a specific topic or book added.",
+            ],
+            response_type="resource_summary",
+        )
+
+    lines = []
+    for item in summary["documents"]:
+        lines.append(
+            f"{item['title']} ({item['topic']}): {item['summary']}"
+        )
+    message = (
+        "Here is a summary of the approved Safety Resources I can access: "
+        + " ".join(lines)
+    )
+    return _response(
+        label=SAFE_LABEL,
+        label_title_value="Safety Resources",
+        tone="safe",
+        confidence=1.0,
+        risk_level="none",
+        indicators="resource_library_summary",
+        explanation=message,
+        guidance="Use the Safety Resources page to open or download the full book.",
+        assistant_message=message,
+        next_steps=[
+            "Open Safety Resources to read or download the full book.",
+            "Ask a more specific question about one topic in the book for a focused answer.",
+            "Request another book if the library does not cover the topic you need.",
+        ],
+        response_type="resource_summary",
+    )
 
 
 def _education_response(prompt: str, audience_key: str) -> dict:
@@ -611,7 +679,14 @@ def build_safety_assistant_response(prompt: str, *, audience: str, family_id: in
             response_type="conversation",
         )
 
-    resource_matches = search_resource_chunks(cleaned_prompt, audience=audience_key)
+    if intent == "resource_summary":
+        return _resource_summary_response(cleaned_prompt, audience_key, family_id)
+
+    resource_matches = search_resource_chunks(
+        cleaned_prompt,
+        audience=audience_key,
+        family_id=family_id,
+    )
     if intent == "education":
         return _with_resource_context(
             _education_response(cleaned_prompt, audience_key),

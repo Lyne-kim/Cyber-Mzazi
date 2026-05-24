@@ -39,6 +39,8 @@ Implemented:
 
 - token-protected developer website at `/developer`
 - document/book upload for the safety-resource library
+- optional book cover image upload and book-card display in parent Safety Resources
+- resource visibility choice: all parents or only the selected requesting family
 - trusted web-resource link management
 - parent resource request review and status updates
 - model, device, message, and deleted-alert suppression diagnostics
@@ -220,6 +222,8 @@ Parent safety-resource requests reach the developer in two ways:
 
 - every request is stored in the database and appears in the developer console
 - if mail is configured and `DEVELOPER_NOTIFICATION_EMAIL` is set, the developer also receives an email notification
+
+When the developer uploads a requested book, the upload form can publish it to all parents or restrict it to the family that made the selected request.
 
 ### 4. Run the web app locally
 

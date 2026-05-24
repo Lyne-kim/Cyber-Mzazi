@@ -212,6 +212,9 @@ class SafetyResourceDocument(TimestampMixin, db.Model):
     summary = db.Column(db.Text)
     status = db.Column(db.String(30), nullable=False, default="approved")
     source_url = db.Column(db.String(500))
+    cover_filename = db.Column(db.String(255))
+    cover_content_type = db.Column(db.String(120))
+    cover_binary_data = db.Column(db.LargeBinary(length=16_777_215))
 
     family = db.relationship("Family", back_populates="safety_resource_documents")
     uploaded_by = db.relationship("User", foreign_keys=[uploaded_by_id])

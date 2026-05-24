@@ -76,6 +76,28 @@
             Source URL
             <input type="url" name="source_url" placeholder="https://example.org/resource">
           </label>
+          <div class="form-grid">
+            <label>
+              Visibility
+              <select name="visibility">
+                <option value="all">All parents</option>
+                <option value="request_family">Only the selected requesting family</option>
+              </select>
+            </label>
+            <label>
+              Parent request to fulfill
+              <select name="request_id">
+                <option value="">No specific request</option>
+                {% for item in requests %}
+                  <option value="{{ item.id }}">{{ item.title }} / family {{ item.family_id }} / {{ item.status|title }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>
+            Book cover image
+            <input type="file" name="cover_image" accept="image/*">
+          </label>
           <label>
             Summary
             <textarea name="summary" rows="3"></textarea>
@@ -161,9 +183,16 @@
         <h2>Uploaded books</h2>
         {% for document in documents %}
           <article class="developer-row">
+            <div class="resource-cover">
+              {% if document.cover_binary_data %}
+                <img src="{{ url_for('developer.document_cover', document_id=document.id) }}" alt="Cover for {{ document.title or document.filename }}">
+              {% else %}
+                <span>{{ (document.title or document.filename)[:1]|upper }}</span>
+              {% endif %}
+            </div>
             <div>
               <strong>{{ document.title or document.filename }}</strong>
-              <p>{{ document.topic }} / {{ document.audience|title }} / {{ document.file_size }} bytes</p>
+              <p>{{ document.topic }} / {{ document.audience|title }} / {{ "All parents" if not document.family_id else "Family " ~ document.family_id }} / {{ document.file_size }} bytes</p>
               <p class="meta">{{ document.text_chunks.count() }} AI-search chunks</p>
             </div>
             <form method="post" action="{{ url_for('developer.delete_document', document_id=document.id) }}">

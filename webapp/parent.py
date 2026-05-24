@@ -823,6 +823,25 @@ def download_resource_document(document_id: int):
     )
 
 
+@parent_bp.get("/safety-resources/documents/<int:document_id>/cover")
+def resource_document_cover(document_id: int):
+    document = SafetyResourceDocument.query.filter(
+        SafetyResourceDocument.id == document_id,
+        SafetyResourceDocument.status == "approved",
+        or_(
+            SafetyResourceDocument.family_id == current_user.family_id,
+            SafetyResourceDocument.family_id.is_(None),
+        ),
+    ).first_or_404()
+    if not document.cover_binary_data:
+        return "", 404
+    return send_file(
+        BytesIO(document.cover_binary_data),
+        mimetype=document.cover_content_type or "image/png",
+        download_name=document.cover_filename or f"resource-{document.id}-cover",
+    )
+
+
 @parent_bp.post("/messages/<int:message_id>/review")
 def review_message(message_id: int):
     record = MessageRecord.query.filter_by(

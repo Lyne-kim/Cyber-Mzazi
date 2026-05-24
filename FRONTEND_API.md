@@ -121,6 +121,12 @@ X-Cyber-Mzazi-Device-Key: <device-ingestion-token>
 
 The backend splits grouped notification text, classifies each message, and skips messages that match parent-deleted suppression signatures.
 
+### Safety resource document cover
+
+`GET /parent/safety-resources/documents/:documentId/cover`
+
+Returns the uploaded cover image for an approved book visible to the logged-in parent family. If no cover exists, the frontend should show a generated fallback cover.
+
 ### Request child logout
 
 `POST /child/logout-request`
@@ -157,3 +163,5 @@ The browser developer website is available outside `/api` at:
 ```text
 /developer
 ```
+
+The browser developer upload form supports an optional cover image and a visibility choice: global for all parents, or family-only when fulfilling a selected parent request.

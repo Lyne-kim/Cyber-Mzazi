@@ -518,13 +518,22 @@
         </div>
         <div class="stack">
           {% for document in safety_documents %}
-            <article class="mini-panel resource-item">
-              <strong>{{ document.title or document.filename }}</strong>
-              <p class="muted">{{ document.topic }} / {{ document.audience|title }} / {{ document.file_size }} bytes</p>
-              {% if document.summary %}
-                <p>{{ document.summary }}</p>
-              {% endif %}
-              <a class="button ghost small" href="{{ url_for('parent.download_resource_document', document_id=document.id) }}">Download</a>
+            <article class="mini-panel resource-item resource-book-card">
+              <div class="resource-cover">
+                {% if document.cover_binary_data %}
+                  <img src="{{ url_for('parent.resource_document_cover', document_id=document.id) }}" alt="Cover for {{ document.title or document.filename }}">
+                {% else %}
+                  <span>{{ (document.title or document.filename)[:1]|upper }}</span>
+                {% endif %}
+              </div>
+              <div class="resource-book-copy">
+                <strong>{{ document.title or document.filename }}</strong>
+                <p class="muted">{{ document.topic }} / {{ document.audience|title }} / {{ "All families" if not document.family_id else "Your family" }}</p>
+                {% if document.summary %}
+                  <p>{{ document.summary }}</p>
+                {% endif %}
+                <a class="button ghost small" href="{{ url_for('parent.download_resource_document', document_id=document.id) }}">Download</a>
+              </div>
             </article>
           {% else %}
             <p class="muted">No approved books uploaded yet.</p>
