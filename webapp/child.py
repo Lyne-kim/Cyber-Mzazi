@@ -269,6 +269,11 @@ def report():
     return _render_child_page("report", "Safety Check")
 
 
+@child_bp.get("/messages")
+def messages():
+    return redirect(url_for("child.report"))
+
+
 @child_bp.post("/language")
 def set_language():
     language = request.form.get("language", "en").strip().lower()
