@@ -198,21 +198,10 @@ def register():
         verification_warning = None
         verification_event_logged = False
         if parent_requires_email:
-            try:
-                ok, message = send_verification_email(parent_user)
-            except Exception as exc:  # pragma: no cover - external mail provider dependent
-                ok, message = False, f"Verification email could not be sent: {exc}"
-            if ok:
-                verification_message = message
-                log_event(
-                    family_id,
-                    parent_id,
-                    "verification_email_sent",
-                    f"Verification email sent to {parent_email}",
-                )
-                verification_event_logged = True
-            else:
-                verification_warning = message
+            verification_warning = (
+                "Family account created. Use Resend Verification Email on the login page "
+                "to send the verification link."
+            )
         if parent_requires_phone:
             try:
                 ok, message = send_phone_verification_code(parent_user)
@@ -367,7 +356,11 @@ def resend_verification():
         flash(f"Wait {wait_seconds} seconds before requesting another email code.", "warning")
         return render_template("parent_login.html", pending_identifier=identifier)
 
-    ok, message = send_verification_email(user)
+    try:
+        ok, message = send_verification_email(user)
+    except Exception as exc:  # pragma: no cover - production SMTP failures are environment-dependent
+        current_app.logger.exception("Verification email resend failed.")
+        ok, message = False, f"Verification email could not be sent: {exc}"
     if ok:
         log_event(
             user.family_id,
@@ -375,7 +368,13 @@ def resend_verification():
             "verification_email_resent",
             f"Verification email resent to {user.email}",
         )
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("Verification email resend state could not be saved.")
+            flash("Verification email was sent, but the delivery status could not be saved.", "warning")
+            return render_template("parent_login.html", pending_identifier=identifier)
         flash("Verification email sent again. Check the inbox and spam folder.", "success")
     else:
         db.session.rollback()
@@ -405,7 +404,11 @@ def resend_phone_verification():
         flash(f"Wait {wait_seconds} seconds before requesting another SMS code.", "warning")
         return render_template("parent_login.html", pending_identifier=identifier)
 
-    ok, message = send_phone_verification_code(user)
+    try:
+        ok, message = send_phone_verification_code(user)
+    except Exception as exc:  # pragma: no cover - production SMS failures are environment-dependent
+        current_app.logger.exception("Phone verification resend failed.")
+        ok, message = False, f"Phone verification code could not be sent: {exc}"
     if ok:
         log_event(
             user.family_id,
@@ -413,7 +416,13 @@ def resend_phone_verification():
             "phone_verification_resent",
             f"Phone verification code resent to {user.phone}",
         )
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("Phone verification resend state could not be saved.")
+            flash("Phone verification code was sent, but the delivery status could not be saved.", "warning")
+            return render_template("parent_login.html", pending_identifier=identifier)
         flash("Phone verification code sent again.", "success")
     else:
         db.session.rollback()
