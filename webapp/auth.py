@@ -168,45 +168,20 @@ def register():
             current_app.logger.exception("Family registration failed during database flush.")
             flash("Family account could not be created right now. Check the details and try again.", "danger")
             return render_template("register.html")
+        parent_requires_email = parent_user.requires_email_verification
+        parent_requires_phone = parent_user.requires_phone_verification
+        family_id = family.id
+        parent_id = parent_user.id
+        child_id = child_user.id
+        parent_email = parent_user.email
+        parent_phone = parent_user.phone
         log_event(
-            family.id,
-            parent_user.id,
+            family_id,
+            parent_id,
             "family_registered",
             "Family account created",
-            subject_user_id=child_user.id,
+            subject_user_id=child_id,
         )
-        verification_message = None
-        verification_warning = None
-        if parent_user.requires_email_verification:
-            try:
-                ok, message = send_verification_email(parent_user)
-            except Exception as exc:  # pragma: no cover - external mail provider dependent
-                ok, message = False, f"Verification email could not be sent: {exc}"
-            if ok:
-                verification_message = message
-                log_event(
-                    family.id,
-                    parent_user.id,
-                    "verification_email_sent",
-                    f"Verification email sent to {parent_user.email}",
-                )
-            else:
-                verification_warning = message
-        if parent_user.requires_phone_verification:
-            try:
-                ok, message = send_phone_verification_code(parent_user)
-            except Exception as exc:  # pragma: no cover - external SMS provider dependent
-                ok, message = False, f"Phone verification code could not be sent: {exc}"
-            if ok:
-                verification_message = message
-                log_event(
-                    family.id,
-                    parent_user.id,
-                    "phone_verification_sent",
-                    f"Phone verification code sent to {parent_user.phone}",
-                )
-            else:
-                verification_warning = message
         try:
             db.session.commit()
         except IntegrityError:
@@ -219,12 +194,58 @@ def register():
             flash("Family account could not be saved right now. Please try again.", "danger")
             return render_template("register.html")
 
-        if parent_user.requires_email_verification:
+        verification_message = None
+        verification_warning = None
+        verification_event_logged = False
+        if parent_requires_email:
+            try:
+                ok, message = send_verification_email(parent_user)
+            except Exception as exc:  # pragma: no cover - external mail provider dependent
+                ok, message = False, f"Verification email could not be sent: {exc}"
+            if ok:
+                verification_message = message
+                log_event(
+                    family_id,
+                    parent_id,
+                    "verification_email_sent",
+                    f"Verification email sent to {parent_email}",
+                )
+                verification_event_logged = True
+            else:
+                verification_warning = message
+        if parent_requires_phone:
+            try:
+                ok, message = send_phone_verification_code(parent_user)
+            except Exception as exc:  # pragma: no cover - external SMS provider dependent
+                ok, message = False, f"Phone verification code could not be sent: {exc}"
+            if ok:
+                verification_message = message
+                log_event(
+                    family_id,
+                    parent_id,
+                    "phone_verification_sent",
+                    f"Phone verification code sent to {parent_phone}",
+                )
+                verification_event_logged = True
+            else:
+                verification_warning = message
+        if verification_event_logged:
+            try:
+                db.session.commit()
+            except SQLAlchemyError:
+                db.session.rollback()
+                current_app.logger.exception("Verification delivery state could not be saved.")
+                verification_warning = (
+                    verification_warning
+                    or "Family account was created, but verification delivery status could not be saved."
+                )
+
+        if parent_requires_email:
             flash(
                 "Family account created. Verify the parent email before signing in.",
                 "success",
             )
-        elif parent_user.requires_phone_verification:
+        elif parent_requires_phone:
             flash(
                 "Family account created. Verify the parent phone number before signing in.",
                 "success",

@@ -650,43 +650,34 @@ def register_family():
     except IntegrityError:
         db.session.rollback()
         return _error("Parent email or phone is already in use.", 409)
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("API family registration failed during database flush.")
+        return _error("Family account could not be created right now. Please try again.", 500)
+
+    family_payload = {
+        "id": family.id,
+        "family_name": family.family_name,
+        "parent_contact": family.parent_contact,
+        "child_display_name": family.child_display_name,
+    }
+    parent_payload = _user_payload(parent_user)
+    child_payload = _user_payload(child_user)
+    parent_requires_email = parent_user.requires_email_verification
+    parent_requires_phone = parent_user.requires_phone_verification
+    family_id = family.id
+    parent_id = parent_user.id
+    child_id = child_user.id
+    parent_email = parent_user.email
+    parent_phone = parent_user.phone
+
     log_event(
-        family.id,
-        parent_user.id,
+        family_id,
+        parent_id,
         "family_registered",
         "Family account created via API",
-        subject_user_id=child_user.id,
+        subject_user_id=child_id,
     )
-    verification_sent = False
-    verification_message = None
-    phone_verification_sent = False
-    phone_verification_message = None
-    if parent_user.requires_email_verification:
-        try:
-            verification_sent, verification_message = send_verification_email(parent_user)
-        except Exception as exc:  # pragma: no cover - external mail provider dependent
-            verification_sent = False
-            verification_message = f"Verification email could not be sent: {exc}"
-        if verification_sent:
-            log_event(
-                family.id,
-                parent_user.id,
-                "verification_email_sent",
-                f"Verification email sent to {parent_user.email} via API",
-            )
-    if parent_user.requires_phone_verification:
-        try:
-            phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)
-        except Exception as exc:  # pragma: no cover - external SMS provider dependent
-            phone_verification_sent = False
-            phone_verification_message = f"Phone verification code could not be sent: {exc}"
-        if phone_verification_sent:
-            log_event(
-                family.id,
-                parent_user.id,
-                "phone_verification_sent",
-                f"Phone verification code sent to {parent_user.phone} via API",
-            )
     try:
         db.session.commit()
     except IntegrityError:
@@ -697,20 +688,55 @@ def register_family():
         current_app.logger.exception("API family registration failed during database commit.")
         return _error("Family account could not be saved right now. Please try again.", 500)
 
+    verification_sent = False
+    verification_message = None
+    phone_verification_sent = False
+    phone_verification_message = None
+    verification_event_logged = False
+    if parent_requires_email:
+        try:
+            verification_sent, verification_message = send_verification_email(parent_user)
+        except Exception as exc:  # pragma: no cover - external mail provider dependent
+            verification_sent = False
+            verification_message = f"Verification email could not be sent: {exc}"
+        if verification_sent:
+            log_event(
+                family_id,
+                parent_id,
+                "verification_email_sent",
+                f"Verification email sent to {parent_email} via API",
+            )
+            verification_event_logged = True
+    if parent_requires_phone:
+        try:
+            phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)
+        except Exception as exc:  # pragma: no cover - external SMS provider dependent
+            phone_verification_sent = False
+            phone_verification_message = f"Phone verification code could not be sent: {exc}"
+        if phone_verification_sent:
+            log_event(
+                family_id,
+                parent_id,
+                "phone_verification_sent",
+                f"Phone verification code sent to {parent_phone} via API",
+            )
+            verification_event_logged = True
+    if verification_event_logged:
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("API verification delivery state could not be saved.")
+
     return (
         jsonify(
             {
                 "ok": True,
-                "family": {
-                    "id": family.id,
-                    "family_name": family.family_name,
-                    "parent_contact": family.parent_contact,
-                    "child_display_name": family.child_display_name,
-                },
-                "parent": _user_payload(parent_user),
-                "child": _user_payload(child_user),
-                "requires_email_verification": parent_user.requires_email_verification,
-                "requires_phone_verification": parent_user.requires_phone_verification,
+                "family": family_payload,
+                "parent": parent_payload,
+                "child": child_payload,
+                "requires_email_verification": parent_requires_email,
+                "requires_phone_verification": parent_requires_phone,
                 "email_verification_sent": verification_sent,
                 "email_delivery_message": verification_message,
                 "phone_verification_sent": phone_verification_sent,
