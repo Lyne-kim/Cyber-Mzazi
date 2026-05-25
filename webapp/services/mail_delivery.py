@@ -5,6 +5,7 @@ import socket
 from email.message import EmailMessage
 
 from flask import current_app
+import requests
 
 
 def configured_sender() -> str:
@@ -15,6 +16,11 @@ def configured_sender() -> str:
 
 
 def is_mail_delivery_configured() -> bool:
+    provider = current_app.config.get("MAIL_PROVIDER", "smtp")
+    if provider == "resend":
+        return bool(current_app.config.get("RESEND_API_KEY") and configured_sender())
+    if provider == "brevo":
+        return bool(current_app.config.get("BREVO_API_KEY") and configured_sender())
     return bool(current_app.config.get("MAIL_SERVER") and configured_sender())
 
 
@@ -58,6 +64,14 @@ class IPv4SMTP_SSL(smtplib.SMTP_SSL):
 def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     if not is_mail_delivery_configured():
         return False, "Email delivery is not configured yet."
+
+    provider = current_app.config.get("MAIL_PROVIDER", "smtp")
+    if provider == "resend":
+        return _send_email_resend(recipient, subject, body)
+    if provider == "brevo":
+        return _send_email_brevo(recipient, subject, body)
+    if provider != "smtp":
+        return False, f"Unsupported MAIL_PROVIDER '{provider}'. Use smtp, resend, or brevo."
 
     sender = configured_sender()
     message = EmailMessage()
@@ -108,6 +122,63 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
         return False, f"{error} Fallback SSL:{fallback_ssl_port} also failed: {fallback_error}"
 
     return False, error
+
+
+def _send_email_resend(recipient: str, subject: str, body: str) -> tuple[bool, str]:
+    sender = configured_sender()
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {current_app.config['RESEND_API_KEY']}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": sender,
+                "to": [recipient],
+                "subject": subject,
+                "text": body,
+            },
+            timeout=10,
+        )
+    except requests.RequestException as exc:
+        return False, f"Email API request failed: {exc}"
+    if 200 <= response.status_code < 300:
+        return True, "Email sent."
+    return False, f"Email API rejected the message: {response.status_code} {response.text[:300]}"
+
+
+def _send_email_brevo(recipient: str, subject: str, body: str) -> tuple[bool, str]:
+    sender = configured_sender()
+    sender_name, sender_email = _split_sender(sender)
+    try:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": current_app.config["BREVO_API_KEY"],
+                "Content-Type": "application/json",
+            },
+            json={
+                "sender": {"name": sender_name, "email": sender_email},
+                "to": [{"email": recipient}],
+                "subject": subject,
+                "textContent": body,
+            },
+            timeout=10,
+        )
+    except requests.RequestException as exc:
+        return False, f"Email API request failed: {exc}"
+    if 200 <= response.status_code < 300:
+        return True, "Email sent."
+    return False, f"Email API rejected the message: {response.status_code} {response.text[:300]}"
+
+
+def _split_sender(sender: str) -> tuple[str, str]:
+    if "<" in sender and ">" in sender:
+        name = sender.split("<", 1)[0].strip().strip('"') or "Cyber Mzazi"
+        email = sender.split("<", 1)[1].split(">", 1)[0].strip()
+        return name, email
+    return "Cyber Mzazi", sender
 
 
 def _send_email_with_settings(

@@ -127,6 +127,9 @@ class Config:
         os.getenv("MAIL_ENABLE_SSL_FALLBACK", "true").lower() == "true"
     )
     MAIL_FALLBACK_SSL_PORT = int(os.getenv("MAIL_FALLBACK_SSL_PORT", "465"))
+    MAIL_PROVIDER = os.getenv("MAIL_PROVIDER", "smtp").strip().lower()
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY", "").strip()
     EMAIL_VERIFICATION_MAX_AGE = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE", "86400")
     )
