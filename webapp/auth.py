@@ -198,10 +198,22 @@ def register():
         verification_warning = None
         verification_event_logged = False
         if parent_requires_email:
-            verification_warning = (
-                "Family account created. Use Resend Verification Email on the login page "
-                "to send the verification link."
-            )
+            try:
+                ok, message = send_verification_email(parent_user)
+            except Exception as exc:  # pragma: no cover - external mail provider dependent
+                current_app.logger.exception("Verification email delivery failed during registration.")
+                ok, message = False, f"Verification email could not be sent: {exc}"
+            if ok:
+                verification_message = message
+                log_event(
+                    family_id,
+                    parent_id,
+                    "verification_email_sent",
+                    f"Verification email sent to {parent_email}",
+                )
+                verification_event_logged = True
+            else:
+                verification_warning = message
         if parent_requires_phone:
             try:
                 ok, message = send_phone_verification_code(parent_user)

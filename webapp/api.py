@@ -694,10 +694,20 @@ def register_family():
     phone_verification_message = None
     verification_event_logged = False
     if parent_requires_email:
-        verification_message = (
-            "Family account created. Use Resend Verification Email on the login page "
-            "to send the verification link."
-        )
+        try:
+            verification_sent, verification_message = send_verification_email(parent_user)
+        except Exception as exc:  # pragma: no cover - external mail provider dependent
+            current_app.logger.exception("API verification email delivery failed during registration.")
+            verification_sent = False
+            verification_message = f"Verification email could not be sent: {exc}"
+        if verification_sent:
+            log_event(
+                family_id,
+                parent_id,
+                "verification_email_sent",
+                f"Verification email sent to {parent_email} via API",
+            )
+            verification_event_logged = True
     if parent_requires_phone:
         try:
             phone_verification_sent, phone_verification_message = send_phone_verification_code(parent_user)

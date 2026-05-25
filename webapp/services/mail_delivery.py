@@ -73,7 +73,7 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     use_tls = current_app.config["MAIL_USE_TLS"]
     use_ssl = current_app.config["MAIL_USE_SSL"]
     force_ipv4 = current_app.config.get("MAIL_FORCE_IPV4", True)
-    timeout = int(current_app.config.get("MAIL_TIMEOUT", 45))
+    timeout = max(3, min(int(current_app.config.get("MAIL_TIMEOUT", 10)), 10))
     enable_ssl_fallback = current_app.config.get("MAIL_ENABLE_SSL_FALLBACK", True)
     fallback_ssl_port = int(current_app.config.get("MAIL_FALLBACK_SSL_PORT", 465))
 
@@ -150,5 +150,8 @@ def _send_email_with_settings(
         return False, "Email login failed. Check MAIL_USERNAME and MAIL_PASSWORD."
     except smtplib.SMTPException as exc:
         return False, f"Email delivery failed: {exc}"
+    except Exception as exc:  # pragma: no cover - defensive guard for provider-specific failures
+        current_app.logger.exception("Unexpected email delivery failure.")
+        return False, f"Email delivery failed unexpectedly: {exc}"
 
     return True, "Email sent."
