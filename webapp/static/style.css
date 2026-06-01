@@ -1078,6 +1078,7 @@ optgroup {
   border-radius: 18px;
   border: 1px solid rgba(31, 36, 33, 0.1);
   background: rgba(255, 255, 255, 0.98);
+  color: #10202a;
   box-shadow: 0 18px 35px rgba(31, 36, 33, 0.12);
   transform: translateY(-10px);
   opacity: 0;
@@ -2434,6 +2435,24 @@ body.parent-theme .trusted-contact-card {
   border-color: rgba(190, 205, 255, 0.12);
 }
 
+body.parent-theme .detail-list div {
+  align-items: center;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(190, 205, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8fbff;
+}
+
+body.parent-theme .detail-list div span {
+  color: #aab4d2;
+}
+
+body.parent-theme .detail-list div strong {
+  color: #ffffff;
+  text-align: right;
+}
+
 body.parent-theme .notification-preferences,
 body.parent-theme .setting-row,
 body.parent-theme .detail-list,
@@ -2560,6 +2579,39 @@ body.developer-theme .flash-info {
   background: #10284a;
   color: #dbeafe;
   border-color: rgba(13, 139, 255, 0.45);
+}
+
+body.parent-theme .notification-toast,
+body.developer-theme .notification-toast {
+  background: rgba(15, 18, 45, 0.98);
+  color: #f8fbff;
+  border-color: rgba(190, 205, 255, 0.22);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+}
+
+body.parent-theme .notification-toast p,
+body.parent-theme .notification-toast span,
+body.developer-theme .notification-toast p,
+body.developer-theme .notification-toast span {
+  color: #c5cdea;
+}
+
+body.parent-theme .notification-toast-danger,
+body.developer-theme .notification-toast-danger {
+  background: linear-gradient(90deg, rgba(255, 61, 90, 0.18), rgba(15, 18, 45, 0.98) 34%);
+  border-left-color: #ff3d5a;
+}
+
+body.parent-theme .notification-toast-warning,
+body.developer-theme .notification-toast-warning {
+  background: linear-gradient(90deg, rgba(255, 195, 63, 0.18), rgba(15, 18, 45, 0.98) 34%);
+  border-left-color: #ffc33f;
+}
+
+body.parent-theme .notification-toast-success,
+body.developer-theme .notification-toast-success {
+  background: linear-gradient(90deg, rgba(45, 224, 157, 0.18), rgba(15, 18, 45, 0.98) 34%);
+  border-left-color: #2de09d;
 }
 
 body.parent-theme code,
