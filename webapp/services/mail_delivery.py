@@ -61,15 +61,15 @@ class IPv4SMTP_SSL(smtplib.SMTP_SSL):
         return self.context.wrap_socket(sock, server_hostname=self._host)
 
 
-def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
+def send_email(recipient: str, subject: str, body: str, html_body: str | None = None) -> tuple[bool, str]:
     if not is_mail_delivery_configured():
         return False, "Email delivery is not configured yet."
 
     provider = current_app.config.get("MAIL_PROVIDER", "smtp")
     if provider == "resend":
-        return _send_email_resend(recipient, subject, body)
+        return _send_email_resend(recipient, subject, body, html_body)
     if provider == "brevo":
-        return _send_email_brevo(recipient, subject, body)
+        return _send_email_brevo(recipient, subject, body, html_body)
     if provider != "smtp":
         return False, f"Unsupported MAIL_PROVIDER '{provider}'. Use smtp, resend, or brevo."
 
@@ -79,6 +79,8 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     message["From"] = sender
     message["To"] = recipient
     message.set_content(body)
+    if html_body:
+        message.add_alternative(html_body, subtype="html")
 
     server = current_app.config["MAIL_SERVER"]
     port = int(current_app.config["MAIL_PORT"])
@@ -124,7 +126,7 @@ def send_email(recipient: str, subject: str, body: str) -> tuple[bool, str]:
     return False, error
 
 
-def _send_email_resend(recipient: str, subject: str, body: str) -> tuple[bool, str]:
+def _send_email_resend(recipient: str, subject: str, body: str, html_body: str | None = None) -> tuple[bool, str]:
     sender = configured_sender()
     try:
         response = requests.post(
@@ -138,6 +140,7 @@ def _send_email_resend(recipient: str, subject: str, body: str) -> tuple[bool, s
                 "to": [recipient],
                 "subject": subject,
                 "text": body,
+                **({"html": html_body} if html_body else {}),
             },
             timeout=10,
         )
@@ -148,7 +151,7 @@ def _send_email_resend(recipient: str, subject: str, body: str) -> tuple[bool, s
     return False, f"Email API rejected the message: {response.status_code} {response.text[:300]}"
 
 
-def _send_email_brevo(recipient: str, subject: str, body: str) -> tuple[bool, str]:
+def _send_email_brevo(recipient: str, subject: str, body: str, html_body: str | None = None) -> tuple[bool, str]:
     sender = configured_sender()
     sender_name, sender_email = _split_sender(sender)
     try:
@@ -163,6 +166,7 @@ def _send_email_brevo(recipient: str, subject: str, body: str) -> tuple[bool, st
                 "to": [{"email": recipient}],
                 "subject": subject,
                 "textContent": body,
+                **({"htmlContent": html_body} if html_body else {}),
             },
             timeout=10,
         )

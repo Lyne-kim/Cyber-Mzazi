@@ -155,6 +155,32 @@ UNSAFE_LINK_CONTEXT_TERMS = (
 
 URL_PATTERN = re.compile(r"(?:https?://|www\.)[^\s<>\"]+", re.IGNORECASE)
 PLAIN_DOMAIN_PATTERN = re.compile(r"\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b", re.IGNORECASE)
+HANDLE_ONLY_PATTERN = re.compile(r"^@?[a-z0-9][a-z0-9._-]{1,31}$", re.IGNORECASE)
+SOCIAL_CONTEXT_PATTERNS = (
+    r"\bwhatsapp\b",
+    r"\binstagram\b",
+    r"\bfacebook\b",
+    r"\bmessenger\b",
+    r"\btiktok\b",
+    r"\bsnapchat\b",
+    r"\btelegram\b",
+    r"\btwitter\b",
+    r"\bx\b",
+    r"\byoutube\b",
+    r"\bdiscord\b",
+    r"\bthreads\b",
+    r"\breddit\b",
+    r"\bcom\s+whatsapp\b",
+    r"\bcom\s+instagram\b",
+    r"\bcom\s+facebook\b",
+    r"\bcom\s+messenger\b",
+    r"\bcom\s+zhiliaoapp\s+musically\b",
+    r"\bcom\s+snapchat\b",
+    r"\borg\s+telegram\b",
+    r"\bcom\s+twitter\b",
+    r"\bcom\s+google\s+android\s+youtube\b",
+    r"\bcom\s+discord\b",
+)
 
 
 
@@ -213,6 +239,20 @@ def _trusted_link_reason(text: object, extra_domains: tuple[str, ...] = ()) -> s
     return None
 
 
+
+def _is_social_context(*values: object) -> bool:
+    blob = _context_blob(*values)
+    return any(re.search(pattern, blob) for pattern in SOCIAL_CONTEXT_PATTERNS)
+
+
+def _is_handle_only_message(text: object) -> bool:
+    value = str(text or "").strip()
+    if not value or any(char.isspace() for char in value):
+        return False
+    if "://" in value or "." in value.strip("@"):  # domains are handled by link policy instead
+        return False
+    return bool(HANDLE_ONLY_PATTERN.fullmatch(value))
+
 def _safe_result(reason: str) -> dict:
     return {
         "label": SAFE_LABEL,
@@ -234,6 +274,9 @@ def safe_message_override(
 ) -> dict | None:
     """Return a safe prediction for known low-risk service notifications."""
     normalized_text = _normalize_text(text)
+    if _is_social_context(source_platform, app_package, notification_title, sender_handle) and _is_handle_only_message(text):
+        return _safe_result("social_handle_only")
+
     trusted_link_reason = _trusted_link_reason(text, extra_link_domains)
     if trusted_link_reason:
         return _safe_result(trusted_link_reason)
