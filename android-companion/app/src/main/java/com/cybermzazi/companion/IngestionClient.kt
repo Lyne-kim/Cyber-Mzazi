@@ -38,7 +38,7 @@ object IngestionClient {
             val failed = mutableListOf<NotificationPayload>()
             var lastResult = ""
             payloads.forEach { item ->
-                val result = upload(baseUrl, token, item)
+                val result = upload(context, baseUrl, token, item)
                 lastResult = result
                 if (result.startsWith("Uploaded")) {
                     sentCount += 1
@@ -87,7 +87,7 @@ object IngestionClient {
             val remaining = mutableListOf<NotificationPayload>()
             var sentCount = 0
             queue.forEach { payload ->
-                val result = upload(baseUrl, token, payload)
+                val result = upload(context, baseUrl, token, payload)
                 if (result.startsWith("Uploaded")) {
                     sentCount += 1
                     RecentNotificationLog.append(context, payload.appName, payload.notificationTitle, payload.notificationText, "Retried: $result")
@@ -106,7 +106,7 @@ object IngestionClient {
         }
     }
 
-    private fun upload(baseUrl: String, token: String, payload: NotificationPayload): String =
+    private fun upload(context: Context, baseUrl: String, token: String, payload: NotificationPayload): String =
         runCatching {
             val url = URL("$baseUrl/api/device-ingest/android-notifications")
             val connection = (url.openConnection() as HttpURLConnection).apply {
@@ -134,8 +134,18 @@ object IngestionClient {
             val responseCode = connection.responseCode
             if (responseCode in 200..299) {
                 "Uploaded $responseCode from ${payload.appName}"
+            } else if (responseCode == 401) {
+                Prefs.setDeviceToken(context, "")
+                context.getString(R.string.upload_failed_pair_again)
             } else {
-                "Upload failed with HTTP $responseCode"
+                val errorText = runCatching {
+                    connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                }.getOrDefault("").trim()
+                if (errorText.isNotBlank()) {
+                    "Upload failed with HTTP $responseCode: ${errorText.take(120)}"
+                } else {
+                    "Upload failed with HTTP $responseCode"
+                }
             }
         }.getOrElse { throwable ->
             "Upload error: ${throwable.message ?: "Unknown error"}"

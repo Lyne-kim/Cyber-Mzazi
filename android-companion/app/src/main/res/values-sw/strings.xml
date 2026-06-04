@@ -77,4 +77,19 @@
     <string name="child_filters_card_custom">Vichujio vya usalama\n%1$d vimeruhusiwa, %2$d vimezuiwa</string>
     <string name="profile_saved">Wasifu umehifadhiwa.</string>
     <string name="passwords_do_not_match">Manenosiri hayafanani.</string>
+    <string name="manual_report_nav">Ripoti ujumbe</string>
+    <string name="manual_report_open">Ripoti ujumbe kwa mkono</string>
+    <string name="manual_report_title">Ripoti ujumbe</string>
+    <string name="manual_report_copy">Ikiwa ujumbe haukupakiwa moja kwa moja, ubandike hapa. Cyber Mzazi itautuma kwenye dashibodi ya mzazi kwa ukaguzi.</string>
+    <string name="manual_report_sender_hint">Umetoka wapi? Si lazima</string>
+    <string name="manual_report_message_hint">Bandika au andika ujumbe hapa</string>
+    <string name="manual_report_submit">Tuma ujumbe</string>
+    <string name="manual_report_status_empty">Ripoti za mkono zitaonekana kwa mzazi baada ya kupakiwa.</string>
+    <string name="manual_report_submitting">Inatuma ujumbe...</string>
+    <string name="manual_report_message_required">Weka ujumbe kabla ya kutuma.</string>
+    <string name="manual_report_default_sender">Ripoti ya mtoto</string>
+    <string name="manual_report_app_name">Ripoti ya mkono</string>
+    <string name="manual_report_sent_ok">Ujumbe umetumwa.</string>
+    <string name="manual_report_sent_failed">Ujumbe haukuweza kutumwa.</string>
+    <string name="upload_failed_pair_again">Upakiaji umekataliwa. Unganisha kifaa hiki tena kwa QR ya dashibodi ya mzazi.</string>
 </resources>

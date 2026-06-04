@@ -301,4 +301,19 @@
         <item>Check live status</item>
         <item>Review recent log</item>
     </string-array>
+    <string name="manual_report_nav">Report message</string>
+    <string name="manual_report_open">Report a message manually</string>
+    <string name="manual_report_title">Report a message</string>
+    <string name="manual_report_copy">If a message was not uploaded automatically, paste it here. Cyber Mzazi will send it to the parent dashboard for review and classification.</string>
+    <string name="manual_report_sender_hint">Where did it come from? Optional</string>
+    <string name="manual_report_message_hint">Paste or type the message here</string>
+    <string name="manual_report_submit">Submit message</string>
+    <string name="manual_report_status_empty">Manual reports will appear in the parent alerts after upload.</string>
+    <string name="manual_report_submitting">Submitting message...</string>
+    <string name="manual_report_message_required">Enter the message before submitting.</string>
+    <string name="manual_report_default_sender">Child manual report</string>
+    <string name="manual_report_app_name">Manual report</string>
+    <string name="manual_report_sent_ok">Message submitted.</string>
+    <string name="manual_report_sent_failed">Message could not be submitted.</string>
+    <string name="upload_failed_pair_again">Upload denied. Pair this child device again from the parent dashboard QR code.</string>
 </resources>

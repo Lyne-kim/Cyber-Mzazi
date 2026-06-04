@@ -78,6 +78,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var assistantPromptInput: EditText
     private lateinit var assistantConversationContainer: LinearLayout
     private lateinit var assistantResultText: TextView
+    private lateinit var manualReportSenderInput: EditText
+    private lateinit var manualReportMessageInput: EditText
+    private lateinit var manualReportStatusText: TextView
     private lateinit var appVersionText: TextView
 
     private lateinit var menuHome: TextView
@@ -85,6 +88,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuQr: TextView
     private lateinit var menuSettings: TextView
     private lateinit var menuCapture: TextView
+    private lateinit var menuReport: TextView
     private lateinit var menuFilters: TextView
     private lateinit var menuStatus: TextView
     private lateinit var menuLog: TextView
@@ -105,6 +109,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var profileSection: View
     private lateinit var passwordSection: View
     private lateinit var assistantSection: View
+    private lateinit var manualReportSection: View
 
     private lateinit var openChildLoginButton: Button
     private lateinit var childLoginButton: Button
@@ -116,6 +121,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var saveButton: Button
     private lateinit var scanQrButton: Button
     private lateinit var askAssistantButton: Button
+    private lateinit var submitManualReportButton: Button
     private lateinit var passwordConfirmCodeButton: Button
 
     private var currentSection = 0
@@ -194,6 +200,9 @@ class MainActivity : AppCompatActivity() {
         assistantPromptInput = findViewById(R.id.assistantPromptInput)
         assistantConversationContainer = findViewById(R.id.assistantConversationContainer)
         assistantResultText = findViewById(R.id.assistantResultText)
+        manualReportSenderInput = findViewById(R.id.manualReportSenderInput)
+        manualReportMessageInput = findViewById(R.id.manualReportMessageInput)
+        manualReportStatusText = findViewById(R.id.manualReportStatusText)
         appVersionText = findViewById(R.id.appVersionText)
 
         menuHome = findViewById(R.id.menuHome)
@@ -201,6 +210,7 @@ class MainActivity : AppCompatActivity() {
         menuQr = findViewById(R.id.menuQr)
         menuSettings = findViewById(R.id.menuSettings)
         menuCapture = findViewById(R.id.menuCapture)
+        menuReport = findViewById(R.id.menuReport)
         menuFilters = findViewById(R.id.menuFilters)
         menuStatus = findViewById(R.id.menuStatus)
         menuLog = findViewById(R.id.menuLog)
@@ -221,6 +231,7 @@ class MainActivity : AppCompatActivity() {
         profileSection = findViewById(R.id.profileSection)
         passwordSection = findViewById(R.id.passwordSection)
         assistantSection = findViewById(R.id.assistantSection)
+        manualReportSection = findViewById(R.id.manualReportSection)
         openChildLoginButton = findViewById(R.id.openChildLoginButton)
         childLoginButton = findViewById(R.id.childLoginButton)
         openNotificationSettingsButton = findViewById(R.id.openNotificationSettingsButton)
@@ -231,6 +242,7 @@ class MainActivity : AppCompatActivity() {
         saveButton = findViewById(R.id.saveButton)
         scanQrButton = findViewById(R.id.scanQrButton)
         askAssistantButton = findViewById(R.id.askAssistantButton)
+        submitManualReportButton = findViewById(R.id.submitManualReportButton)
         passwordConfirmCodeButton = findViewById(R.id.passwordConfirmCodeButton)
 
         backButton.setOnClickListener { navigateBack() }
@@ -253,6 +265,7 @@ class MainActivity : AppCompatActivity() {
         menuQr.setOnClickListener { showSection(SECTION_QR) }
         menuSettings.setOnClickListener { showSection(SECTION_SETTINGS) }
         menuCapture.setOnClickListener { showSection(SECTION_CAPTURE) }
+        menuReport.setOnClickListener { showSection(SECTION_MANUAL_REPORT) }
         menuFilters.setOnClickListener { showSection(SECTION_FILTERS) }
         menuStatus.setOnClickListener { showSection(SECTION_STATUS) }
         menuLog.setOnClickListener { showSection(SECTION_LOGS) }
@@ -267,7 +280,7 @@ class MainActivity : AppCompatActivity() {
         }
         statusPairDeviceButton.setOnClickListener { showSection(SECTION_QR) }
         goPairChildButton.setOnClickListener { signOut() }
-        goCaptureChildButton.setOnClickListener { showSection(SECTION_CAPTURE) }
+        goCaptureChildButton.setOnClickListener { showSection(SECTION_MANUAL_REPORT) }
         goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
         childPairingChecklistText.setOnClickListener { showSection(SECTION_QR) }
         childNotificationChecklistText.setOnClickListener {
@@ -287,6 +300,9 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.sendTestButton).setOnClickListener {
             sendTestPayload()
+        }
+        findViewById<Button>(R.id.openManualReportButton).setOnClickListener {
+            showSection(SECTION_MANUAL_REPORT)
         }
         findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
             retryQueue()
@@ -310,6 +326,7 @@ class MainActivity : AppCompatActivity() {
             showSection(SECTION_ASSISTANT)
         }
         askAssistantButton.setOnClickListener { askAssistant() }
+        submitManualReportButton.setOnClickListener { submitManualReport() }
         findViewById<Button>(R.id.clearAssistantButton).setOnClickListener {
             assistantPromptInput.text?.clear()
             resetAssistantConversation()
@@ -701,6 +718,7 @@ class MainActivity : AppCompatActivity() {
             position == SECTION_PROFILE && !isSignedIn() -> SECTION_HOME
             position == SECTION_PASSWORD && !isSignedIn() -> SECTION_HOME
             position == SECTION_ASSISTANT && !isSignedIn() -> SECTION_HOME
+            position == SECTION_MANUAL_REPORT && !isSignedIn() -> SECTION_HOME
             position == SECTION_QR && childSignedIn -> SECTION_QR
             position == SECTION_QR && !childSignedIn -> SECTION_HOME
             (position == SECTION_CAPTURE || position == SECTION_FILTERS) && !childSignedIn -> SECTION_HOME
@@ -722,6 +740,7 @@ class MainActivity : AppCompatActivity() {
         profileSection.visibility = if (resolvedPosition == SECTION_PROFILE) View.VISIBLE else View.GONE
         passwordSection.visibility = if (resolvedPosition == SECTION_PASSWORD) View.VISIBLE else View.GONE
         assistantSection.visibility = if (resolvedPosition == SECTION_ASSISTANT) View.VISIBLE else View.GONE
+        manualReportSection.visibility = if (resolvedPosition == SECTION_MANUAL_REPORT) View.VISIBLE else View.GONE
         syncDrawerState(resolvedPosition)
         updateTopNavigation()
         drawerLayout.closeDrawer(GravityCompat.START)
@@ -733,6 +752,7 @@ class MainActivity : AppCompatActivity() {
         updateDrawerItem(menuQr, position == SECTION_QR)
         updateDrawerItem(menuSettings, position == SECTION_SETTINGS)
         updateDrawerItem(menuCapture, position == SECTION_CAPTURE)
+        updateDrawerItem(menuReport, position == SECTION_MANUAL_REPORT)
         updateDrawerItem(menuFilters, position == SECTION_FILTERS)
         updateDrawerItem(menuStatus, position == SECTION_STATUS)
         updateDrawerItem(menuLog, position == SECTION_LOGS)
@@ -940,6 +960,45 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun submitManualReport() {
+        val messageText = manualReportMessageInput.text.toString().trim()
+        if (messageText.isBlank()) {
+            Toast.makeText(this, R.string.manual_report_message_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val sender = manualReportSenderInput.text.toString().trim().ifBlank {
+            getString(R.string.manual_report_default_sender)
+        }
+        val payload = NotificationPayload(
+            appName = getString(R.string.manual_report_app_name),
+            appPackage = "manual.child.report",
+            senderHandle = sender,
+            notificationTitle = getString(R.string.manual_report_title),
+            notificationText = messageText,
+            deepLink = null,
+        )
+        submitManualReportButton.isEnabled = false
+        manualReportStatusText.text = getString(R.string.manual_report_submitting)
+        IngestionClient.sendNotification(this, payload) { ok, message ->
+            runOnUiThread {
+                submitManualReportButton.isEnabled = true
+                manualReportStatusText.text = message
+                statusText.text = message
+                recentLogText.text = RecentNotificationLog.render(this)
+                childSetupStatusText.text = buildChildSetupStatus()
+                updateChildDashboardCards()
+                Toast.makeText(
+                    this,
+                    if (ok) R.string.manual_report_sent_ok else R.string.manual_report_sent_failed,
+                    Toast.LENGTH_SHORT,
+                ).show()
+                if (ok) {
+                    manualReportMessageInput.text?.clear()
+                }
+            }
+        }
+    }
+
     private fun sendTestPayload() {
         if (hasUnsavedSettings()) {
             saveSettings()
@@ -1040,6 +1099,7 @@ class MainActivity : AppCompatActivity() {
         private const val SECTION_PROFILE = 12
         private const val SECTION_PASSWORD = 13
         private const val SECTION_ASSISTANT = 14
+        private const val SECTION_MANUAL_REPORT = 15
         private const val STATE_CURRENT_SECTION = "current_section"
     }
 }
