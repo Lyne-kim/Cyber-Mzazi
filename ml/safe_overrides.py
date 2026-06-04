@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 
 from .labels import RISK_TERMS, SAFE_LABEL
 
@@ -100,6 +101,63 @@ TRUSTED_SOURCE_PATTERNS = (
 )
 
 
+TRUSTED_LINK_DOMAINS = (
+    "safaricom.co.ke",
+    "mpesa.in",
+    "m-pesa.com",
+    "kcbgroup.com",
+    "equitygroupholdings.com",
+    "equitybankgroup.com",
+    "absa.co.ke",
+    "ncba.co.ke",
+    "co-opbank.co.ke",
+    "stanbicbank.co.ke",
+    "sc.com",
+    "familybank.co.ke",
+    "dstv.com",
+    "gotvafrica.com",
+    "zuku.co.ke",
+    "poainternet.net",
+    "faiba.co.ke",
+    "airtelkenya.com",
+    "telkom.co.ke",
+    "jumia.co.ke",
+    "kilimall.co.ke",
+    "kilimall.com",
+    "naivas.online",
+    "carrefour.ke",
+    "glovoapp.com",
+    "bolt.eu",
+    "uber.com",
+    "google.com",
+    "youtube.com",
+    "whatsapp.com",
+    "facebook.com",
+    "instagram.com",
+    "tiktok.com",
+)
+
+UNSAFE_LINK_CONTEXT_TERMS = (
+    "password",
+    "otp",
+    "pin",
+    "verification code",
+    "login code",
+    "account locked",
+    "verify your account",
+    "reset your password",
+    "send money",
+    "urgent payment",
+    "claim your reward",
+    "private photos",
+    "nudes",
+)
+
+URL_PATTERN = re.compile(r"(?:https?://|www\.)[^\s<>\"]+", re.IGNORECASE)
+PLAIN_DOMAIN_PATTERN = re.compile(r"\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b", re.IGNORECASE)
+
+
+
 def split_config_list(raw_value: object) -> tuple[str, ...]:
     raw = str(raw_value or "").replace("\r\n", "\n").replace("\r", "\n")
     parts = re.split(r"[\n;,]+", raw)
@@ -113,6 +171,46 @@ def _normalize_text(value: object) -> str:
 def _context_blob(*values: object) -> str:
     raw = " ".join(str(value or "") for value in values if value)
     return _normalize_text(raw.replace("_", " ").replace("-", " ").replace(".", " "))
+
+
+
+def _hostname_from_candidate(candidate: str) -> str:
+    candidate = str(candidate or "").strip().rstrip(".,);]")
+    if not candidate:
+        return ""
+    if not candidate.lower().startswith(("http://", "https://")):
+        candidate = f"https://{candidate}"
+    hostname = urlparse(candidate).hostname or ""
+    return hostname.lower().strip(".")
+
+
+def _is_trusted_domain(hostname: str, domains: tuple[str, ...]) -> bool:
+    host = str(hostname or "").lower().strip(".")
+    for domain in domains:
+        clean_domain = str(domain or "").lower().strip(".")
+        if clean_domain and (host == clean_domain or host.endswith(f".{clean_domain}")):
+            return True
+    return False
+
+
+def _contains_unsafe_link_context(text: str) -> bool:
+    lowered = _normalize_text(text)
+    return any(term in lowered for term in UNSAFE_LINK_CONTEXT_TERMS)
+
+
+def _trusted_link_reason(text: object, extra_domains: tuple[str, ...] = ()) -> str | None:
+    normalized_text = str(text or "")
+    if _contains_unsafe_link_context(normalized_text):
+        return None
+
+    domains = TRUSTED_LINK_DOMAINS + tuple(_normalize_text(domain) for domain in extra_domains)
+    candidates = set(URL_PATTERN.findall(normalized_text))
+    candidates.update(PLAIN_DOMAIN_PATTERN.findall(normalized_text))
+    for candidate in candidates:
+        hostname = _hostname_from_candidate(candidate)
+        if _is_trusted_domain(hostname, domains):
+            return f"trusted_link_domain:{hostname}"
+    return None
 
 
 def _safe_result(reason: str) -> dict:
@@ -132,9 +230,14 @@ def safe_message_override(
     notification_title: object = None,
     extra_prefixes: tuple[str, ...] = (),
     extra_source_patterns: tuple[str, ...] = (),
+    extra_link_domains: tuple[str, ...] = (),
 ) -> dict | None:
     """Return a safe prediction for known low-risk service notifications."""
     normalized_text = _normalize_text(text)
+    trusted_link_reason = _trusted_link_reason(text, extra_link_domains)
+    if trusted_link_reason:
+        return _safe_result(trusted_link_reason)
+
     if any(phrase and phrase in normalized_text for phrase in SAFE_EDUCATIONAL_PHRASES):
         return _safe_result("safe_educational_phrase")
 
@@ -157,10 +260,13 @@ def safe_override_policy_summary(
     *,
     extra_prefixes: tuple[str, ...] = (),
     extra_source_patterns: tuple[str, ...] = (),
+    extra_link_domains: tuple[str, ...] = (),
 ) -> dict:
     return {
         "default_prefixes": len(SAFE_SERVICE_PREFIXES),
         "default_source_patterns": len(TRUSTED_SOURCE_PATTERNS),
+        "default_link_domains": len(TRUSTED_LINK_DOMAINS),
         "extra_prefixes": list(extra_prefixes),
         "extra_source_patterns": list(extra_source_patterns),
+        "extra_link_domains": list(extra_link_domains),
     }

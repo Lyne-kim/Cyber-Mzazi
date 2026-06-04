@@ -59,11 +59,16 @@
 
             workspace.dataset.sidebarReady = "true";
 
+            const isMobileSidebar = () => window.matchMedia("(max-width: 1080px)").matches;
+
             const setOpen = (isOpen) => {
-              workspace.classList.toggle("sidebar-open", isOpen);
-              toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-              document.body.classList.toggle("sidebar-locked", isOpen);
+              const shouldOpen = Boolean(isOpen && isMobileSidebar());
+              workspace.classList.toggle("sidebar-open", shouldOpen);
+              toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+              document.body.classList.toggle("sidebar-locked", shouldOpen);
             };
+
+            setOpen(false);
 
             toggle.addEventListener("click", () => {
               setOpen(!workspace.classList.contains("sidebar-open"));
@@ -80,11 +85,7 @@
               form.addEventListener("submit", () => setOpen(false));
             });
 
-            window.addEventListener("resize", () => {
-              if (window.innerWidth > 1080) {
-                setOpen(false);
-              }
-            });
+            window.addEventListener("resize", () => setOpen(workspace.classList.contains("sidebar-open")));
 
             document.addEventListener("keydown", (event) => {
               if (event.key === "Escape" && workspace.classList.contains("sidebar-open")) {

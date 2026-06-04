@@ -91,7 +91,7 @@ class Config:
         "distilbert-base-multilingual-cased",
     ).strip()
     TRANSFORMER_MAX_LENGTH = int(os.getenv("TRANSFORMER_MAX_LENGTH", "160"))
-    TRANSFORMER_EPOCHS = int(os.getenv("TRANSFORMER_EPOCHS", "2"))
+    TRANSFORMER_EPOCHS = int(os.getenv("TRANSFORMER_EPOCHS", "5"))
     TRANSFORMER_BATCH_SIZE = int(os.getenv("TRANSFORMER_BATCH_SIZE", "8"))
     TRAINING_MAX_ROWS_PER_LABEL = int(
         os.getenv("TRAINING_MAX_ROWS_PER_LABEL", "180")
@@ -101,6 +101,7 @@ class Config:
     )
     WEB_VERIFIER_URL = os.getenv("WEB_VERIFIER_URL", "")
     WEB_VERIFIER_TOKEN = os.getenv("WEB_VERIFIER_TOKEN", "")
+    SAFE_LINK_DOMAINS = os.getenv("SAFE_LINK_DOMAINS", "")
     LOGOUT_REQUEST_EXPIRY_MINUTES = int(
         os.getenv("LOGOUT_REQUEST_EXPIRY_MINUTES", "30")
     )

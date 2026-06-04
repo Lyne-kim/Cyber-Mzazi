@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, logout_user
 
 from ml.labels import label_title, label_tone
@@ -301,10 +301,20 @@ def submit_message():
             source_platform=source_platform,
             sender_handle=sender_handle,
         )
-    except PredictionUnavailable as exc:
-        flash(str(exc), "danger")
+    except Exception as exc:
+        current_app.logger.exception("Child message prediction failed.")
+        flash(f"Message analysis failed: {exc}", "danger")
         return redirect(url_for("child.report"))
-    verification = verify_message(message_text, prediction.label)
+    try:
+        verification = verify_message(message_text, prediction.label)
+    except Exception as exc:  # pragma: no cover - verifier failures are environment-dependent
+        current_app.logger.exception("Child message verification failed.")
+        verification = {
+            "status": "error",
+            "label": prediction.label,
+            "confidence": 0.0,
+            "notes": f"Verification failed: {exc}",
+        }
 
     record = MessageRecord(
         family_id=current_user.family_id,

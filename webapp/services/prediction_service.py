@@ -94,6 +94,34 @@ def _sanitize_prediction(text: str, label: object, confidence: object, risk_indi
     )
 
 
+def _fallback_prediction(text: str, reason: str) -> PredictionResult:
+    classifier = None
+    if current_app.config.get("ENABLE_HEURISTIC_FALLBACK", True):
+        try:
+            classifier = get_classifier()
+        except Exception as exc:  # pragma: no cover - defensive fallback path
+            current_app.logger.warning("Classifier fallback unavailable after %s: %s", reason, exc)
+
+    if classifier is not None:
+        try:
+            prediction = classifier.predict(text)
+            return PredictionResult(
+                label=normalize_label(prediction.get("label")),
+                confidence=float(prediction.get("confidence", 0.0)),
+                risk_indicators=str(prediction.get("risk_indicators") or ",".join(RISK_TERMS.get(SAFE_LABEL, ["none"]))),
+                provider="heuristic_fallback",
+            )
+        except Exception as exc:  # pragma: no cover - defensive fallback path
+            current_app.logger.warning("Heuristic fallback prediction failed after %s: %s", reason, exc)
+
+    return PredictionResult(
+        label=SAFE_LABEL,
+        confidence=0.0,
+        risk_indicators="prediction_unavailable",
+        provider="safe_fallback",
+    )
+
+
 def prediction_backend_status() -> dict:
     provider = current_app.config.get("MODEL_PROVIDER", "auto")
     if provider == "heuristic":
@@ -139,6 +167,7 @@ def predict_message(
         notification_title=notification_title,
         extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
         extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
+        extra_link_domains=split_config_list(current_app.config.get("SAFE_LINK_DOMAINS", "")),
     )
     if safe_override is not None:
         return PredictionResult(
@@ -207,17 +236,22 @@ def predict_message(
             sanitized.provider = "remote"
             return sanitized
         except (requests.RequestException, ValueError, TypeError) as exc:
-            raise PredictionUnavailable(f"Remote model request failed: {exc}") from exc
+            current_app.logger.exception("Remote model request failed; using fallback prediction.")
+            return _fallback_prediction(text, f"remote model request failed: {exc}")
 
-    classifier = get_classifier()
-    if classifier is None:
-        raise PredictionUnavailable("Model is not ready.")
-    prediction = classifier.predict(text)
-    sanitized = _sanitize_prediction(
-        text,
-        prediction.get("label", SAFE_LABEL),
-        prediction.get("confidence", 0.0),
-        prediction.get("risk_indicators", ""),
-    )
-    sanitized.provider = "local"
-    return sanitized
+    try:
+        classifier = get_classifier()
+        if classifier is None:
+            raise PredictionUnavailable("Model is not ready.")
+        prediction = classifier.predict(text)
+        sanitized = _sanitize_prediction(
+            text,
+            prediction.get("label", SAFE_LABEL),
+            prediction.get("confidence", 0.0),
+            prediction.get("risk_indicators", ""),
+        )
+        sanitized.provider = "local"
+        return sanitized
+    except Exception as exc:
+        current_app.logger.exception("Local prediction failed; using fallback prediction.")
+        return _fallback_prediction(text, f"local prediction failed: {exc}")

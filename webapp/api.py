@@ -483,6 +483,7 @@ def _safe_override_diagnostics() -> dict:
             "policy": safe_override_policy_summary(
                 extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
                 extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
+                extra_link_domains=split_config_list(current_app.config.get("SAFE_LINK_DOMAINS", "")),
             ),
             "recent": [],
             "error": str(exc),
@@ -493,6 +494,7 @@ def _safe_override_diagnostics() -> dict:
         "policy": safe_override_policy_summary(
             extra_prefixes=split_config_list(current_app.config.get("SAFE_MESSAGE_PREFIXES", "")),
             extra_source_patterns=split_config_list(current_app.config.get("SAFE_SENDER_PATTERNS", "")),
+            extra_link_domains=split_config_list(current_app.config.get("SAFE_LINK_DOMAINS", "")),
         ),
         "recent": [_message_payload(message) for message in recent],
     }
@@ -1742,9 +1744,10 @@ def ingest_android_notification():
             )
             db.session.add(record)
             records.append(record)
-    except PredictionUnavailable as exc:
+    except Exception as exc:
         db.session.rollback()
-        return _error(str(exc), 503)
+        current_app.logger.exception("Android notification ingestion failed.")
+        return _error(f"Notification upload failed: {exc}", 500)
 
     touch_ingestion_device(device, source_platform=source_platform)
     if not records:
@@ -1929,9 +1932,19 @@ def submit_message():
             source_platform=source_platform,
             sender_handle=sender_handle,
         )
-    except PredictionUnavailable as exc:
-        return _error(str(exc), 503)
-    verification = verify_message(message_text, prediction.label)
+    except Exception as exc:
+        current_app.logger.exception("Manual API message prediction failed.")
+        return _error(f"Message analysis failed: {exc}", 500)
+    try:
+        verification = verify_message(message_text, prediction.label)
+    except Exception as exc:  # pragma: no cover - verifier failures are environment-dependent
+        current_app.logger.exception("Manual API message verification failed.")
+        verification = {
+            "status": "error",
+            "label": prediction.label,
+            "confidence": 0.0,
+            "notes": f"Verification failed: {exc}",
+        }
 
     record = MessageRecord(
         family_id=current_user.family_id,
