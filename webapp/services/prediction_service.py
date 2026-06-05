@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 import requests
 from flask import current_app
@@ -24,6 +25,8 @@ class PredictionResult:
 class PredictionUnavailable(RuntimeError):
     pass
 
+
+LOW_CONFIDENCE_RISK_THRESHOLD = 0.55
 
 COMMERCE_SAFE_TERMS = {
     "offer",
@@ -54,6 +57,21 @@ def _looks_like_low_risk_commerce(text: str) -> bool:
     return any(term in lowered for term in COMMERCE_SAFE_TERMS)
 
 
+def _evidence_prediction(text: str) -> tuple[str, float, str] | None:
+    lowered = " ".join(str(text or "").lower().split())
+    if re.search(r"\bclaim\s+now\b", lowered):
+        return "scam", 0.88, "claim_now,social_engineering"
+    if re.search(r"\bclick\s+(?:this|the)?\s*link\s+to\s+claim\s+(?:your\s+)?(?:reward|prize|gift|bonus)\b", lowered):
+        return "scam", 0.9, "reward_link,social_engineering"
+    if re.search(r"\b(?:nitro|discord nitro|gifted you nitro|free nitro)\b", lowered) and re.search(r"\b(?:claim|gift|free|reward)\b", lowered):
+        return "scam", 0.86, "free_gift_claim,social_engineering"
+    if re.search(r"\b(?:claim your reward|free gift|gifted you|won a prize|prize)\b", lowered):
+        return "scam", 0.78, "reward_claim,social_engineering"
+    if re.search(r"\b(?:anakucheka|wanakucheka|laughing at you|laugh at you|mocking you|kwa grp|kwa group|in the group|grp)\b", lowered):
+        return "cyberbullying", 0.78, "humiliation,group_mocking"
+    return None
+
+
 def _sanitize_prediction(text: str, label: object, confidence: object, risk_indicators: object) -> PredictionResult:
     raw_label = str(label or "").strip().lower()
     normalized = normalize_label(raw_label)
@@ -62,10 +80,7 @@ def _sanitize_prediction(text: str, label: object, confidence: object, risk_indi
     except (TypeError, ValueError):
         safe_confidence = 0.0
 
-    if (
-        raw_label != normalized
-        or (normalized != SAFE_LABEL and safe_confidence < 0.5)
-    ):
+    if raw_label != normalized:
         classifier = get_classifier()
         heuristic = classifier.predict(text) if classifier is not None else {
             "label": SAFE_LABEL,
@@ -76,6 +91,10 @@ def _sanitize_prediction(text: str, label: object, confidence: object, risk_indi
         safe_confidence = float(heuristic.get("confidence", safe_confidence))
         risk_indicators = heuristic.get("risk_indicators", risk_indicators)
 
+    evidence = _evidence_prediction(text)
+    if evidence is not None and (normalized == SAFE_LABEL or safe_confidence < LOW_CONFIDENCE_RISK_THRESHOLD or not _has_supported_risk_hint(text)):
+        normalized, safe_confidence, risk_indicators = evidence
+
     if (
         normalized != SAFE_LABEL
         and safe_confidence < 0.78
@@ -85,6 +104,15 @@ def _sanitize_prediction(text: str, label: object, confidence: object, risk_indi
         normalized = SAFE_LABEL
         safe_confidence = max(safe_confidence, 0.72)
         risk_indicators = ",".join(RISK_TERMS[SAFE_LABEL])
+
+    if normalized != SAFE_LABEL and safe_confidence < LOW_CONFIDENCE_RISK_THRESHOLD and not _has_supported_risk_hint(text):
+        evidence = _evidence_prediction(text)
+        if evidence is not None:
+            normalized, safe_confidence, risk_indicators = evidence
+        else:
+            normalized = SAFE_LABEL
+            safe_confidence = max(safe_confidence, 0.70)
+            risk_indicators = "low_confidence_no_risk_evidence"
 
     return PredictionResult(
         label=normalized,

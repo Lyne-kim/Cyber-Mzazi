@@ -18,6 +18,11 @@ SAFE_SERVICE_PREFIXES = (
     "call me back",
     "you have a missed call",
     "missed call from",
+    "this is the first time that this number has called you",
+    "this is the first time this number has called you",
+    "if this call was spam",
+    "do you know this number",
+    "do you know",
     "nilijaribu kukupigia",
     "nimejaribu kukupigia",
     "tafadhali nipigie",
@@ -85,6 +90,12 @@ TRUSTED_SOURCE_PATTERNS = (
     r"\bliquid\s*(home|telecom)?\b",
     r"\btelkom\b",
     r"\bairtel\b",
+    # Phone and system caller/spam notices.
+    r"\bdialer\b",
+    r"\bgoogle\s*android\s*dialer\b",
+    r"\bcom\s*google\s*android\s*dialer\b",
+    r"\bphone\b",
+    r"\bcaller\b",
     # Shopping and delivery apps/services.
     r"\bjumia\b",
     r"\bkilimall\b",
@@ -253,6 +264,22 @@ def _is_handle_only_message(text: object) -> bool:
         return False
     return bool(HANDLE_ONLY_PATTERN.fullmatch(value))
 
+def _is_dialer_notice(text: object, *context_values: object) -> bool:
+    normalized_text = _normalize_text(text)
+    context = _context_blob(*context_values)
+    if not re.search(r"\b(?:dialer|phone|caller|com\s+google\s+android\s+dialer)\b", context):
+        return False
+    safe_call_terms = (
+        "first time that this number has called you",
+        "first time this number has called you",
+        "if this call was spam",
+        "block this number",
+        "report it",
+        "do you know",
+        "missed call",
+    )
+    return any(term in normalized_text for term in safe_call_terms)
+
 def _safe_result(reason: str) -> dict:
     return {
         "label": SAFE_LABEL,
@@ -274,6 +301,9 @@ def safe_message_override(
 ) -> dict | None:
     """Return a safe prediction for known low-risk service notifications."""
     normalized_text = _normalize_text(text)
+    if _is_dialer_notice(text, source_platform, app_package, notification_title, sender_handle):
+        return _safe_result("trusted_dialer_notice")
+
     if _is_social_context(source_platform, app_package, notification_title, sender_handle) and _is_handle_only_message(text):
         return _safe_result("social_handle_only")
 

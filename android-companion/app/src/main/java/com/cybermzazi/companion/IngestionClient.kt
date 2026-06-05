@@ -5,6 +5,7 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.UnknownHostException
 import java.util.concurrent.Executors
 
 object IngestionClient {
@@ -148,7 +149,11 @@ object IngestionClient {
                 }
             }
         }.getOrElse { throwable ->
-            "Upload error: ${throwable.message ?: "Unknown error"}"
+            if (throwable is UnknownHostException) {
+                context.getString(R.string.upload_failed_network_dns)
+            } else {
+                "Upload error: ${throwable.message ?: "Unknown error"}"
+            }
         }
 
     private fun splitPayload(payload: NotificationPayload): List<NotificationPayload> {

@@ -67,7 +67,7 @@
     <string name="username_reuse_hint">Unique within your family</string>
     <string name="child_dashboard_header">Cyber Mzazi\nChild Dashboard</string>
     <string name="hi_child">Hi!</string>
-    <string name="report_message">Report a message</string>
+    <string name="report_message">Upload message</string>
     <string name="request_logout">Request logout</string>
     <string name="pair_this_device">Pair this device</string>
     <string name="scan_code_parent">Scan this code on your parent dashboard</string>
@@ -301,19 +301,20 @@
         <item>Check live status</item>
         <item>Review recent log</item>
     </string-array>
-    <string name="manual_report_nav">Report message</string>
-    <string name="manual_report_open">Report a message manually</string>
-    <string name="manual_report_title">Report a message</string>
-    <string name="manual_report_copy">If a message was not uploaded automatically, paste it here. Cyber Mzazi will send it to the parent dashboard for review and classification.</string>
+    <string name="manual_report_nav">Upload message</string>
+    <string name="manual_report_open">Upload message manually</string>
+    <string name="manual_report_title">Upload message</string>
+    <string name="manual_report_copy">If a message was not uploaded automatically, paste it here. Cyber Mzazi will upload it to the parent dashboard for review and classification.</string>
     <string name="manual_report_sender_hint">Where did it come from? Optional</string>
     <string name="manual_report_message_hint">Paste or type the message here</string>
-    <string name="manual_report_submit">Submit message</string>
-    <string name="manual_report_status_empty">Manual reports will appear in the parent alerts after upload.</string>
-    <string name="manual_report_submitting">Submitting message...</string>
+    <string name="manual_report_submit">Upload message</string>
+    <string name="manual_report_status_empty">Uploaded messages will appear in the parent alerts after upload.</string>
+    <string name="manual_report_submitting">Uploading message...</string>
     <string name="manual_report_message_required">Enter the message before submitting.</string>
-    <string name="manual_report_default_sender">Child manual report</string>
-    <string name="manual_report_app_name">Manual report</string>
-    <string name="manual_report_sent_ok">Message submitted.</string>
-    <string name="manual_report_sent_failed">Message could not be submitted.</string>
+    <string name="manual_report_default_sender">Child upload</string>
+    <string name="manual_report_app_name">Manual upload</string>
+    <string name="manual_report_sent_ok">Message uploaded.</string>
+    <string name="manual_report_sent_failed">Message could not be uploaded.</string>
     <string name="upload_failed_pair_again">Upload denied. Pair this child device again from the parent dashboard QR code.</string>
+    <string name="upload_failed_network_dns">Upload failed. Check the child phone internet connection, then retry queued uploads. If it keeps failing, scan the parent dashboard QR code again.</string>
 </resources>

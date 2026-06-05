@@ -116,7 +116,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var openNotificationSettingsButton: Button
     private lateinit var statusPairDeviceButton: Button
     private lateinit var goPairChildButton: Button
-    private lateinit var goCaptureChildButton: Button
     private lateinit var goFiltersChildButton: Button
     private lateinit var saveButton: Button
     private lateinit var scanQrButton: Button
@@ -237,7 +236,6 @@ class MainActivity : AppCompatActivity() {
         openNotificationSettingsButton = findViewById(R.id.openNotificationSettingsButton)
         statusPairDeviceButton = findViewById(R.id.statusPairDeviceButton)
         goPairChildButton = findViewById(R.id.goPairChildButton)
-        goCaptureChildButton = findViewById(R.id.goCaptureChildButton)
         goFiltersChildButton = findViewById(R.id.goFiltersChildButton)
         saveButton = findViewById(R.id.saveButton)
         scanQrButton = findViewById(R.id.scanQrButton)
@@ -280,7 +278,6 @@ class MainActivity : AppCompatActivity() {
         }
         statusPairDeviceButton.setOnClickListener { showSection(SECTION_QR) }
         goPairChildButton.setOnClickListener { signOut() }
-        goCaptureChildButton.setOnClickListener { showSection(SECTION_MANUAL_REPORT) }
         goFiltersChildButton.setOnClickListener { showSection(SECTION_SETTINGS) }
         childPairingChecklistText.setOnClickListener { showSection(SECTION_QR) }
         childNotificationChecklistText.setOnClickListener {
@@ -300,9 +297,6 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.sendTestButton).setOnClickListener {
             sendTestPayload()
-        }
-        findViewById<Button>(R.id.openManualReportButton).setOnClickListener {
-            showSection(SECTION_MANUAL_REPORT)
         }
         findViewById<Button>(R.id.retryQueueButton).setOnClickListener {
             retryQueue()
@@ -506,16 +500,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun signOut() {
         if (childSignedIn) {
-            ParentApiClient.requestChildLogout(this) { ok, message ->
-                runOnUiThread {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    if (ok) latestChildLogoutStatus = "pending"
-                    updateChildDashboardCards()
+            ParentApiClient.fetchChildLogoutStatus(this) { statusOk, status, _ ->
+                if (statusOk) {
+                    runOnUiThread {
+                        when (status) {
+                            "approved" -> completeApprovedChildLogout()
+                            "denied" -> {
+                                latestChildLogoutStatus = "denied"
+                                updateChildDashboardCards()
+                                Toast.makeText(this, R.string.child_logout_denied_status, Toast.LENGTH_SHORT).show()
+                            }
+                            "pending" -> {
+                                latestChildLogoutStatus = "pending"
+                                updateChildDashboardCards()
+                                Toast.makeText(this, R.string.child_logout_pending_card, Toast.LENGTH_SHORT).show()
+                            }
+                            else -> requestChildLogoutApproval()
+                        }
+                    }
+                } else {
+                    requestChildLogoutApproval()
                 }
             }
             return
         }
         showSection(SECTION_HOME)
+    }
+
+    private fun requestChildLogoutApproval() {
+        ParentApiClient.requestChildLogout(this) { ok, message ->
+            runOnUiThread {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                if (ok) latestChildLogoutStatus = "pending"
+                updateChildDashboardCards()
+            }
+        }
     }
 
     private fun checkChildLogoutDecision() {
@@ -544,19 +563,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun completeApprovedChildLogout() {
-        ParentApiClient.logout(this) { ok, message ->
+        ParentApiClient.logout(this) { _, _ ->
             runOnUiThread {
-                if (ok) {
-                    childSignedIn = false
-                    Prefs.clearChildSession(this)
-                    Prefs.clearParentSession(this)
-                    latestChildLogoutStatus = null
-                    updateMenuAccess()
-                    showSection(SECTION_HOME)
-                    Toast.makeText(this, R.string.child_logout_approved_signed_out, Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                }
+                childSignedIn = false
+                Prefs.clearChildSession(this)
+                Prefs.clearParentSession(this)
+                latestChildLogoutStatus = null
+                updateMenuAccess()
+                showSection(SECTION_HOME)
+                Toast.makeText(this, R.string.child_logout_approved_signed_out, Toast.LENGTH_SHORT).show()
             }
         }
     }
