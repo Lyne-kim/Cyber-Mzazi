@@ -160,7 +160,7 @@ VIOLENCE_THREAT_RE = re.compile(
     re.I,
 )
 MONEY_PRESSURE_RE = re.compile(
-    r"\b(?:tuma pesa|send money|nitakushitaki|nikushtaki|nitasema|blackmail|pay now|haraka|very fast|m-pesa|mpesa|okoa|loan|debt)\b",
+    r"\b(?:tuma pesa|nitume pesa|utume pesa|send money|pay me|pay now|nitakushitaki|nikushtaki|atakushitaki|atanishitaki|nitasema|nitakuambia|nitakusema|atanisema|atakusema|atasema|tell your parent|tell your parents|tell your guardian|tell mzazi|kwa mzazi|blackmail|haraka|very fast|m-pesa|mpesa|okoa|loan|debt)\b",
     re.I,
 )
 SEXUAL_PRESSURE_RE = re.compile(
@@ -626,7 +626,7 @@ def _classification_response(prompt: str, audience_key: str, family_id: int | No
             indicators = "direct_threat,physical_harm_language"
         elif direct_label == "scam":
             message = (
-                "This looks like money pressure or blackmail language. Phrases like asking for money quickly or threatening consequences are common coercion and scam signals."
+                "This looks like money pressure and blackmail/coercion. Asking you to send money and threatening to tell a parent or guardian is not a normal request; it is a pressure tactic."
             )
             indicators = "money_pressure,coercion,urgency"
         elif direct_label == "grooming":
